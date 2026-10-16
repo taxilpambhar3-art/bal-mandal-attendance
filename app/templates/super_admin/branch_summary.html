@@ -16,14 +16,14 @@
     </h5>
     <small class="text-muted">
       Code: <span class="badge bg-primary-subtle text-primary border border-primary-subtle">{{ branch.code }}</span> ·
-      શહેર: <b>{{ branch.city }}</b> · {{ week.date.strftime('%d %B %Y') }} ({{ week.week_label }})
+      City: <b>{{ branch.city }}</b> · {{ week.date.strftime('%d %B %Y') }} ({{ week.week_label }})
     </small>
   </div>
   <div class="d-flex gap-2">
     <a href="/super-admin/branches/{{ branch.id }}/edit" class="btn btn-outline-primary btn-sm fw-semibold shadow-sm">
       <i class="bi bi-pencil-square me-1"></i>Edit Branch
     </a>
-    <form method="post" action="/super-admin/branches/{{ branch.id }}/delete" onsubmit="return confirm('શું તમે ખરેખર \'{{ branch.name }}\' શાખા ડિલીટ કરવા માંગો છો? આ શાખાના તમામ મંડળો, બાળકો અને હાજરી પણ ડિલીટ થઈ જશે.');" style="display:inline;">
+    <form method="post" action="/super-admin/branches/{{ branch.id }}/delete" onsubmit="return confirm('Are you sure you want to delete \'{{ branch.name }}\' branch? All mandals, children, and attendance records will also be deleted.');" style="display:inline;">
       <button type="submit" class="btn btn-outline-danger btn-sm fw-semibold shadow-sm">
         <i class="bi bi-trash me-1"></i>Delete Branch
       </button>
@@ -32,7 +32,7 @@
       <i class="bi bi-printer me-1"></i>Print
     </button>
     <a href="/super-admin/branches" class="btn btn-light btn-sm fw-semibold border shadow-sm">
-      <i class="bi bi-arrow-left me-1"></i>પાછા જાઓ
+      <i class="bi bi-arrow-left me-1"></i>Back
     </a>
   </div>
 </div>
@@ -50,21 +50,21 @@
     <div class="stat-card">
       <div class="ico bg-warning-subtle text-warning"><i class="bi bi-people-fill"></i></div>
       <h3>{{ total_children }}</h3>
-      <p>કુલ બાળકો (Enrolled)</p>
+      <p>Enrolled Children</p>
     </div>
   </div>
   <div class="col-6 col-lg-3">
     <div class="stat-card">
       <div class="ico bg-success-subtle text-success"><i class="bi bi-check-circle-fill"></i></div>
       <h3>{{ present }}</h3>
-      <p>હાજર બાળકો (Present)</p>
+      <p>Present Children</p>
     </div>
   </div>
   <div class="col-6 col-lg-3">
     <div class="stat-card">
       <div class="ico bg-info-subtle text-info"><i class="bi bi-graph-up-arrow"></i></div>
       <h3>{{ rate }}%</h3>
-      <p>હાજરી ટકાવારી (Rate)</p>
+      <p>Attendance Rate</p>
     </div>
   </div>
 </div>
@@ -75,7 +75,7 @@
     <div class="panel h-100">
       <div class="d-flex justify-content-between align-items-center mb-3">
         <h6 class="mb-0 text-dark fw-bold">
-          <i class="bi bi-diagram-3 text-primary me-2"></i>{{ branch.name }} હેઠળના Bal Mandals
+          <i class="bi bi-diagram-3 text-primary me-2"></i>Bal Mandals under {{ branch.name }}
         </h6>
         <span class="badge badge-soft-primary fw-bold">{{ mandals|length }} Mandals</span>
       </div>
@@ -85,11 +85,11 @@
           <thead>
             <tr>
               <th>Bal Mandal</th>
-              <th>સભા વાર / સમય</th>
-              <th>સંચાલક</th>
-              <th>બાળકો</th>
-              <th>હાજરી</th>
-              <th>હાજરી %</th>
+              <th>Meeting Day / Time</th>
+              <th>Sanchalak</th>
+              <th>Children</th>
+              <th>Attendance</th>
+              <th>Attendance %</th>
             </tr>
           </thead>
           <tbody>
@@ -112,9 +112,9 @@
               </td>
               <td><span class="fw-bold">{{ m.children_count }}</span></td>
               <td>
-                <span class="text-success fw-bold">{{ m.present_count }} હાજર</span>
+                <span class="text-success fw-bold">{{ m.present_count }} Present</span>
                 {% if m.absent_count > 0 %}
-                <small class="text-danger d-block">{{ m.absent_count }} ગેરહાજર</small>
+                <small class="text-danger d-block">{{ m.absent_count }} Absent</small>
                 {% endif %}
               </td>
               <td>
@@ -130,7 +130,7 @@
             {% else %}
             <tr>
               <td colspan="6" class="text-center text-muted py-4">
-                આ Branch માં હજુ કોઈ Bal Mandal નોંધાયેલ નથી.
+                No Bal Mandals registered under this branch yet.
               </td>
             </tr>
             {% endfor %}
@@ -144,7 +144,7 @@
   <div class="col-lg-4">
     <div class="panel h-100">
       <h6 class="mb-3 text-dark fw-bold">
-        <i class="bi bi-info-circle text-primary me-2"></i>Branch & Admin વિગત
+        <i class="bi bi-info-circle text-primary me-2"></i>Branch & Admin Overview
       </h6>
 
       <div class="p-3 bg-light rounded-3 border mb-3">
@@ -183,7 +183,7 @@
         </div>
         {% else %}
         <div class="small text-warning">
-          <i class="bi bi-exclamation-triangle me-1"></i>કોઈ Branch Admin સોંપાયેલ નથી.
+          <i class="bi bi-exclamation-triangle me-1"></i>No Branch Admin assigned yet.
         </div>
         {% endif %}
       </div>
@@ -194,7 +194,7 @@
           <b>{{ branch.code }}</b>
         </div>
         <div class="list-group-item d-flex justify-content-between px-0 py-2">
-          <span class="text-muted">City (શહેર):</span>
+          <span class="text-muted">City:</span>
           <b>{{ branch.city }}</b>
         </div>
         <div class="list-group-item d-flex justify-content-between px-0 py-2">
@@ -211,7 +211,7 @@
         </div>
         <div class="list-group-item px-0 py-2">
           <span class="text-muted d-block mb-1">Address:</span>
-          <span>{{ branch.address or 'સરનામું ઉપલબ્ધ નથી' }}</span>
+          <span>{{ branch.address or 'No address provided' }}</span>
         </div>
       </div>
     </div>
@@ -222,7 +222,7 @@
 <div class="panel mb-4">
   <div class="d-flex justify-content-between align-items-center mb-3">
     <h6 class="mb-0 text-dark fw-bold">
-      <i class="bi bi-bar-chart-line-fill text-info me-2"></i>{{ branch.name }} — સાપ્તાહિક હાજરી ટકાવારી (Weekly Attendance Trends)
+      <i class="bi bi-bar-chart-line-fill text-info me-2"></i>{{ branch.name }} — Weekly Attendance Trends
     </h6>
     <span class="badge badge-soft-info">Week 1–5 Reset Cycle</span>
   </div>
@@ -242,7 +242,7 @@ new Chart(ctx, {
   data: {
     labels: weekStats.map(s => 'Week ' + s.week),
     datasets: [{
-      label: 'હાજરી %',
+      label: 'Attendance %',
       data: weekStats.map(s => s.rate),
       backgroundColor: 'rgba(59, 130, 246, 0.85)',
       hoverBackgroundColor: 'rgba(29, 78, 216, 1)',
@@ -258,7 +258,7 @@ new Chart(ctx, {
     },
     scales: {
       x: { grid: { display: false } },
-      y: { min: 0, max: 100, title: { display: true, text: 'હાજરી ટકાવારી (%)' } }
+      y: { min: 0, max: 100, title: { display: true, text: 'Attendance Rate (%)' } }
     }
   }
 });

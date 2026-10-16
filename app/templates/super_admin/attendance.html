@@ -1,17 +1,17 @@
 {% extends "partials/shell.html" %}
-{% block title %}લાઈવ Attendance Scans — Super Admin{% endblock %}
+{% block title %}Live Attendance Scans — Super Admin{% endblock %}
 {% block sidenav %}{% include "super_admin/_nav.html" %}{% endblock %}
 {% block content %}
 <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
   <div>
     <h5 class="fw-bold mb-1">
-      <i class="bi bi-camera-video-fill text-success me-2"></i>લાઈવ હાજરી Scans & History (Statewide Scan Log)
+      <i class="bi bi-camera-video-fill text-success me-2"></i>Live Attendance Scans & History (Statewide Scan Log)
     </h5>
-    <small class="text-muted">Sanchalak ડેટા: તમામ Bal Mandals માં થયેલા લાઈવ ફેસ સ્કેન, ફોટો સ્નેપશોટ અને ટાઈમસ્ટેમ્પ</small>
+    <small class="text-muted">Sanchalak Data: Live face scans, photo snapshots, and timestamps across all Bal Mandals</small>
   </div>
   <div>
     <span class="badge badge-soft-success px-3 py-2 fw-bold fs-6">
-      કુલ સ્કેન રેકોર્ડ્સ: {{ scans|length }}
+      Total Scan Records: {{ scans|length }}
     </span>
   </div>
 </div>
@@ -20,13 +20,13 @@
 <div class="panel py-3 mb-4">
   <form method="get" action="/super-admin/attendance" class="row g-2 align-items-end">
     <div class="col-md-3">
-      <label class="form-label small fw-bold text-secondary mb-1">તારીખ (Date):</label>
+      <label class="form-label small fw-bold text-secondary mb-1">Date:</label>
       <input type="date" name="scan_date" class="form-control form-control-sm" value="{{ selected_date }}">
     </div>
     <div class="col-md-3">
       <label class="form-label small fw-bold text-secondary mb-1">Branch Filter:</label>
       <select name="branch_id" class="form-select form-select-sm" onchange="this.form.submit()">
-        <option value="">તમામ Branches</option>
+        <option value="">All Branches</option>
         {% for b in branches %}
         <option value="{{ b.id }}" {% if selected_branch == b.id %}selected{% endif %}>{{ b.name }}</option>
         {% endfor %}
@@ -35,7 +35,7 @@
     <div class="col-md-3">
       <label class="form-label small fw-bold text-secondary mb-1">Bal Mandal Filter:</label>
       <select name="mandal_id" class="form-select form-select-sm" onchange="this.form.submit()">
-        <option value="">તમામ Bal Mandals</option>
+        <option value="">All Bal Mandals</option>
         {% for m in mandals %}
         <option value="{{ m.id }}" {% if selected_mandal == m.id %}selected{% endif %}>{{ m.name }}</option>
         {% endfor %}
@@ -43,7 +43,7 @@
     </div>
     <div class="col-md-3 d-flex gap-2">
       <button type="submit" class="btn btn-primary btn-sm flex-grow-1 fw-bold">
-        <i class="bi bi-funnel-fill me-1"></i>Filter Apply
+        <i class="bi bi-funnel-fill me-1"></i>Apply Filter
       </button>
       {% if selected_date or selected_branch or selected_mandal %}
       <a href="/super-admin/attendance" class="btn btn-outline-secondary btn-sm" title="Clear">
@@ -60,12 +60,12 @@
     <table class="table mock table-hover align-middle mb-0">
       <thead>
         <tr>
-          <th>લાઈવ સ્કેન ફોટો</th>
-          <th>બાળકનું નામ</th>
+          <th>Live Scan Photo</th>
+          <th>Child Name</th>
           <th>Branch</th>
           <th>Bal Mandal</th>
-          <th>તારીખ</th>
-          <th>સ્કેન સમય</th>
+          <th>Date</th>
+          <th>Scan Time</th>
           <th>Week Cycle</th>
           <th>Status</th>
           <th class="text-end">Action</th>
@@ -129,7 +129,7 @@
             </span>
           </td>
           <td class="text-end">
-            <form method="post" action="/super-admin/attendance/{{ a.id }}/delete" onsubmit="return confirm('શું તમે આ હાજરી સ્કેન રેકોર્ડ રદ કરવા માંગો છો?');" style="display:inline;">
+            <form method="post" action="/super-admin/attendance/{{ a.id }}/delete" onsubmit="return confirm('Are you sure you want to remove this attendance scan record?');" style="display:inline;">
               <button type="submit" class="btn btn-outline-danger btn-sm py-1 px-2" title="Delete Scan">
                 <i class="bi bi-trash"></i>
               </button>
@@ -139,7 +139,7 @@
         {% else %}
         <tr>
           <td colspan="9" class="text-center text-muted py-5">
-            કોઈ હાજરી સ્કેન રેકોર્ડ મળ્યો નથી.
+            No attendance scan records found.
           </td>
         </tr>
         {% endfor %}

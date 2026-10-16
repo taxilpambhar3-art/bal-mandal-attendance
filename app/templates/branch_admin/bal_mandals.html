@@ -4,11 +4,11 @@
 {% block content %}
 <div class="d-flex justify-content-between align-items-center mb-3">
   <h6 class="fw-bold mb-0">Bal Mandals — {{ branch.name if branch else '' }}</h6>
-  <a href="/branch-admin/bal-mandals/add" class="btn btn-success btn-sm"><i class="bi bi-plus-lg me-1"></i>નવું બાલ મંડળ</a>
+  <a href="/branch-admin/bal-mandals/add" class="btn btn-success btn-sm"><i class="bi bi-plus-lg me-1"></i>New Bal Mandal</a>
 </div>
 <div class="panel p-0 overflow-hidden">
   <table class="table mock mb-0">
-    <thead><tr><th>નામ</th><th>દિવસ</th><th>સમય</th><th>સંચાલક</th><th>બાળકો</th><th>Status</th><th></th></tr></thead>
+    <thead><tr><th>Name</th><th>Day</th><th>Time</th><th>Sanchalak</th><th>Children</th><th>Status</th><th></th></tr></thead>
     <tbody>
     {% for r in rows %}
       <tr>
@@ -21,7 +21,7 @@
         <td class="text-end">
           <div class="d-flex gap-1 justify-content-end">
             <a class="btn btn-outline-success btn-sm" href="/branch-admin/bal-mandals/{{ r.mandal.id }}/edit">Edit</a>
-            <form method="post" action="/branch-admin/bal-mandals/{{ r.mandal.id }}/delete" onsubmit="return confirm('શું તમે ખરેખર \'{{ r.mandal.name }}\' મંડળ ડિલીટ કરવા માંગો છો? આ મંડળના બાળકો અને હાજરીનો ડેટા પણ ડિલીટ થઈ જશે.');" style="display:inline;">
+            <form method="post" action="/branch-admin/bal-mandals/{{ r.mandal.id }}/delete" onsubmit="return confirm('Are you sure you want to delete \'{{ r.mandal.name }}\'? Children and attendance data for this mandal will also be deleted.');" style="display:inline;">
               <button type="submit" class="btn btn-outline-danger btn-sm" title="Delete Mandal">
                 <i class="bi bi-trash"></i>
               </button>
@@ -30,7 +30,7 @@
         </td>
       </tr>
     {% else %}
-      <tr><td colspan="7" class="text-muted p-3">કોઈ Bal Mandal નથી</td></tr>
+      <tr><td colspan="7" class="text-muted p-3">No Bal Mandals found</td></tr>
     {% endfor %}
     </tbody>
   </table>

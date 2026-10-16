@@ -1,11 +1,11 @@
 {% extends "partials/shell.html" %}
-{% block title %}નવું બાળક ઉમેરો (Face Registration) — બાલ મંડળ{% endblock %}
+{% block title %}Add New Child (Face Registration) — Bal Mandal{% endblock %}
 {% block sidenav %}{% include "sanchalak/_nav.html" %}{% endblock %}
 {% block content %}
 <nav aria-label="breadcrumb">
   <ol class="breadcrumb mb-3" style="font-size:12px;">
-    <li class="breadcrumb-item"><a href="/sanchalak/children" class="text-decoration-none">બાળકો</a></li>
-    <li class="breadcrumb-item active">નવું બાળક ઉમેરો (Face Enrollment)</li>
+    <li class="breadcrumb-item"><a href="/sanchalak/children" class="text-decoration-none">Children</a></li>
+    <li class="breadcrumb-item active">Add New Child (Face Enrollment)</li>
   </ol>
 </nav>
 
@@ -14,7 +14,7 @@
   <div class="col-lg-7">
     <div class="panel">
       <h6 class="mb-3 text-primary">
-        <i class="bi bi-person-plus-fill me-2"></i>બાળકની પ્રાથમિક વિગતો (Child Profile)
+        <i class="bi bi-person-plus-fill me-2"></i>Child Details (Child Profile)
       </h6>
 
       <form id="childForm" method="post" action="/sanchalak/children/add">
@@ -22,31 +22,31 @@
 
         <div class="row g-3">
           <div class="col-md-6">
-            <label class="form-label small fw-bold text-secondary">બાળકનું પૂરું નામ <span class="text-danger">*</span></label>
-            <input name="name" class="form-control" required placeholder="દા.ત. આર્ય પટેલ" autofocus>
+            <label class="form-label small fw-bold text-secondary">Child Full Name <span class="text-danger">*</span></label>
+            <input name="name" class="form-control" required placeholder="e.g. Aryan Patel" autofocus>
           </div>
 
           <div class="col-md-6">
             <div class="d-flex justify-content-between align-items-center mb-1">
-              <label class="form-label small fw-bold text-secondary mb-0">બાળક ID / Code <span class="text-danger">*</span></label>
+              <label class="form-label small fw-bold text-secondary mb-0">Child ID / Code <span class="text-danger">*</span></label>
               <button type="button" class="btn btn-link btn-sm p-0 text-decoration-none" style="font-size:11px;" onclick="genChildCode()">Auto Generate</button>
             </div>
-            <input name="child_code" id="childCodeInput" class="form-control" required placeholder="દા.ત. CH-00140" value="CH-00{{ range(135, 999)|random }}">
+            <input name="child_code" id="childCodeInput" class="form-control" required placeholder="e.g. CH-00140" value="CH-00{{ range(135, 999)|random }}">
           </div>
 
           <div class="col-md-4">
-            <label class="form-label small fw-bold text-secondary">ઉંમર (વર્ષ) <span class="text-danger">*</span></label>
+            <label class="form-label small fw-bold text-secondary">Age (Years) <span class="text-danger">*</span></label>
             <input type="number" name="age" class="form-control" min="3" max="18" value="9" required>
           </div>
 
           <div class="col-md-8">
-            <label class="form-label small fw-bold text-secondary">વાલીનું નામ (Father / Mother)</label>
-            <input name="guardian_name" class="form-control" placeholder="દા.ત. જય પટેલ">
+            <label class="form-label small fw-bold text-secondary">Guardian Name (Father / Mother)</label>
+            <input name="guardian_name" class="form-control" placeholder="e.g. Jay Patel">
           </div>
 
           <div class="col-12">
-            <label class="form-label small fw-bold text-secondary">બાલ મંડળ</label>
-            <input class="form-control bg-light" value="{{ mandal.name if mandal else 'બાલ મંડળ' }} ({{ mandal.weekday if mandal else '' }})" readonly>
+            <label class="form-label small fw-bold text-secondary">Bal Mandal</label>
+            <input class="form-control bg-light" value="{{ mandal.name if mandal else 'Bal Mandal' }} ({{ mandal.weekday if mandal else '' }})" readonly>
           </div>
         </div>
 
@@ -57,8 +57,8 @@
           <div class="d-flex align-items-center gap-2">
             <div id="statusDot" style="width: 12px; height: 12px; border-radius: 50%; background: #94a3b8;"></div>
             <div>
-              <span id="faceStatusText" class="fw-bold text-secondary" style="font-size:13px;">ચહેરાનો ફોટો લેવાનો બાકી છે</span>
-              <small class="text-muted d-block" style="font-size:11px;">Face recognition હાજરી માટે ચહેરો કેપ્ચર કરવો જરૂરી છે.</small>
+              <span id="faceStatusText" class="fw-bold text-secondary" style="font-size:13px;">Face photo pending capture</span>
+              <small class="text-muted d-block" style="font-size:11px;">Face capture is required for facial recognition attendance.</small>
             </div>
           </div>
           <span id="faceBadge" class="badge badge-soft-secondary">No Face</span>
@@ -67,7 +67,7 @@
         <div class="d-flex justify-content-end gap-2">
           <a href="/sanchalak/children" class="btn btn-outline-secondary px-3">Cancel</a>
           <button type="submit" id="saveChildBtn" class="btn btn-warning px-4 fw-bold shadow-sm">
-            <i class="bi bi-check-circle-fill me-1"></i>બાળક સેવ કરો (Save & Enrol)
+            <i class="bi bi-check-circle-fill me-1"></i>Save & Enroll Child
           </button>
         </div>
       </form>
@@ -90,16 +90,16 @@
         <canvas id="regCanvas" style="display:none;"></canvas>
         <div class="face-ring"></div>
         <div class="cam-label">
-          <i class="bi bi-person-bounding-box me-1"></i>ચહેરો ગોળ ફ્રેમમાં રાખો
+          <i class="bi bi-person-bounding-box me-1"></i>Position face within circle
         </div>
       </div>
 
       <!-- Camera Action Buttons -->
       <div class="d-flex gap-2 mb-3">
         <button type="button" id="snapFaceBtn" class="btn btn-warning fw-bold flex-grow-1 shadow-sm">
-          <i class="bi bi-camera-fill me-1"></i>કેમેરાથી ફોટો લો (Capture Face)
+          <i class="bi bi-camera-fill me-1"></i>Capture Face Photo
         </button>
-        <button type="button" id="flipCamBtn" class="btn btn-outline-secondary" title="કેમેરો સ્વિચ કરો">
+        <button type="button" id="flipCamBtn" class="btn btn-outline-secondary" title="Switch Camera">
           <i class="bi bi-arrow-clockwise"></i>
         </button>
       </div>
@@ -107,25 +107,25 @@
       <!-- Or Upload from Gallery / File -->
       <div class="border rounded-3 p-3 bg-light mb-3">
         <label class="form-label small fw-bold text-secondary mb-1">
-          <i class="bi bi-upload me-1"></i>અથવા ફોટો અપલોડ કરો (File / Gallery):
+          <i class="bi bi-upload me-1"></i>Or upload photo (File / Gallery):
         </label>
         <input type="file" id="fileUploadInput" accept="image/*" class="form-control form-control-sm" onchange="handleFile(this)">
       </div>
 
       <!-- Captured Face Preview Box -->
       <div id="previewContainer" class="p-3 border rounded-3 text-center bg-white" style="display: none;">
-        <small class="text-muted fw-bold d-block mb-2">કેપ્ચર કરેલ ફોટો (Captured Preview):</small>
+        <small class="text-muted fw-bold d-block mb-2">Captured Face Photo:</small>
         <img id="enrolledPreviewImg" class="rounded-3 shadow-sm mx-auto mb-2" style="width: 120px; height: 120px; object-fit: cover; border: 2px solid #10b981;" alt="Enrolled Face">
         <div>
           <button type="button" class="btn btn-sm btn-outline-danger py-1 px-3" onclick="clearCapturedFace()">
-            <i class="bi bi-trash me-1"></i>ફરીથી ફોટો લો (Retake)
+            <i class="bi bi-trash me-1"></i>Retake Photo
           </button>
         </div>
       </div>
 
       <div class="note-box mt-3 py-2 px-3" style="font-size:12px;">
         <i class="bi bi-shield-check me-1 text-primary"></i>
-        <b>નોંધ:</b> ફક્ત ૧ જ સારો અને સ્પષ્ટ ફોટો લેવો, જેથી ભવિષ્યમાં Face Recognition વડે હાજરી સરળતાથી નોંધી શકાય.
+        <b>Note:</b> Capture 1 clear face photo so attendance can be verified accurately using facial recognition.
       </div>
     </div>
   </div>
@@ -215,7 +215,7 @@ function setEnrolledPhoto(dataUrl) {
 
   // Update Status Box
   statusDot.style.background = '#10b981';
-  faceStatusText.innerText = '✓ ચહેરાનો ફોટો સફળતાપૂર્વક કેપ્ચર થયો છે!';
+  faceStatusText.innerText = '✓ Face photo captured successfully!';
   faceStatusText.className = 'fw-bold text-success';
   faceBadge.className = 'badge badge-soft-success';
   faceBadge.innerHTML = '<i class="bi bi-check-lg me-1"></i>Face Enrolled';
@@ -226,7 +226,7 @@ function clearCapturedFace() {
   photoDataInput.value = '';
   previewContainer.style.display = 'none';
   statusDot.style.background = '#94a3b8';
-  faceStatusText.innerText = 'ચહેરાનો ફોટો લેવાનો બાકી છે';
+  faceStatusText.innerText = 'Face photo pending capture';
   faceStatusText.className = 'fw-bold text-secondary';
   faceBadge.className = 'badge badge-soft-secondary';
   faceBadge.innerText = 'No Face';

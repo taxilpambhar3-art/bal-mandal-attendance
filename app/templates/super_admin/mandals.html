@@ -1,17 +1,17 @@
 {% extends "partials/shell.html" %}
-{% block title %}બધા Bal Mandals — Super Admin{% endblock %}
+{% block title %}All Bal Mandals — Super Admin{% endblock %}
 {% block sidenav %}{% include "super_admin/_nav.html" %}{% endblock %}
 {% block content %}
 <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
   <div>
     <h5 class="fw-bold mb-1">
-      <i class="bi bi-diagram-3-fill text-primary me-2"></i>તમામ Bal Mandals (Statewide Master Directory)
+      <i class="bi bi-diagram-3-fill text-primary me-2"></i>All Bal Mandals (Statewide Directory)
     </h5>
-    <small class="text-muted">Branch Admin ડેટા: તમામ Branches હેઠળના બાલ મંડળો, સંચાલક અને હાજરી વિગત</small>
+    <small class="text-muted">Branch Admin Data: Bal Mandals, sanchalaks, and attendance metrics across all branches</small>
   </div>
   <div class="d-flex gap-2">
     <a href="/super-admin/branches" class="btn btn-outline-primary btn-sm fw-semibold">
-      <i class="bi bi-building me-1"></i>Branches જુઓ
+      <i class="bi bi-building me-1"></i>View Branches
     </a>
   </div>
 </div>
@@ -20,9 +20,9 @@
 <div class="panel py-3 mb-4">
   <form method="get" action="/super-admin/mandals" class="row g-2 align-items-end">
     <div class="col-md-3">
-      <label class="form-label small fw-bold text-secondary mb-1">Branch દ્વારા Filter કરો:</label>
+      <label class="form-label small fw-bold text-secondary mb-1">Filter by Branch:</label>
       <select name="branch_id" class="form-select form-select-sm" onchange="this.form.submit()">
-        <option value="">તમામ Branches (All Branches)</option>
+        <option value="">All Branches</option>
         {% for b in branches %}
         <option value="{{ b.id }}" {% if selected_branch == b.id %}selected{% endif %}>{{ b.name }} ({{ b.city }})</option>
         {% endfor %}
@@ -31,14 +31,14 @@
     <div class="col-md-3">
       <label class="form-label small fw-bold text-secondary mb-1">Bal Mandal Filter:</label>
       <select name="mandal_id" class="form-select form-select-sm" onchange="this.form.submit()">
-        <option value="">તમામ Bal Mandals</option>
+        <option value="">All Bal Mandals</option>
         {% for m in mandals %}
         <option value="{{ m.id }}" {% if selected_mandal == m.id %}selected{% endif %}>{{ m.name }}</option>
         {% endfor %}
       </select>
     </div>
     <div class="col-md-3">
-      <label class="form-label small fw-bold text-secondary mb-1">મંડળ નામથી શોધો:</label>
+      <label class="form-label small fw-bold text-secondary mb-1">Search by Mandal Name:</label>
       <div class="input-group input-group-sm">
         <span class="input-group-text"><i class="bi bi-search"></i></span>
         <input type="text" name="q" class="form-control" placeholder="Mandal name..." value="{{ search_query }}">
@@ -65,11 +65,11 @@
         <tr>
           <th>Bal Mandal</th>
           <th>Branch</th>
-          <th>સભા વાર / સમય</th>
-          <th>સંચાલક (Coordinator)</th>
-          <th>બાળકો</th>
-          <th>આ અઠવાડિયે હાજર</th>
-          <th>હાજરી %</th>
+          <th>Meeting Day / Time</th>
+          <th>Sanchalak (Coordinator)</th>
+          <th>Children</th>
+          <th>Present This Week</th>
+          <th>Attendance %</th>
           <th>Status</th>
           <th class="text-end">Actions</th>
         </tr>
@@ -120,7 +120,7 @@
           </td>
           <td class="text-end">
             <div class="d-flex gap-1 justify-content-end">
-              <form method="post" action="/super-admin/mandals/{{ r.mandal.id }}/delete" onsubmit="return confirm('શું તમે ખરેખર મંડળ \'{{ r.mandal.name }}\' ને ડિલીટ કરવા માંગો છો? આ મંડળના તમામ બાળકો અને હાજરીનો ડેટા પણ ડિલીટ થઈ જશે.');" style="display:inline;">
+              <form method="post" action="/super-admin/mandals/{{ r.mandal.id }}/delete" onsubmit="return confirm('Are you sure you want to delete \'{{ r.mandal.name }}\' mandal? All children and attendance records will also be deleted.');" style="display:inline;">
                 <button type="submit" class="btn btn-outline-danger btn-sm py-1 px-2" title="Delete Mandal">
                   <i class="bi bi-trash"></i>
                 </button>
@@ -131,7 +131,7 @@
         {% else %}
         <tr>
           <td colspan="9" class="text-center text-muted py-5">
-            કોઈ Bal Mandal મળ્યું નથી.
+            No Bal Mandals found.
           </td>
         </tr>
         {% endfor %}

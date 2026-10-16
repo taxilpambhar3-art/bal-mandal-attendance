@@ -24,7 +24,7 @@ ROLE_HOME = {
 ROLE_LABEL = {
     "super_admin": "Super Admin",
     "branch_admin": "Branch Admin",
-    "sanchalak": "સંચાલક",
+    "sanchalak": "Sanchalak",
 }
 
 ROLE_THEME = {

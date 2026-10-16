@@ -1,17 +1,17 @@
 {% extends "partials/shell.html" %}
-{% block title %}Face Scan હાજરી — બાલ મંડળ{% endblock %}
+{% block title %}Face Scan Attendance — Bal Mandal{% endblock %}
 {% block sidenav %}{% include "sanchalak/_nav.html" %}{% endblock %}
 {% block content %}
 <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
   <div>
-    <h6 class="fw-bold mb-0">ઓટોમેટિક Face Scan હાજરી (Auto Attendance Kiosk)</h6>
-    <small class="text-muted">{{ mandal.name if mandal else 'બાલ મંડળ' }} · {{ week.date.strftime('%d %B %Y') }} · {{ week.week_label }}</small>
+    <h6 class="fw-bold mb-0">Automatic Face Scan Attendance (Auto Attendance Kiosk)</h6>
+    <small class="text-muted">{{ mandal.name if mandal else 'Bal Mandal' }} · {{ week.date.strftime('%d %B %Y') }} · {{ week.week_label }}</small>
   </div>
   <div class="d-flex align-items-center gap-2 flex-wrap">
     <div class="d-flex align-items-center gap-1 bg-light py-1 px-3 border rounded-pill shadow-sm" style="font-size:12px;">
-      <span class="text-secondary fw-bold"><i class="bi bi-lightning-charge-fill text-warning me-1"></i>સ્કેન સ્પીડ:</span>
+      <span class="text-secondary fw-bold"><i class="bi bi-lightning-charge-fill text-warning me-1"></i>Scan Speed:</span>
       <select id="kioskDelaySelect" class="form-select form-select-sm border-0 bg-transparent fw-bold text-success py-0 ps-1 pe-4" style="width:auto;cursor:pointer;font-size:12px;">
-        <option value="0" selected>⚡ 0s (Instant / તુરંત)</option>
+        <option value="0" selected>⚡ 0s (Instant)</option>
         <option value="2">⏱️ 2s</option>
         <option value="5">⏱️ 5s</option>
       </select>
@@ -23,7 +23,7 @@
       </label>
     </div>
     <span class="badge badge-soft-success py-2 px-3" id="cameraStatus">
-      <i class="bi bi-circle-fill me-1" style="font-size:8px;"></i>કેમેરા ચાલુ
+      <i class="bi bi-circle-fill me-1" style="font-size:8px;"></i>Camera Active
     </span>
   </div>
 </div>
@@ -59,7 +59,7 @@
 
         <!-- Target Guide Overlay Label -->
         <div class="cam-label" id="camOverlayLabel" style="z-index:5;">
-          <i class="bi bi-person-bounding-box me-1"></i>બાળક કેમેરા સામે જુએ એટલે ઓટોમેટિક સ્કેન થશે
+          <i class="bi bi-person-bounding-box me-1"></i>Look at the camera to scan automatically
         </div>
 
         <!-- 0-Second Instant Success Floating Toast on Camera -->
@@ -67,12 +67,12 @@
           <div class="d-flex align-items-center gap-2">
             <img id="instantToastPhoto" src="" style="width:38px;height:38px;border-radius:50%;object-fit:cover;border:2px solid #fff;" alt="">
             <div>
-              <div class="fw-bold" style="font-size:13.5px;" id="instantToastName">તક્ષિલ પાંભર</div>
-              <small style="font-size:11px;" id="instantToastScore" class="text-white-50">✓ 100% Match · હાજરી નોંધાઈ</small>
+              <div class="fw-bold" style="font-size:13.5px;" id="instantToastName">Child Name</div>
+              <small style="font-size:11px;" id="instantToastScore" class="text-white-50">✓ 100% Match · Attendance Recorded</small>
             </div>
           </div>
           <span class="badge bg-white text-success fw-bold px-2 py-1 shadow-sm" style="font-size:11px;">
-            <i class="bi bi-lightning-charge-fill me-1 text-warning"></i>0s તુરંત હાજરી
+            <i class="bi bi-lightning-charge-fill me-1 text-warning"></i>Instant Attendance
           </span>
         </div>
 
@@ -81,26 +81,26 @@
           <div class="rounded-circle d-flex align-items-center justify-content-center bg-success text-white mb-2 shadow" style="width:56px;height:56px;">
             <i class="bi bi-check-lg fs-1"></i>
           </div>
-          <h5 class="fw-bold text-white mb-1" id="kioskSuccessName">આર્ય પટેલ</h5>
+          <h5 class="fw-bold text-white mb-1" id="kioskSuccessName">Child Name</h5>
           <span class="badge badge-soft-success mb-2 px-3 py-1 fs-6" id="kioskSuccessScore">
             <i class="bi bi-shield-check me-1"></i>95% Match Verified
           </span>
           <div class="d-flex align-items-center gap-3 my-2">
             <div>
-              <small class="text-white-50 d-block mb-1" style="font-size:11px;">લાઈવ સ્કેન</small>
+              <small class="text-white-50 d-block mb-1" style="font-size:11px;">Live Scan</small>
               <img id="kioskLivePhoto" src="" class="rounded-3 shadow" style="width:68px;height:68px;object-fit:cover;border:2px solid #10b981;" alt="Live">
             </div>
             <i class="bi bi-arrow-left-right text-muted fs-5"></i>
             <div>
-              <small class="text-white-50 d-block mb-1" style="font-size:11px;">રજિસ્ટર્ડ પ્રોફાઇલ</small>
+              <small class="text-white-50 d-block mb-1" style="font-size:11px;">Enrolled Profile</small>
               <img id="kioskEnrolledPhoto" src="" class="rounded-3 shadow" style="width:68px;height:68px;object-fit:cover;border:2px solid #3b82f6;" alt="Enrolled">
             </div>
           </div>
           
-          <!-- 5-Second Countdown Bar -->
+          <!-- Countdown Bar -->
           <div class="w-100 mt-2" style="max-width:300px;">
             <div class="d-flex justify-content-between align-items-center text-white-50 mb-1" style="font-size:12px;">
-              <span>આગલા બાળક માટે ઓટો-કેમેરા:</span>
+              <span>Auto-camera for next child:</span>
               <b class="text-success fs-6" id="kioskCountdownSec">5s</b>
             </div>
             <div class="progress" style="height:6px; background:rgba(255,255,255,0.2); border-radius:10px;">
@@ -109,7 +109,7 @@
           </div>
           
           <button type="button" class="btn btn-warning btn-sm fw-bold mt-3 px-4 shadow" onclick="dismissKioskSuccessNow()">
-            <i class="bi bi-camera-fill me-1"></i>હમણાં જ આગલા બાળકનું સ્કેન કરો (Next Now)
+            <i class="bi bi-camera-fill me-1"></i>Scan Next Child Now
           </button>
         </div>
 
@@ -118,19 +118,19 @@
           <div class="rounded-circle d-flex align-items-center justify-content-center bg-danger text-white mb-2 shadow" style="width:56px;height:56px;">
             <i class="bi bi-x-lg fs-1"></i>
           </div>
-          <h5 class="fw-bold text-danger mb-1">હાજરી નિષ્ફળ (Face Mismatch)</h5>
-          <p class="text-white-50 small mb-2" id="kioskFailMsg">ચહેરો મેળ ખાતો નથી</p>
+          <h5 class="fw-bold text-danger mb-1">Attendance Failed (Face Mismatch)</h5>
+          <p class="text-white-50 small mb-2" id="kioskFailMsg">Face does not match</p>
           <span class="badge bg-danger mb-3 px-3 py-1" id="kioskFailScore">35% Mismatch</span>
           
           <div class="w-100 mt-1 mb-2" style="max-width:280px;">
             <div class="d-flex justify-content-between align-items-center text-white-50 mb-1" style="font-size:12px;">
-              <span>ઓટોમેટિક રીટ્રાય:</span>
+              <span>Automatic retry:</span>
               <b class="text-warning fs-6" id="failCountdownSec">4s</b>
             </div>
           </div>
 
           <button type="button" class="btn btn-warning btn-sm fw-bold px-4 shadow" onclick="dismissKioskFailNow()">
-            <i class="bi bi-arrow-repeat me-1"></i>ફરીથી સ્કેન કરો (Try Again)
+            <i class="bi bi-arrow-repeat me-1"></i>Try Again
           </button>
         </div>
       </div>
@@ -144,13 +144,13 @@
         <!-- Child Selector Dropdown -->
         <div class="mb-3">
           <label class="form-label small fw-bold text-secondary d-flex justify-content-between align-items-center">
-            <span>બાળક ઓળખ પદ્ધતિ (Recognition Mode):</span>
-            <small class="text-primary fw-normal">Auto-Detect અથવા ચોક્કસ બાળક પસંદ કરો</small>
+            <span>Child Recognition Mode:</span>
+            <small class="text-primary fw-normal">Auto-Detect or select a specific child</small>
           </label>
           <select name="child_id" id="childSelect" class="form-select" onchange="onChildSelectionChange()">
-            <option value="auto" selected>✨ ⭐ ઓટો-ડિટેક્ટ (Auto-Detect Any Child in Mandal)</option>
+            <option value="auto" selected>✨ ⭐ Auto-Detect Any Child in Mandal</option>
             {% if pending %}
-              <optgroup label="બાકી રહેલા બાળકો ({{ pending|length }})">
+              <optgroup label="Remaining Children ({{ pending|length }})">
                 {% for c in pending %}
                 <option value="{{ c.id }}" data-name="{{ c.name }}" data-code="{{ c.child_code }}" data-photo="{{ c.face_photo or '' }}">
                   {{ c.name }} ({{ c.child_code }}) {% if not c.face_photo %}[⚠️ No Photo]{% endif %}
@@ -158,7 +158,7 @@
                 {% endfor %}
               </optgroup>
             {% endif %}
-            <optgroup label="બધા નોંધાયેલા બાળકો">
+            <optgroup label="All Registered Children">
               {% for c in children %}
               <option value="{{ c.id }}" data-name="{{ c.name }}" data-code="{{ c.child_code }}" data-photo="{{ c.face_photo or '' }}">
                 {{ c.name }} ({{ c.child_code }}) {% if not c.face_photo %}[⚠️ No Photo]{% endif %}
@@ -176,8 +176,8 @@
               <i class="bi bi-people-fill fs-5"></i>
             </div>
             <div>
-              <small class="text-muted d-block fw-semibold" style="font-size:11px;">ચકાસણી મોડ (Matching Mode):</small>
-              <span id="refChildName" class="fw-bold text-dark" style="font-size:13px;">ઓટો-ડિટેક્ટ (બધા બાળકોમાંથી આપમેળે ઓળખશે)</span>
+              <small class="text-muted d-block fw-semibold" style="font-size:11px;">Matching Mode:</small>
+              <span id="refChildName" class="fw-bold text-dark" style="font-size:13px;">Auto-Detect (Identifies any child in mandal)</span>
             </div>
           </div>
           <span id="refBadge" class="badge badge-soft-primary"><i class="bi bi-stars me-1"></i>Auto AI</span>
@@ -186,9 +186,9 @@
         <!-- Buttons & Flip Cam -->
         <div class="d-flex gap-2">
           <button type="button" id="captureBtn" class="btn btn-warning fw-bold flex-grow-1 shadow-sm">
-            <i class="bi bi-camera-fill me-1"></i>મેન્યુઅલ સ્કેન કરો (Manual Capture)
+            <i class="bi bi-camera-fill me-1"></i>Manual Capture
           </button>
-          <button type="button" id="switchCamBtn" class="btn btn-outline-secondary" title="કેમેરો બદલો">
+          <button type="button" id="switchCamBtn" class="btn btn-outline-secondary" title="Switch Camera">
             <i class="bi bi-arrow-clockwise"></i>
           </button>
         </div>
@@ -196,7 +196,7 @@
 
       <div class="note-box mt-3 py-2 px-3" style="font-size:12px;">
         <i class="bi bi-lightning-charge-fill me-1 text-warning"></i>
-        <b>ઓટોમેટિક હેન્ડ્સ-ફ્રી સ્કેન (0s Instant):</b> કોઈ બટન દબાવવાની જરૂર નથી! બાળક કેમેરા સામે આવે એટલે તુરંત સ્કેન થશે અને ૦ સેકન્ડમાં (વિના વિલંબે) આગલા બાળક માટે કેમેરા સતત ચાલુ રહેશે.
+        <b>Automatic Hands-Free Scan (Instant):</b> No need to press any button! As soon as a child faces the camera, attendance is verified instantly and the camera stays ready for the next child without delay.
       </div>
     </div>
   </div>
@@ -206,7 +206,7 @@
     <div class="panel h-100">
       <div class="d-flex justify-content-between align-items-center mb-3">
         <h6 class="mb-0 text-secondary">
-          <i class="bi bi-check2-circle text-success me-1"></i>આજે હાજર થયેલા (Verified)
+          <i class="bi bi-check2-circle text-success me-1"></i>Present Today (Verified)
         </h6>
         <span class="badge badge-soft-success fw-bold" id="todayCountBadge">{{ today_list|length }}</span>
       </div>
@@ -232,7 +232,7 @@
         {% else %}
         <div class="text-center py-5 text-muted small" id="emptyFeedNotice">
           <i class="bi bi-camera fs-2 d-block text-secondary mb-2"></i>
-          આજે હજુ કોઈ હાજરી નોંધાઈ નથી.<br>બાળક કેમેરા સામે ઊભું રહેતાં જ હાજરી નોંધાશે.
+          No attendance recorded yet today.<br>Attendance will be recorded automatically when a child faces the camera.
         </div>
         {% endfor %}
       </div>
@@ -330,11 +330,11 @@
       };
       currentStream = await navigator.mediaDevices.getUserMedia(constraints);
       video.srcObject = currentStream;
-      cameraStatus.innerHTML = '<i class="bi bi-circle-fill me-1" style="font-size:8px;"></i>કેમેરા ચાલુ';
+      cameraStatus.innerHTML = '<i class="bi bi-circle-fill me-1" style="font-size:8px;"></i>Camera Active';
       cameraStatus.className = 'badge badge-soft-success py-2 px-3';
     } catch (err) {
       console.warn('Camera error:', err);
-      cameraStatus.innerHTML = '<i class="bi bi-exclamation-triangle-fill me-1"></i>કેમેરા ઍક્સેસ નથી';
+      cameraStatus.innerHTML = '<i class="bi bi-exclamation-triangle-fill me-1"></i>No Camera Access';
       cameraStatus.className = 'badge badge-soft-warning py-2 px-3';
     }
   }
@@ -390,7 +390,7 @@
 
     if (selectedOpt.value === 'auto') {
       enrolledDescriptor = null;
-      refChildName.innerText = 'ઓટો-ડિટેક્ટ (બધા બાળકોમાંથી આપમેળે ઓળખશે)';
+      refChildName.innerText = 'Auto-Detect (Identifies any child in mandal)';
       refPhotoImg.style.display = 'none';
       refPhotoPlaceholder.style.display = 'flex';
       refBadge.className = 'badge badge-soft-primary';
@@ -444,7 +444,7 @@
     faceHoldTicks = 0;
     autoScanProgressContainer.style.display = 'none';
     faceRing.classList.remove('face-detected');
-    camOverlayLabel.innerHTML = '<i class="bi bi-person-bounding-box me-1"></i>બાળક કેમેરા સામે જુએ એટલે ઓટોમેટિક સ્કેન થશે';
+    camOverlayLabel.innerHTML = '<i class="bi bi-person-bounding-box me-1"></i>Look at the camera to scan automatically';
   }
 
   // Real-Time Detection Loop (Runs every 280ms)
@@ -478,14 +478,14 @@
 
       const remainingSec = Math.max(0, Math.ceil((REQUIRED_HOLD_TICKS - faceHoldTicks) * 0.3));
       countdownSec.innerText = remainingSec > 0 ? remainingSec + 's' : 'Scanning...';
-      camOverlayLabel.innerHTML = '<span class="text-success fw-bold"><i class="bi bi-check-circle-fill me-1"></i>ચહેરો પકડાયો! સ્થિર રહો...</span>';
+      camOverlayLabel.innerHTML = '<span class="text-success fw-bold"><i class="bi bi-check-circle-fill me-1"></i>Face detected! Hold steady...</span>';
 
       if (faceHoldTicks >= REQUIRED_HOLD_TICKS) {
         // Trigger Automatic Scan!
         isScanTriggered = true;
         playScanChime();
         triggerFlashEffect();
-        camOverlayLabel.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>ઓટો-સ્કેન ચકાસણી થાય છે...';
+        camOverlayLabel.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Verifying attendance...';
         await performCaptureAndSubmit();
       }
     } else {
@@ -528,7 +528,7 @@
     playScanChime();
     triggerFlashEffect();
     captureBtn.disabled = true;
-    captureBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>સ્કેનિંગ...';
+    captureBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Scanning...';
     await performCaptureAndSubmit();
   });
 
@@ -621,7 +621,7 @@
         isScanTriggered = false;
         faceHoldTicks = 0;
         captureBtn.disabled = false;
-        captureBtn.innerHTML = '<i class="bi bi-camera-fill me-1"></i>મેન્યુઅલ સ્કેન કરો (Manual Capture)';
+        captureBtn.innerHTML = '<i class="bi bi-camera-fill me-1"></i>Manual Capture';
         resetAutoScanUI();
       }, 400); // 400ms frame reset buffer
       return;
@@ -663,7 +663,7 @@
     const toast = document.getElementById('instantSuccessToast');
     if (!toast) return;
     document.getElementById('instantToastName').innerText = data.child.name + ' (' + data.child.child_code + ')';
-    document.getElementById('instantToastScore').innerText = '✓ ' + data.confidence + '% Match Verified · હાજરી સફળ!';
+    document.getElementById('instantToastScore').innerText = '✓ ' + data.confidence + '% Match Verified · Attendance Recorded!';
     const imgEl = document.getElementById('instantToastPhoto');
     if (imgEl) {
       imgEl.src = '/static/uploads/' + (data.child.face_photo || data.live_photo);
@@ -697,14 +697,14 @@
       isScanTriggered = false;
       faceHoldTicks = 0;
       captureBtn.disabled = false;
-      captureBtn.innerHTML = '<i class="bi bi-camera-fill me-1"></i>મેન્યુઅલ સ્કેન કરો (Manual Capture)';
+      captureBtn.innerHTML = '<i class="bi bi-camera-fill me-1"></i>Manual Capture';
       resetAutoScanUI();
     }, 1200);
   };
 
   // Show In-Camera Mismatch / Fail Overlay
   function showKioskFail(data) {
-    document.getElementById('kioskFailMsg').innerText = data.message || 'ચહેરો મેળ ખાતો નથી (Face Mismatch)';
+    document.getElementById('kioskFailMsg').innerText = data.message || 'Face Mismatch';
     document.getElementById('kioskFailScore').innerText = (data.confidence || 0) + '% Match (Mismatch)';
 
     const overlay = document.getElementById('kioskFailOverlay');
@@ -732,7 +732,7 @@
     isScanTriggered = false;
     faceHoldTicks = 0;
     captureBtn.disabled = false;
-    captureBtn.innerHTML = '<i class="bi bi-camera-fill me-1"></i>મેન્યુઅલ સ્કેન કરો (Manual Capture)';
+    captureBtn.innerHTML = '<i class="bi bi-camera-fill me-1"></i>Manual Capture';
     resetAutoScanUI();
   };
 

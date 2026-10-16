@@ -5,7 +5,7 @@
 <nav aria-label="breadcrumb">
   <ol class="breadcrumb mb-2" style="font-size:12px;">
     <li class="breadcrumb-item"><a href="/super-admin/branches" class="text-decoration-none">Branches</a></li>
-    <li class="breadcrumb-item active">{{ 'સંપાદિત કરો' if branch else 'નવી Branch ઉમેરો' }}</li>
+    <li class="breadcrumb-item active">{{ 'Edit Branch' if branch else 'Add New Branch' }}</li>
   </ol>
 </nav>
 
@@ -13,9 +13,9 @@
   <div class="d-flex align-items-center justify-content-between mb-3 border-bottom pb-2">
     <div>
       <h6 class="mb-0 fw-bold text-dark">
-        <i class="bi bi-building-add me-2 text-primary"></i>{{ 'Branch અને User વિગતો સંપાદિત કરો' if branch else 'નવી Branch અને User ઉમેરો' }}
+        <i class="bi bi-building-add me-2 text-primary"></i>{{ 'Edit Branch & User Account' if branch else 'Add New Branch & User' }}
       </h6>
-      <small class="text-muted">શાખાની વિગતો અને તેના સંચાલન માટે યુઝર એકાઉન્ટ તેમજ તેનો Role નક્કી કરો</small>
+      <small class="text-muted">Configure branch details, user credentials, and assigned permissions.</small>
     </div>
   </div>
 
@@ -25,20 +25,20 @@
     <div class="mb-4">
       <div class="d-flex align-items-center gap-2 mb-3">
         <span class="badge bg-primary text-white rounded-pill px-2 py-1">1</span>
-        <h6 class="mb-0 fw-bold text-secondary" style="font-size:14px;">Branch ની સામાન્ય માહિતી (Branch Details)</h6>
+        <h6 class="mb-0 fw-bold text-secondary" style="font-size:14px;">Branch General Information</h6>
       </div>
 
       <div class="row g-3">
         <div class="col-md-6">
-          <label class="form-label small fw-semibold">Branch નામ <span class="text-danger">*</span></label>
-          <input name="name" class="form-control form-control-sm" required placeholder="દા.ત. Maninagar Branch" value="{{ branch.name if branch else '' }}">
+          <label class="form-label small fw-semibold">Branch Name <span class="text-danger">*</span></label>
+          <input name="name" class="form-control form-control-sm" required placeholder="e.g. Maninagar Branch" value="{{ branch.name if branch else '' }}">
         </div>
         <div class="col-md-6">
           <label class="form-label small fw-semibold">Branch Code <span class="text-danger">*</span></label>
-          <input name="code" class="form-control form-control-sm" required placeholder="દા.ત. BR-MANINAGAR" value="{{ branch.code if branch else '' }}">
+          <input name="code" class="form-control form-control-sm" required placeholder="e.g. BR-MANINAGAR" value="{{ branch.code if branch else '' }}">
         </div>
         <div class="col-md-6">
-          <label class="form-label small fw-semibold">શહેર (City) <span class="text-danger">*</span></label>
+          <label class="form-label small fw-semibold">City <span class="text-danger">*</span></label>
           <select name="city" class="form-select form-select-sm">
             {% for c in cities %}
             <option {% if branch and branch.city==c %}selected{% endif %}>{{ c }}</option>
@@ -46,8 +46,8 @@
           </select>
         </div>
         <div class="col-md-6">
-          <label class="form-label small fw-semibold">સંપર્ક નંબર (Phone)</label>
-          <input name="phone" class="form-control form-control-sm" placeholder="દા.ત. +91 98765 43210" value="{{ branch.phone if branch and branch.phone else '' }}">
+          <label class="form-label small fw-semibold">Contact Phone</label>
+          <input name="phone" class="form-control form-control-sm" placeholder="e.g. +91 98765 43210" value="{{ branch.phone if branch and branch.phone else '' }}">
         </div>
         <div class="col-md-6">
           <label class="form-label small fw-semibold">Branch Status</label>
@@ -57,7 +57,7 @@
           </select>
         </div>
         <div class="col-md-6">
-          <label class="form-label small fw-semibold">સરનામું (Address)</label>
+          <label class="form-label small fw-semibold">Address</label>
           <input name="address" class="form-control form-control-sm" value="{{ branch.address if branch and branch.address else '' }}">
         </div>
       </div>
@@ -67,48 +67,48 @@
     <div class="mb-4 pt-3 border-top">
       <div class="d-flex align-items-center gap-2 mb-3">
         <span class="badge bg-success text-white rounded-pill px-2 py-1">2</span>
-        <h6 class="mb-0 fw-bold text-secondary" style="font-size:14px;">શાખા વપરાશકર્તા અને ભૂમિકા (Assigned User & Role)</h6>
+        <h6 class="mb-0 fw-bold text-secondary" style="font-size:14px;">Branch User Account & Role</h6>
       </div>
 
       <div class="p-3 rounded-3 border bg-light-subtle">
         <div class="row g-3">
           <div class="col-md-6">
             <label class="form-label small fw-bold text-dark">
-              <i class="bi bi-shield-lock-fill text-primary me-1"></i>User Role (વપરાશકર્તાની ભૂમિકા) <span class="text-danger">*</span>
+              <i class="bi bi-shield-lock-fill text-primary me-1"></i>User Role <span class="text-danger">*</span>
             </label>
             <select name="admin_role" class="form-select form-select-sm fw-bold border-primary" required>
               <option value="branch_admin" {% if not admin or admin.role == 'branch_admin' %}selected{% endif %}>
-                🏢 Branch Admin (શાખા વ્યવસ્થાપક — Full Branch Access)
+                🏢 Branch Admin (Full Branch Access)
               </option>
               <option value="sanchalak" {% if admin and admin.role == 'sanchalak' %}selected{% endif %}>
-                👦 Sanchalak (બાળ મંડળ સંચાલક — Coordinator Access)
+                👦 Sanchalak (Bal Mandal Coordinator)
               </option>
               <option value="super_admin" {% if admin and admin.role == 'super_admin' %}selected{% endif %}>
-                👑 Super Admin (રાજ્યવ્યાપી મુખ્ય એડમિન — System-wide Access)
+                👑 Super Admin (System-wide Access)
               </option>
             </select>
             <small class="text-muted d-block mt-1" style="font-size:11px;">
-              નવી Branch ઉમેરતી વખતે આ યુઝરને કયો Role સોંપવો છે તે પસંદ કરો.
+              Choose the role assigned to this branch administrator account.
             </small>
           </div>
 
           <div class="col-md-6">
-            <label class="form-label small fw-semibold">યુઝરનું પૂરું નામ (Full Name)</label>
-            <input name="admin_name" class="form-control form-control-sm" placeholder="દા.ત. રમેશભાઈ પટેલ" value="{{ admin.full_name if admin else '' }}">
+            <label class="form-label small fw-semibold">Full Name</label>
+            <input name="admin_name" class="form-control form-control-sm" placeholder="e.g. Ramesh Patel" value="{{ admin.full_name if admin else '' }}">
           </div>
 
           <div class="col-md-4">
-            <label class="form-label small fw-semibold">મોબાઈલ નંબર</label>
-            <input name="admin_mobile" class="form-control form-control-sm" placeholder="દા.ત. 9876543210" value="{{ admin.mobile if admin and admin.mobile else '' }}">
+            <label class="form-label small fw-semibold">Mobile Number</label>
+            <input name="admin_mobile" class="form-control form-control-sm" placeholder="e.g. 9876543210" value="{{ admin.mobile if admin and admin.mobile else '' }}">
           </div>
 
           <div class="col-md-4">
             <label class="form-label small fw-bold text-dark">
               <i class="bi bi-person-badge-fill text-primary me-1"></i>Branch User ID <span class="text-danger">*</span>
             </label>
-            <input name="admin_username" id="adminUsernameInput" class="form-control form-control-sm" required placeholder="દા.ત. branch_admin_user" value="{{ admin.username if admin else '' }}">
+            <input name="admin_username" id="adminUsernameInput" class="form-control form-control-sm" required placeholder="e.g. branch_admin_user" value="{{ admin.username if admin else '' }}">
             <small class="text-muted d-block mt-1" style="font-size:11px;">
-              આ User ID દ્વારા શાખા સંચાલક/એડમિન પોર્ટલમાં લૉગિન કરશે.
+              This User ID will be used to log in to the portal.
             </small>
           </div>
 
@@ -117,13 +117,13 @@
               <i class="bi bi-key-fill text-warning me-1"></i>Branch Password <span class="text-danger">*</span>
             </label>
             <div class="input-group input-group-sm">
-              <input type="text" id="adminPasswordInput" name="admin_password" class="form-control form-control-sm" placeholder="{% if admin %}નવો પાસવર્ડ (ખાલી રાખશો તો જૂનો રહેશે){% else %}દા.ત. branch123{% endif %}" value="{% if not admin %}branch123{% endif %}">
+              <input type="text" id="adminPasswordInput" name="admin_password" class="form-control form-control-sm" placeholder="{% if admin %}New password (leave blank to keep unchanged){% else %}e.g. branch123{% endif %}" value="{% if not admin %}branch123{% endif %}">
               <button class="btn btn-outline-secondary" type="button" onclick="togglePassType()" title="Show/Hide Password">
                 <i id="passEyeIcon" class="bi bi-eye-slash"></i>
               </button>
             </div>
             <small class="text-muted d-block mt-1" style="font-size:11px;">
-              {% if admin %}નવો પાસવર્ડ આપવો હોય તો જ લખો (ખાલી રાખશો તો જૂનો રહેશે){% else %}ડિફોલ્ટ પાસવર્ડ: <code>branch123</code> (તમે બદલી શકો છો){% endif %}
+              {% if admin %}Enter only if you wish to change password (leave blank to keep existing){% else %}Default initial password: <code>branch123</code> (you can customize it){% endif %}
             </small>
           </div>
         </div>

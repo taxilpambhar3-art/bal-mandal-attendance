@@ -1,15 +1,15 @@
 {% extends "partials/shell.html" %}
-{% block title %}Session History — બાલ મંડળ{% endblock %}
+{% block title %}Session History — Bal Mandal{% endblock %}
 {% block sidenav %}{% include "sanchalak/_nav.html" %}{% endblock %}
 {% block content %}
 <div class="d-flex justify-content-between align-items-center mb-3">
   <div>
     <h6 class="fw-bold mb-0">Session History</h6>
-    <small class="text-muted">{{ mandal.name if mandal else 'બાલ મંડળ' }} · અગાઉના તમામ Sessions અને સ્કેન ફોટા</small>
+    <small class="text-muted">{{ mandal.name if mandal else 'Bal Mandal' }} · All past sessions and scan photos</small>
   </div>
   <div class="input-group input-group-sm" style="width:230px;">
     <span class="input-group-text bg-light"><i class="bi bi-calendar3"></i></span>
-    <input class="form-control" value="બધા સત્રો (All Sessions)" readonly>
+    <input class="form-control" value="All Sessions" readonly>
   </div>
 </div>
 
@@ -19,12 +19,12 @@
       <thead>
         <tr>
           <th>Session ID</th>
-          <th>તારીખ</th>
+          <th>Date</th>
           <th>Week</th>
-          <th>સમય</th>
-          <th>બાળક</th>
-          <th>સ્કેન ફોટો</th>
-          <th>Action</th>
+          <th>Time</th>
+          <th>Child</th>
+          <th>Scan Photo</th>
+          <th class="text-end">Action</th>
         </tr>
       </thead>
       <tbody>
@@ -39,15 +39,15 @@
           <td class="fw-semibold">{{ a.child.name }} ({{ a.child.child_code }})</td>
           <td>
             {% if a.scan_photo %}
-            <span class="badge badge-soft-info"><i class="bi bi-image me-1"></i>૧ ફોટો</span>
+            <span class="badge badge-soft-info"><i class="bi bi-image me-1"></i>1 Photo</span>
             {% else %}
             <span class="badge badge-soft-secondary">—</span>
             {% endif %}
           </td>
-          <td>
+          <td class="text-end">
             <div class="d-flex gap-1 justify-content-end">
-              <a href="/sanchalak/face-scan/result/{{ a.id }}" class="btn btn-outline-primary btn-sm py-0 px-2" title="વિગતો જુઓ">જુઓ</a>
-              <form method="post" action="/sanchalak/attendance/{{ a.id }}/delete" onsubmit="return confirm('શું તમે આ હાજરી સ્કેન રદ કરવા માંગો છો?');" style="display:inline;">
+              <a href="/sanchalak/face-scan/result/{{ a.id }}" class="btn btn-outline-primary btn-sm py-0 px-2" title="View Details">View</a>
+              <form method="post" action="/sanchalak/attendance/{{ a.id }}/delete" onsubmit="return confirm('Are you sure you want to delete this attendance scan?');" style="display:inline;">
                 <button type="submit" class="btn btn-outline-danger btn-sm py-0 px-2" title="Delete Scan">
                   <i class="bi bi-trash"></i>
                 </button>
@@ -57,14 +57,14 @@
         </tr>
         {% else %}
         <tr>
-          <td colspan="7" class="text-center text-muted p-4">કોઈ ઇતિહાસ મળ્યો નથી</td>
+          <td colspan="7" class="text-center text-muted p-4">No history found</td>
         </tr>
         {% endfor %}
       </tbody>
     </table>
   </div>
   <div class="d-flex justify-content-between align-items-center p-3 border-top">
-    <small class="text-muted">કુલ {{ rows|length }} sessions/records</small>
+    <small class="text-muted">Total {{ rows|length }} records</small>
     <nav>
       <ul class="pagination pagination-sm mb-0">
         <li class="page-item disabled"><a class="page-link" href="#">«</a></li>

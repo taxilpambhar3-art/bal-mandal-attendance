@@ -1,14 +1,14 @@
 {% extends "base.html" %}
 {% block body %}
 <div class="appnav" style="--nav-bg: {{ ROLE_THEME[user.role] }}; background: {{ ROLE_THEME[user.role] }};">
-  <span class="brand"><i class="bi bi-person-bounding-box me-1"></i> બાલ મંડળ</span>
+  <span class="brand"><i class="bi bi-person-bounding-box me-1"></i> Bal Mandal</span>
   <span class="role-badge">
     <i class="bi bi-shield-check me-1"></i>{{ ROLE_LABEL[user.role] }}
     {% if user.branch and user.role == 'branch_admin' %} · {{ user.branch.name }}{% endif %}
     {% if user.bal_mandal and user.role == 'sanchalak' %} · {{ user.bal_mandal.name }}{% endif %}
   </span>
   <div class="right">
-    <span role="button" title="સૂચનાઓ"><i class="bi bi-bell"></i></span>
+    <span role="button" title="Notifications"><i class="bi bi-bell"></i></span>
     <span class="fw-semibold"><i class="bi bi-person-circle me-1"></i>{{ user.full_name }}</span>
     <a href="/logout" class="btn btn-sm btn-outline-light py-1 px-2 border-0 opacity-75 opacity-100-hover" title="Logout">
       <i class="bi bi-box-arrow-right me-1"></i>Logout

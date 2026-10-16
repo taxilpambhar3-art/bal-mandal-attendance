@@ -5,14 +5,14 @@
 <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
   <div>
     <h5 class="fw-bold mb-1">
-      <i class="bi bi-trophy-fill text-warning me-2"></i>સૌથી વધુ હાજરી ધરાવતા બાળકો (Top Attendees)
+      <i class="bi bi-trophy-fill text-warning me-2"></i>Top Attendees
     </h5>
-    <small class="text-muted">{{ branch.name }} શાખા · {{ month_label }} દરમિયાન સૌથી નિયમિત બાળકો</small>
+    <small class="text-muted">{{ branch.name }} Branch · Most consistent attendees during {{ month_label }}</small>
   </div>
   <div class="d-flex gap-2 align-items-center">
     <form method="get" action="/branch-admin/top-attendees" class="d-flex gap-2">
       <select name="mandal_id" class="form-select form-select-sm" onchange="this.form.submit()">
-        <option value="">તમામ Mandals</option>
+        <option value="">All Mandals</option>
         {% for m in mandals %}
         <option value="{{ m.id }}" {% if selected_mandal == m.id %}selected{% endif %}>{{ m.name }}</option>
         {% endfor %}
@@ -27,10 +27,10 @@
       <thead>
         <tr>
           <th style="width: 70px;">Rank</th>
-          <th>બાળક</th>
-          <th>બાલ મંડળ</th>
-          <th>હાજરીની સંખ્યા</th>
-          <th class="text-end">સ્થિતિ</th>
+          <th>Child</th>
+          <th>Bal Mandal</th>
+          <th>Attendance Count</th>
+          <th class="text-end">Status</th>
         </tr>
       </thead>
       <tbody>
@@ -70,22 +70,22 @@
           <td>
             <div class="d-flex align-items-center gap-2">
               <span class="fw-bold fs-5 text-success">{{ item.count }}</span>
-              <small class="text-muted">વાર હાજર</small>
+              <small class="text-muted">times present</small>
             </div>
           </td>
           <td class="text-end">
             {% if item.count >= 3 %}
-            <span class="badge badge-soft-success fw-bold">🌟 ઉત્કૃષ્ટ હાજરી</span>
+            <span class="badge badge-soft-success fw-bold">🌟 Excellent Attendance</span>
             {% elif item.count >= 1 %}
-            <span class="badge badge-soft-info fw-bold">નિયમિત</span>
+            <span class="badge badge-soft-info fw-bold">Regular</span>
             {% else %}
-            <span class="badge badge-soft-warning">અનિયમિત</span>
+            <span class="badge badge-soft-warning">Irregular</span>
             {% endif %}
           </td>
         </tr>
         {% else %}
         <tr>
-          <td colspan="5" class="text-center py-5 text-muted">કોઈ રેકોર્ડ મળ્યો નથી.</td>
+          <td colspan="5" class="text-center py-5 text-muted">No records found.</td>
         </tr>
         {% endfor %}
       </tbody>

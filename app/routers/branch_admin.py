@@ -20,7 +20,7 @@ from ..weeks import current_week_info, gujarati_month
 router = APIRouter(prefix="/branch-admin", tags=["branch-admin"])
 templates: Jinja2Templates | None = None
 
-WEEKDAYS = ["સોમવાર", "મંગળવાર", "બુધવાર", "ગુરુવાર", "શુક્રવાર", "શનિવાર", "રવિવાર"]
+WEEKDAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
 
 
 def _ctx(request: Request, user: User, **extra):
@@ -583,7 +583,7 @@ def face_scan_submit(
     live_path = UPLOAD_DIR / (live_photo_name or "")
 
     if not live_photo_name:
-        msg = "ફોટો કેપ્ચર થઈ શક્યો નથી. કૃપા કરીને ફરીથી કેમેરા સામે ઊભા રહો."
+        msg = "Photo could not be captured. Please face the camera and try again."
         return JSONResponse({"success": False, "is_match": False, "confidence": 0.0, "message": msg})
 
     if child_id == "auto":
@@ -598,7 +598,7 @@ def face_scan_submit(
             .all()
         )
         if not candidates:
-            msg = "બાલ મંડળમાં કોઈ બાળકનો ફોટો નોંધાયેલ નથી! પહેલા પ્રોફાઇલમાં ફેસ અપલોડ કરો."
+            msg = "No registered child face photos found in this Bal Mandal! Please upload face photos first."
             return JSONResponse({"success": False, "is_match": False, "confidence": 0.0, "message": msg})
 
         best_child = None
@@ -621,7 +621,7 @@ def face_scan_submit(
             child = best_child
             match_result = best_match
         else:
-            msg = "કોઈ નોંધાયેલ બાળક સાથે ચહેરો મેળ ખાતો નથી (Unrecognized Child Face)!"
+            msg = "Face does not match any registered child (Unrecognized Child Face)!"
             return JSONResponse({
                 "success": False,
                 "is_match": False,
@@ -641,9 +641,9 @@ def face_scan_submit(
             return JSONResponse({"success": False, "message": "Invalid child ID"})
         child = db.get(Child, cid)
         if not child or child.bal_mandal_id not in bm_ids:
-            return JSONResponse({"success": False, "message": "બાળક આ શાખા હેઠળ નથી!"})
+            return JSONResponse({"success": False, "message": "Child does not belong to this branch!"})
         if not child.face_photo:
-            return JSONResponse({"success": False, "message": "આ બાળકનો ફોટો રજિસ્ટર નથી!"})
+            return JSONResponse({"success": False, "message": "Child face photo is not registered!"})
 
         enrolled_p = UPLOAD_DIR / child.face_photo
         match_result = compare_face_photos(
@@ -720,7 +720,7 @@ def face_scan_submit(
         "live_photo": live_photo_name,
         "scanned_at_str": datetime.utcnow().strftime("%I:%M %p"),
         "today_total": today_total,
-        "message": "હાજરી સફળતાપૂર્વક નોંધાઈ ગઈ!",
+        "message": "Attendance marked successfully!",
     })
 
 

@@ -195,7 +195,7 @@ def face_scan_submit(
     )
 
     if not live_photo_name:
-        msg = "ફોટો કેપ્ચર થઈ શક્યો નથી. કૃપા કરીને ફરીથી કેમેરા સામે ઊભા રહો."
+        msg = "Photo could not be captured. Please face the camera and try again."
         if is_ajax:
             return JSONResponse({"success": False, "is_match": False, "confidence": 0.0, "message": msg})
         return templates.TemplateResponse(
@@ -223,7 +223,7 @@ def face_scan_submit(
             .all()
         )
         if not candidates:
-            msg = "બાલ મંડળમાં કોઈ બાળકનો ફોટો નોંધાયેલ નથી! પહેલા પ્રોફાઇલમાં ફેસ અપલોડ કરો."
+            msg = "No registered child face photos found in this Bal Mandal! Please upload face photos first."
             if is_ajax:
                 return JSONResponse({"success": False, "is_match": False, "confidence": 0.0, "message": msg})
             return templates.TemplateResponse(
@@ -259,7 +259,7 @@ def face_scan_submit(
             child = best_child
             match_result = best_match
         else:
-            msg = "કોઈ નોંધાયેલ બાળક સાથે ચહેરો મેળ ખાતો નથી (Unrecognized Child Face)!"
+            msg = "Face does not match any registered child (Unrecognized Child Face)!"
             if is_ajax:
                 return JSONResponse({
                     "success": False,
@@ -303,7 +303,7 @@ def face_scan_submit(
             return RedirectResponse("/sanchalak/face-scan", status_code=303)
 
         if not child.face_photo:
-            msg = "આ બાળકનો કોઈ રજિસ્ટર્ડ ફોટો સિસ્ટમમાં ઉપલબ્ધ નથી! પહેલા પ્રોફાઇલમાં ફેસ અપલોડ કરો."
+            msg = "Child face photo is not registered in the system! Please upload a photo in child profile first."
             if is_ajax:
                 return JSONResponse({
                     "success": False,
@@ -417,7 +417,7 @@ def face_scan_submit(
             "live_photo": live_photo_name,
             "scanned_at_str": datetime.utcnow().strftime("%I:%M %p"),
             "today_total": today_total,
-            "message": "હાજરી સફળતાપૂર્વક નોંધાઈ ગઈ!",
+            "message": "Attendance marked successfully!",
         })
 
     return templates.TemplateResponse(

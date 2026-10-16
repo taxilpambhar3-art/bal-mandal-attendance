@@ -89,7 +89,7 @@ def compare_face_photos(
             "is_match": False,
             "confidence": 0.0,
             "reason": "no_enrolled_photo",
-            "message": "આ બાળકનો કોઈ રજિસ્ટર્ડ ફોટો મળ્યો નથી (No Enrolled Photo Found). પહેલા પ્રોફાઇલમાં ફેસ ઉમેરો.",
+            "message": "No registered face photo found for this child. Please upload a photo in child profile.",
         }
 
     im_live = _load_image(live_img_path)
@@ -100,7 +100,7 @@ def compare_face_photos(
             "is_match": False,
             "confidence": 0.0,
             "reason": "invalid_image",
-            "message": "ફોટો વાંચવામાં ભૂલ આવી (Invalid Image File).",
+            "message": "Error reading image file (Invalid Image File).",
         }
 
     # Validate that images have actual visual content (not solid black/white/blank)
@@ -109,7 +109,7 @@ def compare_face_photos(
             "is_match": False,
             "confidence": 0.0,
             "reason": "no_face_detected",
-            "message": "કેમેરામાં ચહેરો સ્પષ્ટ દેખાતો નથી (No Clear Face in Camera). કેમેરા સામે ચહેરો લાવો.",
+            "message": "Face not clearly detected in camera. Please face the camera directly.",
         }
 
     if not _has_valid_face_content(im_enrolled):
@@ -117,7 +117,7 @@ def compare_face_photos(
             "is_match": False,
             "confidence": 0.0,
             "reason": "invalid_enrolled_face",
-            "message": "આ બાળકના રજિસ્ટર્ડ ફોટામાં ચહેરો માન્ય નથી. નવો ફોટો અપલોડ કરો.",
+            "message": "Enrolled photo does not contain a clear face. Please re-upload photo.",
         }
 
     # If client-side deep neural face-api already evaluated the descriptor:
@@ -127,7 +127,7 @@ def compare_face_photos(
             "is_match": is_match,
             "confidence": round(float(client_score), 1),
             "reason": "matched" if is_match else "mismatch",
-            "message": "ચહેરો સફળતાપૂર્વક મેળ ખાય છે!" if is_match else "સ્કેન કરેલો ચહેરો રજિસ્ટર્ડ ફોટા સાથે મેળ ખાતો નથી (Face Mismatch)!",
+            "message": "Face matched successfully!" if is_match else "Face does not match registered photo (Face Mismatch)!",
             "engine": "face-api-deepnet",
         }
 
@@ -160,6 +160,6 @@ def compare_face_photos(
         "is_match": is_match,
         "confidence": confidence,
         "reason": "matched" if is_match else "mismatch",
-        "message": "ચહેરો સફળતાપૂર્વક મેળ ખાય છે!" if is_match else "સ્કેન કરેલો ચહેરો રજિસ્ટર્ડ ફોટા સાથે મેળ ખાતો નથી (Face Mismatch)!",
+        "message": "Face matched successfully!" if is_match else "Face does not match registered photo (Face Mismatch)!",
         "engine": "backend-cv",
     }

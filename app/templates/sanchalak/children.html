@@ -1,14 +1,14 @@
 {% extends "partials/shell.html" %}
-{% block title %}બાળકો — બાલ મંડળ{% endblock %}
+{% block title %}Children — Bal Mandal{% endblock %}
 {% block sidenav %}{% include "sanchalak/_nav.html" %}{% endblock %}
 {% block content %}
 <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
   <div>
-    <h6 class="fw-bold mb-0">બાળકોની યાદી (Child Profiles)</h6>
-    <small class="text-muted">{{ mandal.name if mandal else 'બાલ મંડળ' }} · કુલ {{ children|length }} બાળકો નોંધાયેલા છે</small>
+    <h6 class="fw-bold mb-0">Child Profiles (Children Directory)</h6>
+    <small class="text-muted">{{ mandal.name if mandal else 'Bal Mandal' }} · Total {{ children|length }} registered children</small>
   </div>
   <a href="/sanchalak/children/add" class="btn btn-warning btn-sm fw-bold shadow-sm">
-    <i class="bi bi-person-plus-fill me-1"></i>નવું બાળક ઉમેરો (Face Registration)
+    <i class="bi bi-person-plus-fill me-1"></i>Add New Child (Face Registration)
   </a>
 </div>
 
@@ -19,7 +19,7 @@
   <div class="col-sm-4">
     <div class="panel py-2 px-3 d-flex align-items-center justify-content-between">
       <div>
-        <small class="text-muted d-block fw-semibold" style="font-size:11px;">કુલ બાળકો (Total)</small>
+        <small class="text-muted d-block fw-semibold" style="font-size:11px;">Total Children</small>
         <span class="fs-5 fw-bold text-dark">{{ children|length }}</span>
       </div>
       <div class="rounded-circle bg-light d-flex align-items-center justify-content-center text-primary" style="width:38px;height:38px;">
@@ -30,7 +30,7 @@
   <div class="col-sm-4">
     <div class="panel py-2 px-3 d-flex align-items-center justify-content-between">
       <div>
-        <small class="text-muted d-block fw-semibold" style="font-size:11px;">ફેસ નોંધાયેલ (Enrolled)</small>
+        <small class="text-muted d-block fw-semibold" style="font-size:11px;">Face Enrolled</small>
         <span class="fs-5 fw-bold text-success">{{ enrolled_count }}</span>
       </div>
       <div class="rounded-circle d-flex align-items-center justify-content-center text-success" style="width:38px;height:38px;background:#d1fae5;">
@@ -41,7 +41,7 @@
   <div class="col-sm-4">
     <div class="panel py-2 px-3 d-flex align-items-center justify-content-between">
       <div>
-        <small class="text-muted d-block fw-semibold" style="font-size:11px;">ફોટો બાકી (Missing Face)</small>
+        <small class="text-muted d-block fw-semibold" style="font-size:11px;">Missing Face Photo</small>
         <span class="fs-5 fw-bold text-warning">{{ missing_count }}</span>
       </div>
       <div class="rounded-circle d-flex align-items-center justify-content-center text-warning" style="width:38px;height:38px;background:#fef3c7;">
@@ -57,14 +57,14 @@
       <thead>
         <tr>
           <th>#</th>
-          <th>ફોટો</th>
-          <th>બાળક ID</th>
-          <th>નામ</th>
-          <th>ઉંમર</th>
-          <th>વાલીનું નામ</th>
+          <th>Photo</th>
+          <th>Child ID</th>
+          <th>Name</th>
+          <th>Age</th>
+          <th>Guardian Name</th>
           <th>Face Status</th>
           <th>Status</th>
-          <th class="text-end">ક્રિયા (Actions)</th>
+          <th class="text-end">Actions</th>
         </tr>
       </thead>
       <tbody>
@@ -82,7 +82,7 @@
           </td>
           <td><span class="badge bg-light text-dark font-monospace border">{{ c.child_code }}</span></td>
           <td class="fw-semibold">{{ c.name }}</td>
-          <td>{{ c.age }} વર્ષ</td>
+          <td>{{ c.age }} yrs</td>
           <td>{{ c.guardian_name or '—' }}</td>
           <td>
             {% if c.face_photo %}
@@ -91,7 +91,7 @@
             </span>
             {% else %}
             <span class="badge badge-soft-warning">
-              <i class="bi bi-exclamation-triangle-fill me-1"></i>ફોટો બાકી
+              <i class="bi bi-exclamation-triangle-fill me-1"></i>No Photo
             </span>
             {% endif %}
           </td>
@@ -105,10 +105,10 @@
           <td class="text-end">
             <button type="button" class="btn btn-outline-primary btn-sm fw-semibold"
                     onclick="openFaceModal('{{ c.id }}', '{{ c.name }}', '{{ c.child_code }}', '{{ c.face_photo or '' }}')">
-              <i class="bi bi-camera-fill me-1"></i>{% if c.face_photo %}ફોટો બદલો{% else %}ફેસ કેપ્ચર{% endif %}
+              <i class="bi bi-camera-fill me-1"></i>{% if c.face_photo %}Update Face{% else %}Capture Face{% endif %}
             </button>
-            <form method="post" action="/sanchalak/children/{{ c.id }}/delete" onsubmit="return confirm('શું તમે ખરેખર બાળક \'{{ c.name }}\' ને ડિલીટ કરવા માંગો છો?');" style="display:inline;" class="ms-1">
-              <button type="submit" class="btn btn-outline-danger btn-sm" title="બાળક ડિલીટ કરો">
+            <form method="post" action="/sanchalak/children/{{ c.id }}/delete" onsubmit="return confirm('Are you sure you want to delete child \'{{ c.name }}\'?');" style="display:inline;" class="ms-1">
+              <button type="submit" class="btn btn-outline-danger btn-sm" title="Delete Child">
                 <i class="bi bi-trash"></i>
               </button>
             </form>
@@ -116,7 +116,7 @@
         </tr>
         {% else %}
         <tr>
-          <td colspan="9" class="text-center text-muted p-4">કોઈ બાળક નોંધાયેલ નથી</td>
+          <td colspan="9" class="text-center text-muted p-4">No children registered.</td>
         </tr>
         {% endfor %}
       </tbody>
@@ -130,7 +130,7 @@
     <div class="modal-content shadow">
       <div class="modal-header">
         <div>
-          <h6 class="modal-title fw-bold" id="faceModalLabel">બાળકનો ચહેરો અપડેટ કરો</h6>
+          <h6 class="modal-title fw-bold" id="faceModalLabel">Update Child Face</h6>
           <small class="text-muted" id="modalChildInfo">—</small>
         </div>
         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" onclick="stopModalCamera()"></button>
@@ -144,15 +144,15 @@
             <canvas id="modalCanvas" style="display:none;"></canvas>
             <div class="face-ring"></div>
             <div class="cam-label">
-              <i class="bi bi-person-bounding-box me-1"></i>ચહેરો ગોળ ફ્રેમમાં રાખો
+              <i class="bi bi-person-bounding-box me-1"></i>Position face within circle
             </div>
           </div>
 
           <div class="d-flex gap-2 mb-3">
             <button type="button" id="modalSnapBtn" class="btn btn-warning fw-bold flex-grow-1">
-              <i class="bi bi-camera-fill me-1"></i>કેમેરાથી ફોટો લો
+              <i class="bi bi-camera-fill me-1"></i>Capture Photo
             </button>
-            <button type="button" id="modalFlipBtn" class="btn btn-outline-secondary" title="કેમેરો બદલો">
+            <button type="button" id="modalFlipBtn" class="btn btn-outline-secondary" title="Switch Camera">
               <i class="bi bi-arrow-clockwise"></i>
             </button>
           </div>
@@ -160,24 +160,24 @@
           <!-- File upload fallback -->
           <div class="border rounded-3 p-2 bg-light mb-3">
             <label class="form-label small fw-bold text-secondary mb-1">
-              <i class="bi bi-upload me-1"></i>અથવા ફોટો અપલોડ કરો:
+              <i class="bi bi-upload me-1"></i>Or upload photo:
             </label>
             <input type="file" id="modalFileInput" accept="image/*" class="form-control form-control-sm" onchange="handleModalFile(this)">
           </div>
 
           <!-- Preview of captured photo -->
           <div id="modalPreviewBox" class="p-2 border rounded-3 text-center bg-white" style="display: none;">
-            <small class="text-muted fw-bold d-block mb-1">નવો ફોટો (New Enrolled Face):</small>
+            <small class="text-muted fw-bold d-block mb-1">New Face Photo:</small>
             <img id="modalPreviewImg" class="rounded-3 shadow-sm mx-auto mb-2" style="width: 100px; height: 100px; object-fit: cover; border: 2px solid #10b981;" alt="Preview">
             <div>
-              <span class="badge badge-soft-success"><i class="bi bi-check-circle-fill me-1"></i>તૈયાર છે (Ready to Save)</span>
+              <span class="badge badge-soft-success"><i class="bi bi-check-circle-fill me-1"></i>Ready to Save</span>
             </div>
           </div>
         </div>
         <div class="modal-footer">
           <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal" onclick="stopModalCamera()">Cancel</button>
           <button type="submit" id="modalSubmitBtn" class="btn btn-primary fw-bold" disabled>
-            <i class="bi bi-check-lg me-1"></i>ફોટો સેવ કરો (Save Face)
+            <i class="bi bi-check-lg me-1"></i>Save Face Photo
           </button>
         </div>
       </form>

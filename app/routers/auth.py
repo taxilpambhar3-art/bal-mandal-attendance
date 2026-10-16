@@ -34,7 +34,7 @@ def login_submit(
     if not user or not verify_password(password, user.password_hash) or not user.is_active:
         return templates.TemplateResponse(
             "login.html",
-            {"request": request, "error": "ખોટું Username અથવા Password"},
+            {"request": request, "error": "Invalid Username or Password"},
             status_code=400,
         )
     request.session["user_id"] = user.id

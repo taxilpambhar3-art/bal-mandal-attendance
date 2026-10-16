@@ -18,7 +18,7 @@ from .weeks import current_week_info, format_dt, gujarati_month, week_number_for
 
 BASE_DIR = Path(__file__).resolve().parent
 
-app = FastAPI(title="બાલ મંડળ હાજરી સિસ્ટમ")
+app = FastAPI(title="Bal Mandal Attendance System")
 app.add_middleware(SessionMiddleware, secret_key="bal-mandal-dev-secret-change-me")
 
 app.mount("/static", StaticFiles(directory=str(BASE_DIR / "static")), name="static")

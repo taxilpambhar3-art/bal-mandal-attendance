@@ -1,17 +1,17 @@
 {% extends "partials/shell.html" %}
-{% block title %}બધા બાળકો (Children) — Branch Admin{% endblock %}
+{% block title %}All Children — Branch Admin{% endblock %}
 {% block sidenav %}{% include "branch_admin/_nav.html" %}{% endblock %}
 {% block content %}
 <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
   <div>
     <h5 class="fw-bold mb-1">
-      <i class="bi bi-people-fill text-success me-2"></i>તમામ નોંધાયેલા બાળકો (Children Directory)
+      <i class="bi bi-people-fill text-success me-2"></i>All Registered Children (Children Directory)
     </h5>
-    <small class="text-muted">{{ branch.name }} શાખા હેઠળના તમામ બાળ મંડળોના બાળકો, ફેસ ફોટો અને હાજરી ટ્રેકિંગ</small>
+    <small class="text-muted">Children under all Bal Mandals of {{ branch.name }} branch, face photos, and attendance tracking</small>
   </div>
   <div class="d-flex gap-2">
     <a href="/branch-admin/children/add" class="btn btn-warning btn-sm fw-bold shadow-sm">
-      <i class="bi bi-person-plus-fill me-1"></i>નવું બાળક ઉમેરો (Enroll Child)
+      <i class="bi bi-person-plus-fill me-1"></i>Enroll Child
     </a>
   </div>
 </div>
@@ -20,16 +20,16 @@
 <div class="panel py-3 mb-4">
   <form method="get" action="/branch-admin/children" class="row g-2 align-items-end">
     <div class="col-md-5">
-      <label class="form-label small fw-bold text-secondary mb-1">નામ અથવા Code થી શોધો:</label>
+      <label class="form-label small fw-bold text-secondary mb-1">Search by Name or Code:</label>
       <div class="input-group input-group-sm">
         <span class="input-group-text"><i class="bi bi-search"></i></span>
-        <input type="text" name="q" class="form-control" placeholder="નામ / CH-XXXXX..." value="{{ search_query }}">
+        <input type="text" name="q" class="form-control" placeholder="Name / CH-XXXXX..." value="{{ search_query }}">
       </div>
     </div>
     <div class="col-md-4">
       <label class="form-label small fw-bold text-secondary mb-1">Bal Mandal Filter:</label>
       <select name="mandal_id" class="form-select form-select-sm" onchange="this.form.submit()">
-        <option value="">તમામ Bal Mandals (All Mandals)</option>
+        <option value="">All Bal Mandals</option>
         {% for m in mandals %}
         <option value="{{ m.id }}" {% if selected_mandal == m.id %}selected{% endif %}>{{ m.name }} ({{ m.weekday }})</option>
         {% endfor %}
@@ -55,14 +55,14 @@
       <thead>
         <tr>
           <th>#</th>
-          <th>ફોટો</th>
-          <th>બાળક ID</th>
-          <th>નામ</th>
-          <th>બાલ મંડળ</th>
-          <th>સંચાલક</th>
-          <th>વાલીનું નામ</th>
-          <th>હાજરી દર</th>
-          <th class="text-end">ક્રિયા (Actions)</th>
+          <th>Photo</th>
+          <th>Child ID</th>
+          <th>Name</th>
+          <th>Bal Mandal</th>
+          <th>Sanchalak</th>
+          <th>Guardian Name</th>
+          <th>Attendance Rate</th>
+          <th class="text-end">Actions</th>
         </tr>
       </thead>
       <tbody>
@@ -84,7 +84,7 @@
           <td><span class="badge bg-light text-dark font-monospace border">{{ c.child_code }}</span></td>
           <td>
             <div class="fw-bold text-dark">{{ c.name }}</div>
-            <small class="text-muted">{{ c.age }} વર્ષ</small>
+            <small class="text-muted">{{ c.age }} yrs</small>
           </td>
           <td>
             <span class="badge badge-soft-primary">{{ m.name if m else '—' }}</span>
@@ -105,17 +105,17 @@
           </td>
           <td class="text-end">
             <div class="btn-group btn-group-sm">
-              <button type="button" class="btn btn-outline-primary" title="ફેસ ફોટો અપડેટ કરો" onclick="openFaceModal('{{ c.id }}', '{{ c.name }}', '{{ c.face_photo or '' }}')">
+              <button type="button" class="btn btn-outline-primary" title="Update Face Photo" onclick="openFaceModal('{{ c.id }}', '{{ c.name }}', '{{ c.face_photo or '' }}')">
                 <i class="bi bi-camera me-1"></i>Update Face
               </button>
               <form method="post" action="/branch-admin/manual-attendance" class="d-inline ms-1">
                 <input type="hidden" name="child_id" value="{{ c.id }}">
-                <button type="submit" class="btn btn-outline-success" title="આજની હાજરી નોંધો">
+                <button type="submit" class="btn btn-outline-success" title="Mark Today Attendance">
                   <i class="bi bi-check2"></i>
                 </button>
               </form>
-              <form method="post" action="/branch-admin/children/{{ c.id }}/delete" class="d-inline ms-1" onsubmit="return confirm('શું તમે ખરેખર બાળક \'{{ c.name }}\' ને ડિલીટ કરવા માંગો છો?');">
-                <button type="submit" class="btn btn-outline-danger" title="બાળક ડિલીટ કરો">
+              <form method="post" action="/branch-admin/children/{{ c.id }}/delete" class="d-inline ms-1" onsubmit="return confirm('Are you sure you want to delete child \'{{ c.name }}\'?');">
+                <button type="submit" class="btn btn-outline-danger" title="Delete Child">
                   <i class="bi bi-trash"></i>
                 </button>
               </form>
@@ -126,7 +126,7 @@
         <tr>
           <td colspan="9" class="text-center py-5 text-muted">
             <i class="bi bi-person-x fs-1 d-block mb-2"></i>
-            કોઈ બાળકો મળ્યા નથી.
+            No children found.
           </td>
         </tr>
         {% endfor %}
@@ -140,7 +140,7 @@
   <div class="modal-dialog modal-dialog-centered">
     <div class="modal-content">
       <div class="modal-header">
-        <h6 class="modal-title fw-bold" id="modalTitle">ચહેરાનો ફોટો અપડેટ કરો</h6>
+        <h6 class="modal-title fw-bold" id="modalTitle">Update Face Photo</h6>
         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
       </div>
       <div class="modal-body text-center">
@@ -154,10 +154,10 @@
 
         <div class="d-flex justify-content-center gap-2 mb-3">
           <button type="button" class="btn btn-warning btn-sm fw-bold" id="modalSnapBtn" onclick="snapModalPhoto()">
-            <i class="bi bi-camera me-1"></i>કેપ્ચર ફોટો
+            <i class="bi bi-camera me-1"></i>Capture Photo
           </button>
           <button type="button" class="btn btn-outline-secondary btn-sm" id="modalRetakeBtn" style="display:none;" onclick="retakeModalPhoto()">
-            <i class="bi bi-arrow-counterclockwise me-1"></i>ફરીથી લો
+            <i class="bi bi-arrow-counterclockwise me-1"></i>Retake Photo
           </button>
         </div>
 
@@ -166,7 +166,7 @@
           <div class="d-flex justify-content-end gap-2">
             <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
             <button type="submit" class="btn btn-success btn-sm fw-bold" id="modalSaveBtn" disabled>
-              <i class="bi bi-check-circle me-1"></i>સેવ કરો
+              <i class="bi bi-check-circle me-1"></i>Save Photo
             </button>
           </div>
         </form>
@@ -188,7 +188,7 @@ const updateFaceForm = document.getElementById('updateFaceForm');
 const modalRing = document.getElementById('modalRing');
 
 async function openFaceModal(childId, childName, existingPhoto) {
-  document.getElementById('modalTitle').textContent = childName + ' - ચહેરાનો ફોટો અપડેટ કરો';
+  document.getElementById('modalTitle').textContent = childName + ' - Update Face Photo';
   updateFaceForm.action = '/branch-admin/children/' + childId + '/face';
   modalPhotoData.value = '';
   modalSaveBtn.disabled = true;
@@ -206,7 +206,7 @@ async function openFaceModal(childId, childName, existingPhoto) {
     modalVideo.srcObject = modalStream;
   } catch (err) {
     console.error('Camera error in modal:', err);
-    alert('કેમેરા શરૂ કરવામાં મુશ્કેલી આવી. કૃપા કરીને પરવાનગી આપો.');
+    alert('Could not start camera. Please grant camera permission.');
   }
 }
 

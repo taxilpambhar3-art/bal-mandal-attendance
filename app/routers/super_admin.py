@@ -16,7 +16,7 @@ from ..weeks import current_week_info, gujarati_month
 router = APIRouter(prefix="/super-admin", tags=["super-admin"])
 templates: Jinja2Templates | None = None
 
-CITIES = ["અમદાવાદ", "સુરત", "વડોદરા", "રાજકોટ", "ભાવનગર"]
+CITIES = ["Ahmedabad", "Surat", "Vadodara", "Rajkot", "Bhavnagar"]
 
 
 def _ctx(request: Request, user: User, **extra):

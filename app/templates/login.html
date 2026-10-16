@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}Login — બાલ મંડળ હાજરી સિસ્ટમ{% endblock %}
+{% block title %}Login — Bal Mandal Attendance System{% endblock %}
 {% block body %}
 <div class="d-flex align-items-center justify-content-center min-vh-100 py-5" style="background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);">
   <div class="container" style="max-width: 440px;">
@@ -12,7 +12,7 @@
                style="width: 72px; height: 72px; border-radius: 20px; background: #eff6ff;">
             <i class="bi bi-person-bounding-box" style="font-size: 36px; color: #1d4ed8;"></i>
           </div>
-          <h4 class="fw-bold mb-1 text-dark" style="letter-spacing: -0.3px;">બાલ મંડળ હાજરી સિસ્ટમ</h4>
+          <h4 class="fw-bold mb-1 text-dark" style="letter-spacing: -0.3px;">Bal Mandal Attendance System</h4>
           <p class="text-muted mb-0" style="font-size: 13px;">Face Scanner Web Attendance Portal</p>
         </div>
 
@@ -29,7 +29,7 @@
             <label class="form-label small fw-bold text-secondary">Username</label>
             <div class="input-group">
               <span class="input-group-text bg-light border-end-0"><i class="bi bi-person text-secondary"></i></span>
-              <input name="username" id="usernameInput" class="form-control border-start-0 ps-1" required placeholder="તમારું username દાખલ કરો" autocomplete="username" autofocus>
+              <input name="username" id="usernameInput" class="form-control border-start-0 ps-1" required placeholder="Enter your username" autocomplete="username" autofocus>
             </div>
           </div>
 
@@ -53,18 +53,18 @@
           </div>
 
           <button type="submit" class="btn btn-primary w-100 py-2 fw-bold shadow-sm" style="border-radius: 12px; font-size: 15px;">
-            <i class="bi bi-box-arrow-in-right me-1"></i> Login કરો
+            <i class="bi bi-box-arrow-in-right me-1"></i> Sign In
           </button>
         </form>
 
         <div class="note-box mt-4 py-2 px-3" style="font-size: 12.5px;">
           <i class="bi bi-shield-check me-1 text-primary"></i>
-          Login થતાં જ Role (Super Admin / Branch Admin / સંચાલક) ઓળખીને Dashboard પર <b>Auto-Redirect</b> થશે.
+          Upon login, you will be <b>auto-redirected</b> to your dashboard based on your assigned role (Super Admin / Branch Admin / Sanchalak).
         </div>
 
         <!-- Quick 1-Click Demo Logins -->
         <div class="mt-4 pt-3 border-top">
-          <small class="text-muted fw-bold d-block mb-2 text-center">ઝડપી ડેમો લોગિન (1-Click Fill):</small>
+          <small class="text-muted fw-bold d-block mb-2 text-center">Quick Demo Login (1-Click Fill):</small>
           <div class="d-flex flex-column gap-1" style="font-size: 12px;">
             <button type="button" class="btn btn-sm btn-light border text-start d-flex justify-content-between align-items-center py-2 px-3" onclick="fillLogin('superadmin', 'password')">
               <span><i class="bi bi-shield-shaded text-primary me-2"></i><b>Super Admin</b></span>
@@ -75,7 +75,7 @@
               <code class="text-muted">maninagar_admin</code>
             </button>
             <button type="button" class="btn btn-sm btn-light border text-start d-flex justify-content-between align-items-center py-2 px-3" onclick="fillLogin('hetal_shani', 'password')">
-              <span><i class="bi bi-person-badge text-warning me-2"></i><b>સંચાલક (Face Scan)</b></span>
+              <span><i class="bi bi-person-badge text-warning me-2"></i><b>Sanchalak (Face Scan)</b></span>
               <code class="text-muted">hetal_shani</code>
             </button>
           </div>
@@ -84,7 +84,7 @@
       </div>
     </div>
     <p class="text-center text-white-50 mt-3 mb-0" style="font-size: 12px;">
-      © 2026 બાલ મંડળ હાજરી સિસ્ટમ · Secure Portal
+      © 2026 Bal Mandal Attendance System · Secure Portal
     </p>
   </div>
 </div>

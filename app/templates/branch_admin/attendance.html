@@ -1,13 +1,13 @@
 {% extends "partials/shell.html" %}
-{% block title %}લાઈવ Attendance Scans — Branch Admin{% endblock %}
+{% block title %}Live Attendance Scans — Branch Admin{% endblock %}
 {% block sidenav %}{% include "branch_admin/_nav.html" %}{% endblock %}
 {% block content %}
 <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
   <div>
     <h5 class="fw-bold mb-1">
-      <i class="bi bi-clock-history text-success me-2"></i>લાઈવ હાજરી Scans & History (Attendance Logs)
+      <i class="bi bi-clock-history text-success me-2"></i>Live Attendance Scans & History (Attendance Logs)
     </h5>
-    <small class="text-muted">{{ branch.name }} શાખા હેઠળના તમામ બાળ મંડળોમાં થયેલા કેમેરા સ્કેન, ફોટો સ્નેપશોટ અને હાજરી લોગ</small>
+    <small class="text-muted">Camera scans, photo snapshots, and attendance logs across all Bal Mandals under {{ branch.name }} branch</small>
   </div>
 </div>
 
@@ -15,13 +15,13 @@
 <div class="panel py-3 mb-4">
   <form method="get" action="/branch-admin/attendance" class="row g-2 align-items-end">
     <div class="col-md-4">
-      <label class="form-label small fw-bold text-secondary mb-1">તારીખ (Date):</label>
+      <label class="form-label small fw-bold text-secondary mb-1">Date:</label>
       <input type="date" name="scan_date" class="form-control form-control-sm" value="{{ selected_date }}">
     </div>
     <div class="col-md-5">
       <label class="form-label small fw-bold text-secondary mb-1">Bal Mandal Filter:</label>
       <select name="mandal_id" class="form-select form-select-sm" onchange="this.form.submit()">
-        <option value="">તમામ Bal Mandals (All Mandals)</option>
+        <option value="">All Bal Mandals</option>
         {% for m in mandals %}
         <option value="{{ m.id }}" {% if selected_mandal == m.id %}selected{% endif %}>{{ m.name }} ({{ m.weekday }})</option>
         {% endfor %}
@@ -47,11 +47,11 @@
       <thead>
         <tr>
           <th>#</th>
-          <th>લાઈવ સ્કેન ફોટો</th>
-          <th>બાળક વિગત</th>
-          <th>બાલ મંડળ</th>
-          <th>હાજરી તારીખ</th>
-          <th>સ્કેન સમય</th>
+          <th>Live Scan Photo</th>
+          <th>Child Details</th>
+          <th>Bal Mandal</th>
+          <th>Attendance Date</th>
+          <th>Scan Time</th>
           <th>Status</th>
           <th class="text-end">Action</th>
         </tr>
@@ -66,7 +66,7 @@
               <img src="/static/uploads/{{ a.scan_photo }}" class="rounded shadow-sm" style="width:48px;height:48px;object-fit:cover;border:2px solid #10b981;" alt="Scan Photo">
             </a>
             {% else %}
-            <span class="badge bg-light text-secondary border">મેન્યુઅલ</span>
+            <span class="badge bg-light text-secondary border">Manual</span>
             {% endif %}
           </td>
           <td>
@@ -79,7 +79,7 @@
               </div>
               {% endif %}
               <div>
-                <div class="fw-bold text-dark">{{ a.child.name if a.child else 'બાળક' }}</div>
+                <div class="fw-bold text-dark">{{ a.child.name if a.child else 'Child' }}</div>
                 <small class="text-muted font-monospace">{{ a.child.child_code if a.child else '—' }}</small>
               </div>
             </div>
@@ -101,7 +101,7 @@
             </span>
           </td>
           <td class="text-end">
-            <form method="post" action="/branch-admin/attendance/{{ a.id }}/delete" onsubmit="return confirm('શું તમે આ હાજરી રેકોર્ડ રદ કરવા માંગો છો?')">
+            <form method="post" action="/branch-admin/attendance/{{ a.id }}/delete" onsubmit="return confirm('Are you sure you want to delete this attendance record?')">
               <button type="submit" class="btn btn-outline-danger btn-sm" title="Delete">
                 <i class="bi bi-trash"></i>
               </button>
@@ -112,7 +112,7 @@
         <tr>
           <td colspan="8" class="text-center py-5 text-muted">
             <i class="bi bi-inbox fs-1 d-block mb-2 text-secondary"></i>
-            કોઈ હાજરી સ્કેન રેકોર્ડ્સ મળ્યા નથી.
+            No attendance scan records found.
           </td>
         </tr>
         {% endfor %}

@@ -5,15 +5,15 @@
 <nav aria-label="breadcrumb">
   <ol class="breadcrumb mb-2" style="font-size:12px;">
     <li class="breadcrumb-item"><a href="/branch-admin/bal-mandals" class="text-decoration-none">Bal Mandals</a></li>
-    <li class="breadcrumb-item active">{{ 'સંપાદિત' if mandal else 'નવું બાલ મંડળ' }}</li>
+    <li class="breadcrumb-item active">{{ 'Edit' if mandal else 'New Bal Mandal' }}</li>
   </ol>
 </nav>
 <div class="panel">
-  <h6 class="mb-3"><i class="bi bi-plus-circle me-2 text-success"></i>બાલ મંડળની માહિતી</h6>
+  <h6 class="mb-3"><i class="bi bi-plus-circle me-2 text-success"></i>Bal Mandal Details</h6>
   <form method="post" action="{% if mandal %}/branch-admin/bal-mandals/{{ mandal.id }}/edit{% else %}/branch-admin/bal-mandals/add{% endif %}">
     <div class="row g-3">
       <div class="col-md-6">
-        <label class="form-label small fw-semibold">બાલ મંડળ નામ <span class="text-danger">*</span></label>
+        <label class="form-label small fw-semibold">Bal Mandal Name <span class="text-danger">*</span></label>
         <input name="name" class="form-control form-control-sm" required value="{{ mandal.name if mandal else '' }}">
       </div>
       <div class="col-md-6">
@@ -21,7 +21,7 @@
         <input class="form-control form-control-sm bg-light" value="{{ branch.name if branch else '' }}" readonly>
       </div>
       <div class="col-md-4">
-        <label class="form-label small fw-semibold">અઠવાડિયાનો દિવસ <span class="text-danger">*</span></label>
+        <label class="form-label small fw-semibold">Weekday <span class="text-danger">*</span></label>
         <select name="weekday" class="form-select form-select-sm">
           {% for d in weekdays %}
           <option {% if mandal and mandal.weekday==d %}selected{% endif %}>{{ d }}</option>
@@ -29,7 +29,7 @@
         </select>
       </div>
       <div class="col-md-4">
-        <label class="form-label small fw-semibold">સમય</label>
+        <label class="form-label small fw-semibold">Time</label>
         <input type="time" name="meeting_time" class="form-control form-control-sm"
                value="{{ mandal.meeting_time.strftime('%H:%M') if mandal and mandal.meeting_time else '17:00' }}">
       </div>
@@ -42,25 +42,25 @@
       </div>
       <div class="col-12"><hr class="my-1"></div>
       <div class="col-md-6">
-        <label class="form-label small fw-semibold">સંચાલકનું નામ <span class="text-danger">*</span></label>
+        <label class="form-label small fw-semibold">Sanchalak Name <span class="text-danger">*</span></label>
         <input name="sanchalak_name" class="form-control form-control-sm" value="{{ sanchalak.full_name if sanchalak else '' }}">
       </div>
       <div class="col-md-6">
-        <label class="form-label small fw-semibold">સંચાલક મોબાઈલ</label>
+        <label class="form-label small fw-semibold">Sanchalak Mobile</label>
         <input name="sanchalak_mobile" class="form-control form-control-sm" value="{{ sanchalak.mobile if sanchalak and sanchalak.mobile else '' }}">
       </div>
       <div class="col-md-6">
-        <label class="form-label small fw-semibold">સંચાલક Login Username</label>
+        <label class="form-label small fw-semibold">Sanchalak Username</label>
         <input name="sanchalak_username" class="form-control form-control-sm" value="{{ sanchalak.username if sanchalak else '' }}">
       </div>
       <div class="col-md-6">
-        <label class="form-label small fw-semibold">સંચાલક Password</label>
+        <label class="form-label small fw-semibold">Sanchalak Password</label>
         <input name="sanchalak_password" type="password" class="form-control form-control-sm" placeholder="{{ '••••••••' if sanchalak else 'scan123' }}">
       </div>
       <div class="col-12">
         <div class="note-box">
           <i class="bi bi-camera me-1"></i>
-          સંચાલક Face Scanner વડે બાળકોની હાજરી પૂરશે — <b>એક સ્કેન = એક ફોટો</b>.
+          Sanchalak will record children attendance using Face Scanner — <b>One scan = One photo</b>.
         </div>
       </div>
     </div>

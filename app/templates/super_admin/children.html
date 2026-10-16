@@ -1,17 +1,17 @@
 {% extends "partials/shell.html" %}
-{% block title %}બધા બાળકો (All Children) — Super Admin{% endblock %}
+{% block title %}All Children — Super Admin{% endblock %}
 {% block sidenav %}{% include "super_admin/_nav.html" %}{% endblock %}
 {% block content %}
 <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
   <div>
     <h5 class="fw-bold mb-1">
-      <i class="bi bi-person-hearts text-danger me-2"></i>તમામ નોંધાયેલા બાળકો (Children Directory)
+      <i class="bi bi-person-hearts text-danger me-2"></i>All Registered Children (Children Directory)
     </h5>
-    <small class="text-muted">Sanchalak ડેટા: તમામ Bal Mandals હેઠળના બાળકો, ફેસ ફોટો, વાલીની વિગત અને હાજરી ટ્રેક</small>
+    <small class="text-muted">Sanchalak Data: Children under all Bal Mandals, face photos, guardian details, and attendance tracking</small>
   </div>
   <div>
     <span class="badge badge-soft-primary px-3 py-2 fw-bold fs-6">
-      કુલ બાળકો: {{ rows|length }}
+      Total Children: {{ rows|length }}
     </span>
   </div>
 </div>
@@ -20,16 +20,16 @@
 <div class="panel py-3 mb-4">
   <form method="get" action="/super-admin/children" class="row g-2 align-items-end">
     <div class="col-md-3">
-      <label class="form-label small fw-bold text-secondary mb-1">નામ અથવા Code થી શોધો:</label>
+      <label class="form-label small fw-bold text-secondary mb-1">Search by Name or Code:</label>
       <div class="input-group input-group-sm">
         <span class="input-group-text"><i class="bi bi-search"></i></span>
-        <input type="text" name="q" class="form-control" placeholder="નામ / CH-XXXXX..." value="{{ search_query }}">
+        <input type="text" name="q" class="form-control" placeholder="Name / CH-XXXXX..." value="{{ search_query }}">
       </div>
     </div>
     <div class="col-md-3">
       <label class="form-label small fw-bold text-secondary mb-1">Branch Filter:</label>
       <select name="branch_id" class="form-select form-select-sm" onchange="this.form.submit()">
-        <option value="">તમામ Branches</option>
+        <option value="">All Branches</option>
         {% for b in branches %}
         <option value="{{ b.id }}" {% if selected_branch == b.id %}selected{% endif %}>{{ b.name }} ({{ b.city }})</option>
         {% endfor %}
@@ -38,7 +38,7 @@
     <div class="col-md-3">
       <label class="form-label small fw-bold text-secondary mb-1">Bal Mandal Filter:</label>
       <select name="mandal_id" class="form-select form-select-sm" onchange="this.form.submit()">
-        <option value="">તમામ Bal Mandals</option>
+        <option value="">All Bal Mandals</option>
         {% for m in mandals %}
         <option value="{{ m.id }}" {% if selected_mandal == m.id %}selected{% endif %}>{{ m.name }}</option>
         {% endfor %}
@@ -63,14 +63,14 @@
     <table class="table mock table-hover align-middle mb-0">
       <thead>
         <tr>
-          <th>ફોટો</th>
-          <th>બાળકનું નામ</th>
+          <th>Photo</th>
+          <th>Child Name</th>
           <th>Code</th>
-          <th>ઉંમર</th>
-          <th>વાલી (Guardian)</th>
+          <th>Age</th>
+          <th>Guardian</th>
           <th>Branch</th>
           <th>Bal Mandal</th>
-          <th>આ મહિનાની હાજરી</th>
+          <th>Monthly Attendance</th>
           <th>Face Status</th>
           <th class="text-end">Actions</th>
         </tr>
@@ -94,7 +94,7 @@
             <span class="badge bg-primary-subtle text-primary border border-primary-subtle">{{ r.child.child_code }}</span>
           </td>
           <td>
-            {% if r.child.age %}{{ r.child.age }} વર્ષ{% else %}<span class="text-muted">—</span>{% endif %}
+            {% if r.child.age %}{{ r.child.age }} yrs{% else %}<span class="text-muted">—</span>{% endif %}
           </td>
           <td>
             {{ r.child.guardian_name or '—' }}
@@ -124,7 +124,7 @@
                 <div class="progress-bar {% if r.rate >= 75 %}bg-success{% elif r.rate >= 50 %}bg-warning{% else %}bg-danger{% endif %}"
                      style="width: {{ r.rate }}%;"></div>
               </div>
-              <span class="fw-bold" style="font-size: 11.5px;">{{ r.rate }}% ({{ r.pres_count }} સભા)</span>
+              <span class="fw-bold" style="font-size: 11.5px;">{{ r.rate }}% ({{ r.pres_count }} sessions)</span>
             </div>
           </td>
           <td>
@@ -135,7 +135,7 @@
             {% endif %}
           </td>
           <td class="text-end">
-            <form method="post" action="/super-admin/children/{{ r.child.id }}/delete" onsubmit="return confirm('શું તમે ખરેખર બાળક \'{{ r.child.name }}\' ને ડિલીટ કરવા માંગો છો? આ બાળકની તમામ હાજરી પણ ડિલીટ થઈ જશે.');" style="display:inline;">
+            <form method="post" action="/super-admin/children/{{ r.child.id }}/delete" onsubmit="return confirm('Are you sure you want to delete child \'{{ r.child.name }}\'? All attendance records for this child will also be deleted.');" style="display:inline;">
               <button type="submit" class="btn btn-outline-danger btn-sm py-1 px-2" title="Delete Child">
                 <i class="bi bi-trash"></i>
               </button>
@@ -145,7 +145,7 @@
         {% else %}
         <tr>
           <td colspan="10" class="text-center text-muted py-5">
-            કોઈ બાળક મળ્યું નથી.
+            No children found.
           </td>
         </tr>
         {% endfor %}

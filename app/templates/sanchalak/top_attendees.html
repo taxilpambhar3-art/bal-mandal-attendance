@@ -1,11 +1,11 @@
 {% extends "partials/shell.html" %}
-{% block title %}Top Attendees — બાલ મંડળ{% endblock %}
+{% block title %}Top Attendees — Bal Mandal{% endblock %}
 {% block sidenav %}{% include "sanchalak/_nav.html" %}{% endblock %}
 {% block content %}
 <div class="d-flex justify-content-between align-items-center mb-3">
   <div>
-    <h6 class="fw-bold mb-0">બાળક પ્રમાણે હાજરી રિપોર્ટ / Top Attendees</h6>
-    <small class="text-muted">{{ mandal.name if mandal else 'બાલ મંડળ' }} · {{ month_label }}</small>
+    <h6 class="fw-bold mb-0">Top Attendees (Attendance by Child)</h6>
+    <small class="text-muted">{{ mandal.name if mandal else 'Bal Mandal' }} · {{ month_label }}</small>
   </div>
   <form method="get" action="/sanchalak/top-attendees" class="d-inline-flex gap-2">
     <select name="month" class="form-select form-select-sm" style="width:180px;" onchange="this.form.submit()">
@@ -27,7 +27,7 @@
         <i class="bi bi-trophy-fill"></i>
       </div>
       <div class="fw-bold" style="font-size:14px;">{{ ranking[0].child.name }}</div>
-      <small class="text-muted d-block">{{ ranking[0].count }} હાજર</small>
+      <small class="text-muted d-block">{{ ranking[0].count }} Present</small>
       <span class="badge badge-soft-success mt-2">Rank #1</span>
     </div>
   </div>
@@ -41,7 +41,7 @@
         <i class="bi bi-award-fill"></i>
       </div>
       <div class="fw-bold" style="font-size:14px;">{{ ranking[1].child.name }}</div>
-      <small class="text-muted d-block">{{ ranking[1].count }} હાજર</small>
+      <small class="text-muted d-block">{{ ranking[1].count }} Present</small>
       <span class="badge badge-soft-success mt-2">Rank #2</span>
     </div>
   </div>
@@ -55,7 +55,7 @@
         <i class="bi bi-star-fill"></i>
       </div>
       <div class="fw-bold" style="font-size:14px;">{{ ranking[2].child.name }}</div>
-      <small class="text-muted d-block">{{ ranking[2].count }} હાજર</small>
+      <small class="text-muted d-block">{{ ranking[2].count }} Present</small>
       <span class="badge badge-soft-success mt-2">Rank #3</span>
     </div>
   </div>
@@ -66,10 +66,10 @@
 <!-- Full Attendees Table -->
 <div class="panel p-0">
   <div class="p-3 pb-0 d-flex justify-content-between align-items-center flex-wrap gap-2">
-    <h6 class="mb-0">બધા બાળકોની હાજરી</h6>
+    <h6 class="mb-0">All Children Attendance</h6>
     <div class="input-group input-group-sm" style="width:220px;">
       <span class="input-group-text bg-light"><i class="bi bi-search"></i></span>
-      <input id="searchInput" class="form-control" placeholder="બાળક શોધો..." onkeyup="filterTable()">
+      <input id="searchInput" class="form-control" placeholder="Search child..." onkeyup="filterTable()">
     </div>
   </div>
   <div class="table-responsive">
@@ -77,9 +77,9 @@
       <thead>
         <tr>
           <th>#</th>
-          <th>બાળકનું નામ</th>
-          <th>વાલીનું નામ</th>
-          <th>હાજરી સંખ્યા</th>
+          <th>Child Name</th>
+          <th>Guardian Name</th>
+          <th>Attendance Count</th>
           <th>Rank</th>
         </tr>
       </thead>
@@ -89,7 +89,7 @@
           <td>{{ loop.index }}</td>
           <td class="fw-semibold">{{ r.child.name }} ({{ r.child.child_code }})</td>
           <td>{{ r.child.guardian_name or '—' }}</td>
-          <td><span class="badge badge-soft-primary px-3 py-1">{{ r.count }} હાજર</span></td>
+          <td><span class="badge badge-soft-primary px-3 py-1">{{ r.count }} Present</span></td>
           <td>
             {% if loop.index == 1 %}
             <i class="bi bi-trophy-fill text-warning fs-5" title="Rank 1"></i>
@@ -104,7 +104,7 @@
         </tr>
         {% else %}
         <tr>
-          <td colspan="5" class="text-center text-muted p-4">કોઈ ડેટા નથી</td>
+          <td colspan="5" class="text-center text-muted p-4">No data available</td>
         </tr>
         {% endfor %}
       </tbody>

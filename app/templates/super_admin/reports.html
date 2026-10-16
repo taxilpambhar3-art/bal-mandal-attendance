@@ -1,11 +1,11 @@
 {% extends "partials/shell.html" %}
-{% block title %}Super Admin Consolidated Reports — બાલ મંડળ{% endblock %}
+{% block title %}Super Admin Consolidated Reports — Bal Mandal{% endblock %}
 {% block sidenav %}{% include "super_admin/_nav.html" %}{% endblock %}
 {% block content %}
 <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
   <div>
     <h5 class="fw-bold mb-1"><i class="bi bi-bar-chart-line-fill text-primary me-2"></i>Consolidated Attendance Reports</h5>
-    <small class="text-muted">{{ month_label }} · તમામ Branches અને Bal Mandals નો સર્વાંગી વિશ્લેષણ રિપોર્ટ</small>
+    <small class="text-muted">{{ month_label }} · Comprehensive attendance analysis across all Branches and Bal Mandals</small>
   </div>
   <div class="d-flex gap-2">
     <button type="button" class="btn btn-sm btn-outline-success shadow-sm" onclick="exportSuperCSV()">
@@ -21,11 +21,11 @@
 <form class="panel mb-4 py-3" method="get" action="/super-admin/reports">
   <div class="row g-2 align-items-end">
     <div class="col-md-2">
-      <label class="form-label small mb-1 fw-bold text-secondary">Year (વર્ષ)</label>
+      <label class="form-label small mb-1 fw-bold text-secondary">Year</label>
       <input type="number" name="year" class="form-control form-control-sm" value="{{ year }}">
     </div>
     <div class="col-md-2">
-      <label class="form-label small mb-1 fw-bold text-secondary">Month (મહિનો)</label>
+      <label class="form-label small mb-1 fw-bold text-secondary">Month</label>
       <select name="month" class="form-select form-select-sm">
         {% for m in range(1, 13) %}
         <option value="{{ m }}" {% if m == month %}selected{% endif %}>{{ gujarati_month(m) }}</option>
@@ -35,7 +35,7 @@
     <div class="col-md-2">
       <label class="form-label small mb-1 fw-bold text-secondary">Week Number</label>
       <select name="week" class="form-select form-select-sm">
-        <option value="">બધા Weeks (All)</option>
+        <option value="">All Weeks</option>
         {% for w in range(1, 6) %}
         <option value="{{ w }}" {% if week_filter == w %}selected{% endif %}>Week {{ w }}</option>
         {% endfor %}
@@ -44,7 +44,7 @@
     <div class="col-md-2">
       <label class="form-label small mb-1 fw-bold text-secondary">Branch Filter:</label>
       <select name="branch_id" class="form-select form-select-sm" onchange="this.form.submit()">
-        <option value="">તમામ Branches</option>
+        <option value="">All Branches</option>
         {% for b in branches %}
         <option value="{{ b.id }}" {% if selected_branch == b.id %}selected{% endif %}>{{ b.name }} ({{ b.city }})</option>
         {% endfor %}
@@ -53,7 +53,7 @@
     <div class="col-md-3">
       <label class="form-label small mb-1 fw-bold text-secondary">Bal Mandal Filter:</label>
       <select name="mandal_id" class="form-select form-select-sm">
-        <option value="">તમામ Bal Mandals</option>
+        <option value="">All Bal Mandals</option>
         {% for m in mandals %}
         <option value="{{ m.id }}" {% if selected_mandal == m.id %}selected{% endif %}>{{ m.name }}</option>
         {% endfor %}
@@ -78,28 +78,28 @@
     <div class="stat-card">
       <div class="ico bg-primary-subtle text-primary"><i class="bi bi-people-fill"></i></div>
       <h3>{{ total_children }}</h3>
-      <p>કુલ બાળકો (Total Enrolled)</p>
+      <p>Total Enrolled</p>
     </div>
   </div>
   <div class="col-6 col-lg-3">
     <div class="stat-card">
       <div class="ico bg-success-subtle text-success"><i class="bi bi-check-circle-fill"></i></div>
       <h3>{{ present }}</h3>
-      <p>કુલ હાજરી (Present Scans)</p>
+      <p>Total Present Scans</p>
     </div>
   </div>
   <div class="col-6 col-lg-3">
     <div class="stat-card">
       <div class="ico bg-danger-subtle text-danger"><i class="bi bi-x-circle-fill"></i></div>
       <h3>{{ absent }}</h3>
-      <p>ગેરહાજર સંખ્યા</p>
+      <p>Total Absent</p>
     </div>
   </div>
   <div class="col-6 col-lg-3">
     <div class="stat-card">
       <div class="ico bg-info-subtle text-info"><i class="bi bi-graph-up"></i></div>
       <h3>{{ rate }}%</h3>
-      <p>સરેરાશ હાજરી દર</p>
+      <p>Average Attendance Rate</p>
     </div>
   </div>
 </div>
@@ -110,7 +110,7 @@
   <div class="col-lg-7">
     <div class="panel h-100">
       <div class="d-flex justify-content-between align-items-center mb-3">
-        <h6 class="mb-0"><i class="bi bi-bar-chart-fill text-primary me-2"></i>સમગ્ર રાજ્ય હાજરી ટ્રેન્ડ (Consolidated Weekly Trend)</h6>
+        <h6 class="mb-0"><i class="bi bi-bar-chart-fill text-primary me-2"></i>Consolidated Weekly Attendance Trend</h6>
         <span class="badge badge-soft-info">Week 1–5 Reset Cycle</span>
       </div>
       <div class="chart-container">
@@ -123,7 +123,7 @@
   <div class="col-lg-5">
     <div class="panel h-100">
       <div class="d-flex justify-content-between align-items-center mb-3">
-        <h6 class="mb-0"><i class="bi bi-diagram-3-fill text-success me-2"></i>Mandal-wise હાજરી ટકાવારી (%)</h6>
+        <h6 class="mb-0"><i class="bi bi-diagram-3-fill text-success me-2"></i>Mandal-wise Attendance Rate (%)</h6>
         <span class="badge badge-soft-success">{{ drill|length }} Mandals</span>
       </div>
       <div class="chart-container">
@@ -136,16 +136,16 @@
 <!-- Week-wise Breakdown Table -->
 <div class="panel p-0 overflow-hidden mb-4">
   <div class="p-3 pb-2 d-flex justify-content-between align-items-center border-bottom">
-    <h6 class="mb-0"><i class="bi bi-calendar3-range text-secondary me-2"></i>{{ month_label }} — Week-wise Consolidated હાજરી</h6>
+    <h6 class="mb-0"><i class="bi bi-calendar3-range text-secondary me-2"></i>{{ month_label }} — Week-wise Consolidated Attendance</h6>
   </div>
   <div class="table-responsive">
     <table class="table mock table-hover mb-0 align-middle">
       <thead>
         <tr>
-          <th>અઠવાડિયું</th>
-          <th>હાજર બાળકો</th>
-          <th>ગેરહાજર બાળકો</th>
-          <th>હાજરી દર (%)</th>
+          <th>Week</th>
+          <th>Present Children</th>
+          <th>Absent Children</th>
+          <th>Attendance Rate (%)</th>
           <th>Status</th>
         </tr>
       </thead>
@@ -183,8 +183,8 @@
 <!-- Drill-down Table -->
 <div class="panel p-0 overflow-hidden">
   <div class="p-3 pb-2 border-bottom d-flex justify-content-between align-items-center">
-    <h6 class="mb-0"><i class="bi bi-funnel text-secondary me-2"></i>Branch → Bal Mandal → સંચાલક (Detailed Drill-down)</h6>
-    <small class="text-muted">ક્લિક કરીને વિગત જુઓ</small>
+    <h6 class="mb-0"><i class="bi bi-funnel text-secondary me-2"></i>Branch → Bal Mandal → Sanchalak (Detailed Drill-down)</h6>
+    <small class="text-muted">Click to view details</small>
   </div>
   <div class="table-responsive">
     <table class="table mock table-hover mb-0 align-middle" id="superReportsTable">
@@ -192,10 +192,10 @@
         <tr>
           <th>Branch</th>
           <th>Bal Mandal</th>
-          <th>સંચાલક</th>
-          <th>કુલ બાળકો</th>
-          <th>હાજર</th>
-          <th>હાજરી %</th>
+          <th>Sanchalak</th>
+          <th>Total Children</th>
+          <th>Present</th>
+          <th>Attendance %</th>
           <th>Performance</th>
         </tr>
       </thead>
@@ -254,7 +254,7 @@ new Chart(ctxSuperWeekly, {
     datasets: [
       {
         type: 'line',
-        label: 'હાજરી % (Attendance Rate)',
+        label: 'Attendance Rate (%)',
         data: weekRows.map(w => w.rate),
         borderColor: '#3b82f6',
         backgroundColor: 'rgba(59, 130, 246, 0.15)',
@@ -265,7 +265,7 @@ new Chart(ctxSuperWeekly, {
       },
       {
         type: 'bar',
-        label: 'કુલ હાજર બાળકો (Count)',
+        label: 'Total Present Children (Count)',
         data: weekRows.map(w => w.present),
         backgroundColor: 'rgba(30, 58, 138, 0.8)',
         borderRadius: 8,
@@ -285,14 +285,14 @@ new Chart(ctxSuperWeekly, {
       yCount: {
         type: 'linear',
         position: 'left',
-        title: { display: true, text: 'હાજર સંખ્યા' },
+        title: { display: true, text: 'Present Count' },
         min: 0,
         grid: { color: '#f1f5f9' }
       },
       yRate: {
         type: 'linear',
         position: 'right',
-        title: { display: true, text: 'ટકાવારી (%)' },
+        title: { display: true, text: 'Percentage (%)' },
         min: 0,
         max: 100,
         grid: { display: false }
@@ -308,7 +308,7 @@ new Chart(ctxDrill, {
   data: {
     labels: drillRows.map(d => d.mandal),
     datasets: [{
-      label: 'હાજરી %',
+      label: 'Attendance %',
       data: drillRows.map(d => d.rate),
       backgroundColor: 'rgba(16, 185, 129, 0.8)',
       borderRadius: 6

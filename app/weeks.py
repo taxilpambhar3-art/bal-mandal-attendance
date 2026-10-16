@@ -34,18 +34,18 @@ def current_week_info(today: date | None = None) -> dict:
 
 def gujarati_month(month: int) -> str:
     names = {
-        1: "જાન્યુઆરી",
-        2: "ફેબ્રુઆરી",
-        3: "માર્ચ",
-        4: "એપ્રિલ",
-        5: "મે",
-        6: "જૂન",
-        7: "જુલાઈ",
-        8: "ઓગસ્ટ",
-        9: "સપ્ટેમ્બર",
-        10: "ઓક્ટોબર",
-        11: "નવેમ્બર",
-        12: "ડિસેમ્બર",
+        1: "January",
+        2: "February",
+        3: "March",
+        4: "April",
+        5: "May",
+        6: "June",
+        7: "July",
+        8: "August",
+        9: "September",
+        10: "October",
+        11: "November",
+        12: "December",
     }
     return names.get(month, str(month))
 

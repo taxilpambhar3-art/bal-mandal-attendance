@@ -1,22 +1,22 @@
 {% extends "partials/shell.html" %}
-{% block title %}Face Scan હાજરી Kiosk — Branch Admin{% endblock %}
+{% block title %}Face Scan Attendance Kiosk — Branch Admin{% endblock %}
 {% block sidenav %}{% include "branch_admin/_nav.html" %}{% endblock %}
 {% block content %}
 <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
   <div>
     <h5 class="fw-bold mb-0">
-      <i class="bi bi-camera-video-fill text-success me-2"></i>Face Scan હાજરી Kiosk (Branch Admin Mode)
+      <i class="bi bi-camera-video-fill text-success me-2"></i>Face Scan Attendance Kiosk (Branch Admin Mode)
     </h5>
     <small class="text-muted">
-      {{ branch.name }} શાખા · {{ week.date.strftime('%d %B %Y') }} · <span class="badge badge-soft-info">{{ week.week_label }}</span>
+      {{ branch.name }} Branch · {{ week.date.strftime('%d %B %Y') }} · <span class="badge badge-soft-info">{{ week.week_label }}</span>
     </small>
   </div>
   <div class="d-flex align-items-center gap-2 flex-wrap">
     <!-- Mandal Switcher Dropdown -->
     <div class="d-flex align-items-center gap-1 bg-light py-1 px-3 border rounded-pill shadow-sm">
-      <span class="text-secondary small fw-bold"><i class="bi bi-diagram-3-fill text-primary me-1"></i>મંડળ:</span>
+      <span class="text-secondary small fw-bold"><i class="bi bi-diagram-3-fill text-primary me-1"></i>Mandal:</span>
       <select id="mandalSelector" class="form-select form-select-sm border-0 bg-transparent fw-bold text-dark py-0 ps-1 pe-4" style="width:auto;cursor:pointer;font-size:12px;" onchange="window.location.href='/branch-admin/face-scan' + (this.value ? '?mandal_id=' + this.value : '')">
-        <option value="" {% if not selected_mandal %}selected{% endif %}>તમામ બાળ મંડળ (All Mandals)</option>
+        <option value="" {% if not selected_mandal %}selected{% endif %}>All Bal Mandals</option>
         {% for m in mandals %}
         <option value="{{ m.id }}" {% if selected_mandal and selected_mandal.id == m.id %}selected{% endif %}>
           {{ m.name }} ({{ m.weekday }})
@@ -27,9 +27,9 @@
 
     <!-- Scan Speed Selector -->
     <div class="d-flex align-items-center gap-1 bg-light py-1 px-3 border rounded-pill shadow-sm" style="font-size:12px;">
-      <span class="text-secondary fw-bold"><i class="bi bi-lightning-charge-fill text-warning me-1"></i>સ્પીડ:</span>
+      <span class="text-secondary fw-bold"><i class="bi bi-lightning-charge-fill text-warning me-1"></i>Speed:</span>
       <select id="kioskDelaySelect" class="form-select form-select-sm border-0 bg-transparent fw-bold text-success py-0 ps-1 pe-4" style="width:auto;cursor:pointer;font-size:12px;">
-        <option value="0" selected>⚡ 0s (Instant / તુરંત)</option>
+        <option value="0" selected>⚡ 0s (Instant)</option>
         <option value="2">⏱️ 2s</option>
         <option value="5">⏱️ 5s</option>
       </select>
@@ -43,7 +43,7 @@
     </div>
 
     <span class="badge badge-soft-success py-2 px-3" id="cameraStatus">
-      <i class="bi bi-circle-fill me-1" style="font-size:8px;"></i>કેમેરા ચાલુ
+      <i class="bi bi-circle-fill me-1" style="font-size:8px;"></i>Camera Active
     </span>
   </div>
 </div>
@@ -79,7 +79,7 @@
 
         <!-- Center Guide Label -->
         <div class="cam-label" id="camOverlayLabel" style="z-index:5;">
-          <i class="bi bi-person-bounding-box me-1"></i>બાળક કેમેરા સામે જુએ એટલે ઓટોમેટિક હાજરી પુરાશે
+          <i class="bi bi-person-bounding-box me-1"></i>Look at the camera to mark attendance automatically
         </div>
 
         <!-- 0-Second Instant Success Toast Overlay -->
@@ -87,12 +87,12 @@
           <div class="d-flex align-items-center gap-2">
             <img id="instantToastPhoto" src="" style="width:38px;height:38px;border-radius:50%;object-fit:cover;border:2px solid #fff;" alt="">
             <div>
-              <div class="fw-bold" style="font-size:13.5px;" id="instantToastName">બાળકનું નામ</div>
-              <small style="font-size:11px;" id="instantToastScore" class="text-white-50">✓ 100% Match · હાજરી નોંધાઈ</small>
+              <div class="fw-bold" style="font-size:13.5px;" id="instantToastName">Child Name</div>
+              <small style="font-size:11px;" id="instantToastScore" class="text-white-50">✓ 100% Match · Attendance Recorded</small>
             </div>
           </div>
           <span class="badge bg-white text-success fw-bold px-2 py-1 shadow-sm" style="font-size:11px;">
-            <i class="bi bi-lightning-charge-fill me-1 text-warning"></i>0s તુરંત હાજરી
+            <i class="bi bi-lightning-charge-fill me-1 text-warning"></i>Instant Attendance
           </span>
         </div>
 
@@ -101,35 +101,35 @@
           <div class="rounded-circle d-flex align-items-center justify-content-center bg-success text-white mb-2 shadow" style="width:52px;height:52px;">
             <i class="bi bi-check-lg fs-2"></i>
           </div>
-          <h5 class="fw-bold text-white mb-1" id="kioskSuccessName">બાળક</h5>
+          <h5 class="fw-bold text-white mb-1" id="kioskSuccessName">Child</h5>
           <span class="badge badge-soft-success mb-2 px-3 py-1 fs-6" id="kioskSuccessScore">
             <i class="bi bi-shield-check me-1"></i>95% Match Verified
           </span>
           <div class="d-flex align-items-center gap-3 my-2">
             <div>
-              <small class="text-white-50 d-block mb-1" style="font-size:11px;">લાઈવ સ્કેન</small>
+              <small class="text-white-50 d-block mb-1" style="font-size:11px;">Live Scan</small>
               <img id="kioskLivePhoto" src="" class="rounded-3 shadow" style="width:64px;height:64px;object-fit:cover;border:2px solid #10b981;" alt="Live">
             </div>
             <i class="bi bi-arrow-left-right text-muted fs-5"></i>
             <div>
-              <small class="text-white-50 d-block mb-1" style="font-size:11px;">રજિસ્ટર્ડ પ્રોફાઇલ</small>
+              <small class="text-white-50 d-block mb-1" style="font-size:11px;">Enrolled Profile</small>
               <img id="kioskEnrolledPhoto" src="" class="rounded-3 shadow" style="width:64px;height:64px;object-fit:cover;border:2px solid #3b82f6;" alt="Enrolled">
             </div>
           </div>
           <div style="width:200px; height:4px; background:rgba(255,255,255,0.2); border-radius:2px; overflow:hidden;" class="mt-2">
             <div id="kioskCountdownBar" style="height:100%; width:100%; background:#10b981; transition:width 0.1s linear;"></div>
           </div>
-          <small class="text-white-50 mt-1" style="font-size:11px;">આગામી બાળક માટે કેમેરા તૈયાર થઈ રહ્યો છે...</small>
+          <small class="text-white-50 mt-1" style="font-size:11px;">Preparing camera for the next child...</small>
         </div>
       </div>
 
       <!-- Kiosk Actions Bar -->
       <div class="d-flex justify-content-between align-items-center mt-3 gap-2 flex-wrap">
         <button type="button" class="btn btn-success fw-bold flex-grow-1 shadow-sm" id="manualSnapBtn">
-          <i class="bi bi-camera-fill me-1"></i>મેન્યુઅલ કેપ્ચર (Manual Snap)
+          <i class="bi bi-camera-fill me-1"></i>Manual Snap
         </button>
         <button type="button" class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#manualAttModal">
-          <i class="bi bi-pencil-square me-1"></i>યાદીમાંથી હાજરી પૂરો
+          <i class="bi bi-pencil-square me-1"></i>Mark Attendance from List
         </button>
       </div>
     </div>
@@ -141,10 +141,10 @@
       <div>
         <div class="d-flex justify-content-between align-items-center mb-3">
           <h6 class="mb-0 fw-bold">
-            <i class="bi bi-check2-circle text-success me-1"></i>આજની હાજરી યાદી
+            <i class="bi bi-check2-circle text-success me-1"></i>Today's Attendance List
           </h6>
           <span class="badge badge-soft-success px-3 py-2 fw-bold" id="todayCountBadge">
-            કુલ હાજર: {{ today_list|length }}
+            Total Present: {{ today_list|length }}
           </span>
         </div>
 
@@ -161,19 +161,19 @@
             </div>
             {% endif %}
             <div class="flex-grow-1 overflow-hidden">
-              <div class="fw-bold text-dark text-truncate" style="font-size: 13.5px;">{{ a.child.name if a.child else 'બાળક' }}</div>
+              <div class="fw-bold text-dark text-truncate" style="font-size: 13.5px;">{{ a.child.name if a.child else 'Child' }}</div>
               <small class="text-muted d-block" style="font-size:11px;">
                 {{ format_dt(a.scanned_at) }} · {{ a.bal_mandal.name if a.bal_mandal else '' }}
               </small>
             </div>
             <span class="badge bg-success-subtle text-success border border-success-subtle fw-bold" style="font-size:11px;">
-              <i class="bi bi-check-circle-fill me-1"></i>હાજર
+              <i class="bi bi-check-circle-fill me-1"></i>Present
             </span>
           </div>
           {% else %}
           <div class="text-center py-5 text-muted small" id="noScansMsg">
             <i class="bi bi-camera fs-2 d-block mb-2 text-secondary"></i>
-            આજે હજુ સુધી કોઈ બાળકની હાજરી પુરાઈ નથી.
+            No attendance recorded yet today.
           </div>
           {% endfor %}
         </div>
@@ -181,10 +181,10 @@
 
       <div class="pt-3 border-top mt-3 d-flex gap-2">
         <a href="/branch-admin/attendance" class="btn btn-outline-secondary btn-sm flex-grow-1">
-          <i class="bi bi-clock-history me-1"></i>સંપૂર્ણ સ્કેન હિસ્ટ્રી
+          <i class="bi bi-clock-history me-1"></i>Full Scan History
         </a>
         <a href="/branch-admin/children/add" class="btn btn-outline-warning btn-sm">
-          <i class="bi bi-person-plus me-1"></i>નવું બાળક
+          <i class="bi bi-person-plus me-1"></i>New Child
         </a>
       </div>
     </div>
@@ -196,14 +196,14 @@
   <div class="modal-dialog modal-dialog-centered">
     <div class="modal-content">
       <div class="modal-header">
-        <h6 class="modal-title fw-bold">યાદીમાંથી હાજરી પૂરો</h6>
+        <h6 class="modal-title fw-bold">Mark Attendance from List</h6>
         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
       </div>
       <form method="post" action="/branch-admin/manual-attendance">
         <div class="modal-body">
-          <label class="form-label small fw-bold text-secondary mb-1">બાકી રહેલા બાળકોમાંથી પસંદ કરો:</label>
+          <label class="form-label small fw-bold text-secondary mb-1">Select from remaining children:</label>
           <select name="child_id" class="form-select" required>
-            <option value="">-- બાળક પસંદ કરો --</option>
+            <option value="">-- Select Child --</option>
             {% for c in pending %}
             <option value="{{ c.id }}">{{ c.name }} ({{ c.child_code }}) - {{ c.bal_mandal.name if c.bal_mandal else '' }}</option>
             {% endfor %}
@@ -211,7 +211,7 @@
         </div>
         <div class="modal-footer">
           <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
-          <button type="submit" class="btn btn-success btn-sm fw-bold">હાજરી પૂરો</button>
+          <button type="submit" class="btn btn-success btn-sm fw-bold">Mark Present</button>
         </div>
       </form>
     </div>
@@ -328,7 +328,7 @@ async function captureAndVerify() {
   setTimeout(() => { flashOverlay.style.opacity = '0'; }, 150);
   faceRing.style.borderColor = '#eab308';
   faceRing.classList.add('scanning');
-  camOverlayLabel.innerHTML = '<i class="bi bi-hourglass-split me-1"></i>ચેક થઈ રહ્યું છે... (Verifying)';
+  camOverlayLabel.innerHTML = '<i class="bi bi-hourglass-split me-1"></i>Verifying face...';
 
   canvas.width = video.videoWidth || 640;
   canvas.height = video.videoHeight || 480;
@@ -362,7 +362,7 @@ async function captureAndVerify() {
         setTimeout(() => {
           isProcessing = false;
           faceRing.style.borderColor = '#10b981';
-          camOverlayLabel.innerHTML = '<i class="bi bi-person-bounding-box me-1"></i>બાળક કેમેરા સામે જુએ એટલે ઓટોમેટિક સ્કેન થશે';
+          camOverlayLabel.innerHTML = '<i class="bi bi-person-bounding-box me-1"></i>Look at the camera to scan automatically';
         }, 300);
       } else {
         showKioskSuccessOverlay(data, selectedDelay);
@@ -372,11 +372,11 @@ async function captureAndVerify() {
       playChime(false);
       faceRing.style.borderColor = '#ef4444';
       faceRing.classList.remove('scanning');
-      camOverlayLabel.innerHTML = '<i class="bi bi-x-circle me-1 text-danger"></i>ચહેરો મેળ ખાતો નથી! ફરી પ્રયાસ કરો.';
+      camOverlayLabel.innerHTML = '<i class="bi bi-x-circle me-1 text-danger"></i>Face not recognized! Please try again.';
       setTimeout(() => {
         isProcessing = false;
         faceRing.style.borderColor = '#10b981';
-        camOverlayLabel.innerHTML = '<i class="bi bi-person-bounding-box me-1"></i>બાળક કેમેરા સામે જુએ એટલે ઓટોમેટિક સ્કેન થશે';
+        camOverlayLabel.innerHTML = '<i class="bi bi-person-bounding-box me-1"></i>Look at the camera to scan automatically';
       }, 1000);
     }
   } catch (err) {
@@ -384,14 +384,14 @@ async function captureAndVerify() {
     isProcessing = false;
     faceRing.style.borderColor = '#10b981';
     faceRing.classList.remove('scanning');
-    camOverlayLabel.innerHTML = '<i class="bi bi-exclamation-triangle me-1"></i>નેટવર્ક ભૂલ. ફરી પ્રયાસ કરો.';
+    camOverlayLabel.innerHTML = '<i class="bi bi-exclamation-triangle me-1"></i>Network error. Please try again.';
   }
 }
 
 let toastHideTimeout = null;
 function showInstantToast(data) {
   instantToastName.textContent = data.child.name;
-  instantToastScore.textContent = '✓ ' + Math.round(data.confidence) + '% Match · ' + (data.child.mandal_name || 'હાજરી નોંધાઈ');
+  instantToastScore.textContent = '✓ ' + Math.round(data.confidence) + '% Match · ' + (data.child.mandal_name || 'Attendance Recorded');
   if (data.child.face_photo) {
     instantToastPhoto.src = '/static/uploads/' + data.child.face_photo;
     instantToastPhoto.style.display = 'block';
@@ -426,7 +426,7 @@ function showKioskSuccessOverlay(data, delaySeconds) {
       kioskSuccessOverlay.style.display = 'none';
       isProcessing = false;
       faceRing.style.borderColor = '#10b981';
-      camOverlayLabel.innerHTML = '<i class="bi bi-person-bounding-box me-1"></i>બાળક કેમેરા સામે જુએ એટલે ઓટોમેટિક સ્કેન થશે';
+      camOverlayLabel.innerHTML = '<i class="bi bi-person-bounding-box me-1"></i>Look at the camera to scan automatically';
     }
   }, 50);
 }
@@ -446,12 +446,12 @@ function addScannedChildRow(data) {
       </small>
     </div>
     <span class="badge bg-success text-white fw-bold" style="font-size:11px;">
-      <i class="bi bi-check-circle-fill me-1"></i>હાજર
+      <i class="bi bi-check-circle-fill me-1"></i>Present
     </span>
   `;
   scannedChildrenList.prepend(row);
   if (data.today_total) {
-    todayCountBadge.textContent = 'કુલ હાજર: ' + data.today_total;
+    todayCountBadge.textContent = 'Total Present: ' + data.today_total;
   }
 }
 

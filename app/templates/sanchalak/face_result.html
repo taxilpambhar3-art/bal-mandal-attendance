@@ -1,5 +1,5 @@
 {% extends "partials/shell.html" %}
-{% block title %}હાજરી પરિણામ — બાલ મંડળ{% endblock %}
+{% block title %}Attendance Result — Bal Mandal{% endblock %}
 {% block sidenav %}{% include "sanchalak/_nav.html" %}{% endblock %}
 {% block content %}
 <div class="d-flex align-items-center gap-2 mb-3">
@@ -7,8 +7,8 @@
     <i class="bi bi-check-lg fs-5"></i>
   </div>
   <div>
-    <h6 class="fw-bold mb-0 text-success">હાજરી સફળતાપૂર્વક નોંધાઈ ગઈ! (Face Matched & Verified)</h6>
-    <small class="text-muted">ચહેરો રજિસ્ટર્ડ પ્રોફાઇલ સાથે મેળ ખાય છે · Attendance Marked</small>
+    <h6 class="fw-bold mb-0 text-success">Attendance Verified Successfully! (Face Matched)</h6>
+    <small class="text-muted">Face matches enrolled profile · Attendance Marked</small>
   </div>
 </div>
 
@@ -18,7 +18,7 @@
     <div class="panel h-100">
       <div class="d-flex justify-content-between align-items-center mb-3">
         <h6 class="mb-0 text-secondary">
-          <i class="bi bi-shield-check text-success me-1"></i>ચહેરો ચકાસણી (Face Match Verified)
+          <i class="bi bi-shield-check text-success me-1"></i>Face Match Verified
         </h6>
         <span class="badge badge-soft-success py-1 px-2">
           <i class="bi bi-check2-circle me-1"></i>{{ confidence or '95' }}% Match Score
@@ -29,7 +29,7 @@
         <!-- Live Scanned Face -->
         <div class="col-6">
           <div class="p-2 border rounded-3 bg-light h-100">
-            <small class="text-muted fw-bold d-block mb-2" style="font-size:11.5px;">૧. લાઈવ સ્કેન કરેલો ચહેરો</small>
+            <small class="text-muted fw-bold d-block mb-2" style="font-size:11.5px;">1. Live Scanned Face</small>
             {% if att.scan_photo %}
             <img src="/static/uploads/{{ att.scan_photo }}" class="img-fluid rounded-3 shadow-sm mb-2" style="height:150px;width:100%;object-fit:cover;border:2px solid #10b981;" alt="Scanned Face">
             {% else %}
@@ -46,7 +46,7 @@
         <!-- Enrolled Face -->
         <div class="col-6">
           <div class="p-2 border rounded-3 bg-light h-100">
-            <small class="text-muted fw-bold d-block mb-2" style="font-size:11.5px;">૨. રજિસ્ટર્ડ પ્રોફાઇલ ફોટો</small>
+            <small class="text-muted fw-bold d-block mb-2" style="font-size:11.5px;">2. Enrolled Profile Photo</small>
             {% if child.face_photo %}
             <img src="/static/uploads/{{ child.face_photo }}" class="img-fluid rounded-3 shadow-sm mb-2" style="height:150px;width:100%;object-fit:cover;border:2px solid #3b82f6;" alt="Enrolled Face">
             {% else %}
@@ -64,8 +64,8 @@
       <div class="alert alert-success py-2 mb-0 d-flex align-items-center gap-2" style="font-size:13px;">
         <i class="bi bi-check-circle-fill text-success fs-5"></i>
         <div>
-          <b>ચહેરો સફળતાપૂર્વક મેળ ખાય છે!</b>
-          <div class="text-muted" style="font-size:12px;">સ્કેન કરેલો ચહેરો અને બાળકની રજિસ્ટર્ડ પ્રોફાઇલ માન્ય છે.</div>
+          <b>Face matched successfully!</b>
+          <div class="text-muted" style="font-size:12px;">The scanned face matches the registered profile.</div>
         </div>
       </div>
     </div>
@@ -76,20 +76,20 @@
     <div class="panel h-100 d-flex flex-column justify-content-between">
       <div>
         <h6 class="mb-3 text-secondary">
-          <i class="bi bi-person-badge me-1"></i>બાળકની વિગત (Child Profile)
+          <i class="bi bi-person-badge me-1"></i>Child Profile
         </h6>
 
         <div class="row g-3 mb-3" style="font-size:13.5px;">
-          <div class="col-6"><span class="text-muted">નામ:</span> <b>{{ child.name }}</b></div>
-          <div class="col-6"><span class="text-muted">બાળક ID:</span> <b>{{ child.child_code }}</b></div>
-          <div class="col-6"><span class="text-muted">વાલીનું નામ:</span> <b>{{ child.guardian_name or '—' }}</b></div>
-          <div class="col-6"><span class="text-muted">ઉંમર:</span> <b>{{ child.age }} વર્ષ</b></div>
-          <div class="col-6"><span class="text-muted">બાલ મંડળ:</span> <b>{{ mandal.name if mandal else '—' }}</b></div>
+          <div class="col-6"><span class="text-muted">Name:</span> <b>{{ child.name }}</b></div>
+          <div class="col-6"><span class="text-muted">Child ID:</span> <b>{{ child.child_code }}</b></div>
+          <div class="col-6"><span class="text-muted">Guardian:</span> <b>{{ child.guardian_name or '—' }}</b></div>
+          <div class="col-6"><span class="text-muted">Age:</span> <b>{{ child.age }} yrs</b></div>
+          <div class="col-6"><span class="text-muted">Bal Mandal:</span> <b>{{ mandal.name if mandal else '—' }}</b></div>
           <div class="col-6"><span class="text-muted">Branch:</span> <b>{{ mandal.branch.name if mandal and mandal.branch else '—' }}</b></div>
-          <div class="col-6"><span class="text-muted">તારીખ:</span> <b>{{ att.attendance_date.strftime('%d %B %Y') }}</b></div>
+          <div class="col-6"><span class="text-muted">Date:</span> <b>{{ att.attendance_date.strftime('%d %B %Y') }}</b></div>
           <div class="col-6"><span class="text-muted">Week:</span> <b>Week {{ att.week_number }}</b></div>
           <div class="col-12">
-            <span class="text-muted">સ્કેન સમય:</span> <b>{{ format_dt(att.scanned_at) }}</b>
+            <span class="text-muted">Scan Time:</span> <b>{{ format_dt(att.scanned_at) }}</b>
           </div>
         </div>
       </div>
@@ -99,7 +99,7 @@
         <div class="d-flex align-items-center justify-content-between mb-2">
           <span class="text-dark fw-semibold">
             <i class="bi bi-clock-history text-success me-1"></i>
-            આગલા બાળક માટે ઓટોમેટિક સ્કેન: <span id="returnCount" class="badge bg-success fs-6 ms-1">5s</span>
+            Auto-camera for next child: <span id="returnCount" class="badge bg-success fs-6 ms-1">5s</span>
           </span>
           <button type="button" id="pauseBtn" class="btn btn-sm btn-outline-secondary py-0 px-2" style="font-size:11.5px;" onclick="toggleAutoReturn()">
             <i class="bi bi-pause-fill"></i> Pause
@@ -109,17 +109,17 @@
           <div id="progressBar" class="progress-bar bg-success progress-bar-striped progress-bar-animated" role="progressbar" style="width: 100%; transition: width 0.1s linear;"></div>
         </div>
         <small class="text-muted d-block mt-2" style="font-size:11.5px;">
-          <i class="bi bi-magic me-1 text-primary"></i>૫ સેકન્ડમાં આપમેળે કેમેરા ચાલુ થશે અને આગલા બાળકનો ફેસ સ્કેન થઈ જશે.
+          <i class="bi bi-magic me-1 text-primary"></i>Camera will automatically open in 5 seconds to scan the next child.
         </small>
       </div>
 
       <!-- Action Bar -->
       <div class="d-flex gap-2 justify-content-end flex-wrap pt-2 border-top">
         <a href="/sanchalak/face-scan" class="btn btn-warning fw-bold shadow-sm">
-          <i class="bi bi-camera-fill me-1"></i>હમણાં જ આગલા બાળકનો ફોટો લો (Next Child Now)
+          <i class="bi bi-camera-fill me-1"></i>Scan Next Child Now
         </a>
         <a href="/sanchalak/" class="btn btn-success fw-bold">
-          <i class="bi bi-check-lg me-1"></i>હાજરી પૂર્ણ કરો (Finish)
+          <i class="bi bi-check-lg me-1"></i>Finish Attendance
         </a>
       </div>
     </div>

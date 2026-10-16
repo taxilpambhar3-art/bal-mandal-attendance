@@ -1,20 +1,20 @@
 {% extends "partials/shell.html" %}
-{% block title %}સંચાલક Dashboard — બાલ મંડળ{% endblock %}
+{% block title %}Sanchalak Dashboard — Bal Mandal{% endblock %}
 {% block sidenav %}{% include "sanchalak/_nav.html" %}{% endblock %}
 {% block content %}
 <!-- Top Header Banner -->
 <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
   <div>
     <h5 class="fw-bold mb-1">
-      <i class="bi bi-person-badge-fill text-warning me-2"></i>{{ mandal.name if mandal else 'બાલ મંડળ' }} — Dashboard
+      <i class="bi bi-person-badge-fill text-warning me-2"></i>{{ mandal.name if mandal else 'Bal Mandal' }} — Dashboard
     </h5>
     <small class="text-muted">
-      સંચાલક: {{ user.full_name }} · {{ week.date.strftime('%d %B %Y') }} · <span class="badge badge-soft-info">{{ week.week_label }} ({{ gujarati_month(week.month) }})</span>
+      Sanchalak: {{ user.full_name }} · {{ week.date.strftime('%d %B %Y') }} · <span class="badge badge-soft-info">{{ week.week_label }} ({{ gujarati_month(week.month) }})</span>
     </small>
   </div>
   <div class="d-flex gap-2">
     <a href="/sanchalak/face-scan" class="btn btn-warning btn-sm fw-bold shadow-sm px-3 py-2">
-      <i class="bi bi-camera-video-fill me-1"></i>Face Scan હાજરી શરૂ કરો
+      <i class="bi bi-camera-video-fill me-1"></i>Start Face Scan Attendance
     </a>
   </div>
 </div>
@@ -25,28 +25,28 @@
     <div class="stat-card">
       <div class="ico bg-warning-subtle text-warning"><i class="bi bi-people-fill"></i></div>
       <h3>{{ total }}</h3>
-      <p>કુલ નોંધાયેલા બાળકો</p>
+      <p>Total Registered Children</p>
     </div>
   </div>
   <div class="col-6 col-lg-3">
     <div class="stat-card">
       <div class="ico bg-success-subtle text-success"><i class="bi bi-check-circle-fill"></i></div>
       <h3>{{ present }}</h3>
-      <p>આ અઠવાડિયે હાજર ({{ week.week_label }})</p>
+      <p>Present This Week ({{ week.week_label }})</p>
     </div>
   </div>
   <div class="col-6 col-lg-3">
     <div class="stat-card">
       <div class="ico bg-danger-subtle text-danger"><i class="bi bi-x-circle-fill"></i></div>
       <h3>{{ absent }}</h3>
-      <p>આ અઠવાડિયે ગેરહાજર</p>
+      <p>Absent This Week</p>
     </div>
   </div>
   <div class="col-6 col-lg-3">
     <div class="stat-card">
       <div class="ico bg-primary-subtle text-primary"><i class="bi bi-graph-up-arrow"></i></div>
       <h3>{{ rate }}%</h3>
-      <p>હાજરી દર (Attendance Rate)</p>
+      <p>Attendance Rate</p>
     </div>
   </div>
 </div>
@@ -57,7 +57,7 @@
   <div class="col-lg-7">
     <div class="panel h-100">
       <div class="d-flex justify-content-between align-items-center mb-3">
-        <h6 class="mb-0"><i class="bi bi-graph-up text-primary me-2"></i>આ મહિનાનો હાજરી ટ્રેન્ડ ({{ gujarati_month(week.month) }} {{ week.year }})</h6>
+        <h6 class="mb-0"><i class="bi bi-graph-up text-primary me-2"></i>Monthly Attendance Trend ({{ gujarati_month(week.month) }} {{ week.year }})</h6>
         <span class="badge badge-soft-warning">Week 1–5 Reset</span>
       </div>
       
@@ -80,7 +80,7 @@
 
       <div class="note-box mt-3 py-2 px-3" style="font-size:12px;">
         <i class="bi bi-info-circle me-1"></i>
-        દર મહિને Week નંબર <b>1</b> થી ફરી શરૂ થાય છે (એક મહિનામાં 4–5 અઠવાડિયા).
+        Week number resets to <b>1</b> each month (4–5 weeks per month).
       </div>
     </div>
   </div>
@@ -90,15 +90,15 @@
     <div class="panel h-100 d-flex flex-column justify-content-between">
       <div>
         <div class="d-flex justify-content-between align-items-center mb-3">
-          <h6 class="mb-0"><i class="bi bi-camera-fill text-danger me-2"></i>આજનું લાઈવ સત્ર (Today's Live)</h6>
-          <span class="badge badge-soft-success"><i class="bi bi-circle-fill me-1" style="font-size:7px;"></i>ચાલુ સત્ર</span>
+          <h6 class="mb-0"><i class="bi bi-camera-fill text-danger me-2"></i>Today's Live Session</h6>
+          <span class="badge badge-soft-success"><i class="bi bi-circle-fill me-1" style="font-size:7px;"></i>Live Session</span>
         </div>
 
         <div class="text-center py-3 bg-light rounded-3 mb-3 border">
           <div style="font-size: 42px; font-weight: 800; color: #059669; line-height: 1;">
             {{ today_present }}<span style="font-size: 20px; color: #94a3b8; font-weight: 500;"> / {{ total }}</span>
           </div>
-          <small class="text-muted fw-semibold d-block mt-1">બાળકો હાજર નોંધાયા</small>
+          <small class="text-muted fw-semibold d-block mt-1">Children marked present</small>
           
           <div class="px-4 mt-3">
             {% set today_rate = (today_present / total * 100)|round if total else 0 %}
@@ -108,7 +108,7 @@
             </div>
             <div class="d-flex justify-content-between mt-1 text-muted" style="font-size:11px;">
               <span>0%</span>
-              <span class="fw-bold text-success">{{ today_rate }}% હાજરી</span>
+              <span class="fw-bold text-success">{{ today_rate }}% Attendance</span>
               <span>100%</span>
             </div>
           </div>
@@ -117,17 +117,17 @@
 
       <div>
         <a href="/sanchalak/face-scan" class="btn btn-warning w-100 fw-bold py-2 shadow-sm mb-2">
-          <i class="bi bi-camera-video me-1"></i>Face Scan થી હાજરી નોંધો
+          <i class="bi bi-camera-video me-1"></i>Mark Attendance with Face Scan
         </a>
         <div class="row g-2">
           <div class="col-6">
             <a href="/sanchalak/reports" class="btn btn-outline-secondary btn-sm w-100">
-              <i class="bi bi-file-earmark-bar-graph me-1"></i>રિપોર્ટ જુઓ
+              <i class="bi bi-file-earmark-bar-graph me-1"></i>View Reports
             </a>
           </div>
           <div class="col-6">
             <a href="/sanchalak/children" class="btn btn-outline-secondary btn-sm w-100">
-              <i class="bi bi-people me-1"></i>બાળકો યાદી
+              <i class="bi bi-people me-1"></i>Children List
             </a>
           </div>
         </div>
@@ -147,7 +147,7 @@ new Chart(ctxDash, {
   data: {
     labels: weekStats.map(s => 'Week ' + s.week),
     datasets: [{
-      label: 'હાજરી %',
+      label: 'Attendance %',
       data: weekStats.map(s => s.rate),
       borderColor: '#f59e0b',
       backgroundColor: 'rgba(245, 158, 11, 0.15)',
@@ -165,7 +165,7 @@ new Chart(ctxDash, {
       legend: { display: false },
       tooltip: {
         callbacks: {
-          label: ctx => ' ' + ctx.raw + '% હાજરી (' + weekStats[ctx.dataIndex].present + ' બાળકો)'
+          label: ctx => ' ' + ctx.raw + '% Attendance (' + weekStats[ctx.dataIndex].present + ' children)'
         }
       }
     },

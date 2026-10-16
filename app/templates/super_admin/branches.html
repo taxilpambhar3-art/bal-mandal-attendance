@@ -8,7 +8,7 @@
     <a href="/super-admin/credentials" class="btn btn-outline-warning btn-sm text-dark bg-white border fw-semibold">
       <i class="bi bi-key-fill text-warning me-1"></i>Login ID & Passwords
     </a>
-    <a href="/super-admin/branches/add" class="btn btn-primary btn-sm"><i class="bi bi-plus-lg me-1"></i>નવી Branch</a>
+    <a href="/super-admin/branches/add" class="btn btn-primary btn-sm"><i class="bi bi-plus-lg me-1"></i>New Branch</a>
   </div>
 </div>
 <div class="panel p-0 overflow-hidden">
@@ -16,8 +16,8 @@
     <table class="table mock mb-0">
       <thead>
         <tr>
-          <th>Code</th><th>Branch</th><th>શહેર</th><th>Admin</th>
-          <th>Mandals</th><th>બાળકો</th><th>Status</th><th></th>
+          <th>Code</th><th>Branch</th><th>City</th><th>Admin</th>
+          <th>Mandals</th><th>Children</th><th>Status</th><th></th>
         </tr>
       </thead>
       <tbody>
@@ -90,7 +90,7 @@
               <a class="btn btn-outline-secondary btn-sm py-1 px-2" href="/super-admin/branches/{{ r.branch.id }}/edit" title="Edit Branch">
                 <i class="bi bi-pencil"></i>
               </a>
-              <form method="post" action="/super-admin/branches/{{ r.branch.id }}/delete" onsubmit="return confirm('શું તમે ખરેખર \'{{ r.branch.name }}\' શાખા ડિલીટ કરવા માંગો છો? આ શાખાના તમામ મંડળો, બાળકો અને હાજરી ડેટા પણ ડિલીટ થઈ જશે.');" style="display:inline;">
+              <form method="post" action="/super-admin/branches/{{ r.branch.id }}/delete" onsubmit="return confirm('Are you sure you want to delete \'{{ r.branch.name }}\' branch? All mandals, children, and attendance records under this branch will also be deleted.');" style="display:inline;">
                 <button type="submit" class="btn btn-outline-danger btn-sm py-1 px-2" title="Delete Branch">
                   <i class="bi bi-trash"></i>
                 </button>
@@ -99,7 +99,7 @@
           </td>
         </tr>
       {% else %}
-        <tr><td colspan="8" class="text-muted p-3">કોઈ Branch નથી</td></tr>
+        <tr><td colspan="8" class="text-muted p-3">No branches found</td></tr>
       {% endfor %}
       </tbody>
     </table>

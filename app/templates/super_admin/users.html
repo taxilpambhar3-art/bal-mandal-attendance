@@ -5,16 +5,16 @@
 <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
   <div>
     <h5 class="fw-bold mb-1">
-      <i class="bi bi-people-fill text-primary me-2"></i>તમામ Admins & Sanchalaks (Staff Directory)
+      <i class="bi bi-people-fill text-primary me-2"></i>All Admins & Sanchalaks (Staff Directory)
     </h5>
-    <small class="text-muted">રાજ્યભરના તમામ Branch Admins અને Bal Mandal Sanchalaks ની સંપૂર્ણ વિગતો</small>
+    <small class="text-muted">Statewide directory of all Branch Admins and Bal Mandal Sanchalaks</small>
   </div>
   <div class="d-flex align-items-center gap-2">
     <a href="/super-admin/credentials" class="btn btn-outline-warning btn-sm text-dark bg-white border fw-semibold shadow-sm">
       <i class="bi bi-key-fill text-warning me-1"></i>Login ID & Passwords
     </a>
     <span class="badge badge-soft-primary px-3 py-2 fw-bold fs-6">
-      કુલ સભ્યો: {{ users|length }}
+      Total Staff: {{ users|length }}
     </span>
   </div>
 </div>
@@ -23,17 +23,17 @@
 <div class="panel py-3 mb-4">
   <form method="get" action="/super-admin/users" class="row g-2 align-items-center">
     <div class="col-md-3">
-      <label class="form-label small fw-bold text-secondary mb-1">Role દ્વારા Filter કરો:</label>
+      <label class="form-label small fw-bold text-secondary mb-1">Filter by Role:</label>
       <select name="role" class="form-select form-select-sm" onchange="this.form.submit()">
-        <option value="">બધા Roles (All Admins & Sanchalaks)</option>
-        <option value="branch_admin" {% if selected_role == 'branch_admin' %}selected{% endif %}>🏢 ફક્ત Branch Admins</option>
-        <option value="sanchalak" {% if selected_role == 'sanchalak' %}selected{% endif %}>👦 ફક્ત Sanchalaks (Coordinators)</option>
+        <option value="">All Roles (Admins & Sanchalaks)</option>
+        <option value="branch_admin" {% if selected_role == 'branch_admin' %}selected{% endif %}>🏢 Branch Admins Only</option>
+        <option value="sanchalak" {% if selected_role == 'sanchalak' %}selected{% endif %}>👦 Sanchalaks Only</option>
       </select>
     </div>
     <div class="col-md-3">
-      <label class="form-label small fw-bold text-secondary mb-1">Branch દ્વારા Filter કરો:</label>
+      <label class="form-label small fw-bold text-secondary mb-1">Filter by Branch:</label>
       <select name="branch_id" class="form-select form-select-sm" onchange="this.form.submit()">
-        <option value="">તમામ Branches</option>
+        <option value="">All Branches</option>
         {% for b in branches %}
         <option value="{{ b.id }}" {% if selected_branch == b.id %}selected{% endif %}>{{ b.name }} ({{ b.city }})</option>
         {% endfor %}
@@ -42,7 +42,7 @@
     <div class="col-md-3">
       <label class="form-label small fw-bold text-secondary mb-1">Bal Mandal Filter:</label>
       <select name="mandal_id" class="form-select form-select-sm" onchange="this.form.submit()">
-        <option value="">તમામ Bal Mandals</option>
+        <option value="">All Bal Mandals</option>
         {% for m in mandals %}
         <option value="{{ m.id }}" {% if selected_mandal == m.id %}selected{% endif %}>{{ m.name }}</option>
         {% endfor %}
@@ -67,7 +67,7 @@
     <table class="table mock table-hover align-middle mb-0">
       <thead>
         <tr>
-          <th>નામ (Full Name)</th>
+          <th>Full Name</th>
           <th>Username</th>
           <th>Role</th>
           <th>Mobile</th>
@@ -138,7 +138,7 @@
           </td>
           <td class="text-end">
             {% if u.id != user.id %}
-            <form method="post" action="/super-admin/users/{{ u.id }}/delete" onsubmit="return confirm('શું તમે ખરેખર યુઝર \'{{ u.full_name }}\' ({{ u.username }}) ને ડિલીટ કરવા માંગો છો?');" style="display:inline;">
+            <form method="post" action="/super-admin/users/{{ u.id }}/delete" onsubmit="return confirm('Are you sure you want to delete user \'{{ u.full_name }}\' ({{ u.username }})?');" style="display:inline;">
               <button type="submit" class="btn btn-outline-danger btn-sm py-1 px-2" title="Delete User">
                 <i class="bi bi-trash"></i>
               </button>
@@ -151,7 +151,7 @@
         {% else %}
         <tr>
           <td colspan="8" class="text-center text-muted py-5">
-            કોઈ Admin અથવા Sanchalak મળ્યા નથી.
+            No Admins or Sanchalaks found.
           </td>
         </tr>
         {% endfor %}
