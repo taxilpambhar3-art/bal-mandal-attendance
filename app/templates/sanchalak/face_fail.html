@@ -1,0 +1,171 @@
+{% extends "partials/shell.html" %}
+{% block title %}હાજરી નિષ્ફળ — બાલ મંડળ{% endblock %}
+{% block sidenav %}{% include "sanchalak/_nav.html" %}{% endblock %}
+{% block content %}
+<div class="d-flex align-items-center gap-2 mb-3">
+  <div class="rounded-circle d-flex align-items-center justify-content-center bg-danger text-white shadow-sm" style="width:40px;height:40px;">
+    <i class="bi bi-x-lg fs-5"></i>
+  </div>
+  <div>
+    <h6 class="fw-bold mb-0 text-danger">હાજરી નિષ્ફળ — ચહેરો મેળ ખાતો નથી (Face Mismatch)</h6>
+    <small class="text-muted">સ્કેન કરેલો ચહેરો રજિસ્ટર્ડ ફોટા સાથે મેળ ખાતો નથી · Attendance Not Marked</small>
+  </div>
+</div>
+
+<div class="row g-3">
+  <!-- Side-by-Side Face Comparison -->
+  <div class="col-lg-7">
+    <div class="panel">
+      <h6 class="mb-3 text-secondary">
+        <i class="bi bi-arrow-left-right me-1"></i>ફોટો સરખામણી (Face Comparison)
+      </h6>
+
+      <div class="row g-3 text-center">
+        <!-- Scanned Photo -->
+        <div class="col-6">
+          <div class="p-3 border rounded-3 bg-light h-100">
+            <small class="text-muted fw-bold d-block mb-2">૧. લાઈવ સ્કેન કરેલો ચહેરો</small>
+            {% if live_photo %}
+            <img src="/static/uploads/{{ live_photo }}" class="img-fluid rounded-3 shadow-sm mb-2" style="max-height:190px;object-fit:cover;border:2px solid #ef4444;" alt="Live Scan">
+            {% else %}
+            <div class="rounded-3 bg-secondary text-white d-flex align-items-center justify-content-center mx-auto mb-2" style="height:160px;max-width:160px;">
+              <i class="bi bi-camera-fill fs-1"></i>
+            </div>
+            {% endif %}
+            <span class="badge badge-soft-danger d-inline-block">
+              <i class="bi bi-x-circle-fill me-1"></i>Live Scanned Face
+            </span>
+          </div>
+        </div>
+
+        <!-- Enrolled Photo -->
+        <div class="col-6">
+          <div class="p-3 border rounded-3 bg-light h-100">
+            <small class="text-muted fw-bold d-block mb-2">૨. બાળકનો રજિસ્ટર્ડ ફોટો</small>
+            {% if child and child.face_photo %}
+            <img src="/static/uploads/{{ child.face_photo }}" class="img-fluid rounded-3 shadow-sm mb-2" style="max-height:190px;object-fit:cover;border:2px solid #3b82f6;" alt="Enrolled Photo">
+            {% else %}
+            <div class="rounded-3 bg-warning text-dark d-flex flex-column align-items-center justify-content-center mx-auto mb-2 p-2" style="height:160px;max-width:160px;">
+              <i class="bi bi-person-x-fill fs-1 mb-1"></i>
+              <small class="fw-bold" style="font-size:11px;">ફોટો નોંધાયેલ નથી</small>
+            </div>
+            {% endif %}
+            <span class="badge badge-soft-primary d-inline-block">
+              <i class="bi bi-shield-check me-1"></i>{{ child.name if child else 'Selected Child' }}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Mismatch Warning Banner -->
+      <div class="alert alert-danger mt-3 mb-0 d-flex align-items-start gap-2">
+        <i class="bi bi-exclamation-triangle-fill fs-5 mt-1 flex-none"></i>
+        <div>
+          <b class="d-block">પરિણામ: {{ message or 'ચહેરો મેળ ખાતો નથી (Face Mismatch)!' }}</b>
+          <div class="small mt-1">
+            ચહેરાની સામ્યતા (Similarity Score): <span class="badge bg-danger">{{ confidence }}%</span> 
+            <span class="text-muted ms-1">(હાજરી માટે ઓછામાં ઓછી ૬૦% સામ્યતા જરૂરી છે)</span>
+          </div>
+          <div class="small text-danger-emphasis mt-1">
+            સ્કેન કરેલો ચહેરો અને પસંદ કરેલા બાળકના રજિસ્ટર્ડ ફોટા વચ્ચે મેળ ખાતો નથી, તેથી હાજરી નોંધવામાં આવી નથી.
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Selected Child Details & Next Actions -->
+  <div class="col-lg-5">
+    <div class="panel h-100 d-flex flex-column justify-content-between">
+      <div>
+        <h6 class="mb-3 text-secondary">
+          <i class="bi bi-person-badge me-1"></i>પસંદ કરેલ બાળકની વિગત
+        </h6>
+
+        {% if child %}
+        <div class="row g-2 mb-3" style="font-size:13.5px;">
+          <div class="col-6"><span class="text-muted">નામ:</span> <b>{{ child.name }}</b></div>
+          <div class="col-6"><span class="text-muted">બાળક ID:</span> <b>{{ child.child_code }}</b></div>
+          <div class="col-6"><span class="text-muted">ઉંમર:</span> <b>{{ child.age }} વર્ષ</b></div>
+          <div class="col-6"><span class="text-muted">વાલી:</span> <b>{{ child.guardian_name or '—' }}</b></div>
+          <div class="col-12"><span class="text-muted">બાલ મંડળ:</span> <b>{{ mandal.name if mandal else '—' }}</b></div>
+        </div>
+        {% else %}
+        <p class="text-muted small">કોઈ બાળક ઓળખાયું નથી.</p>
+        {% endif %}
+
+        <div class="note-box py-2 px-3 mb-3" style="font-size:12px;">
+          <i class="bi bi-lightbulb me-1 text-warning"></i>
+          <b>શું કરવું?</b>
+          <ul class="mb-0 ps-3 mt-1 text-muted">
+            <li>કેમેરા સામે સાચું બાળક ઊભું રાખો.</li>
+            <li>ડ્રોપડાઉનમાંથી સાચું બાળક પસંદ કરો.</li>
+            <li>જો બાળકનો દેખાવ બદલાયો હોય તો પ્રોફાઇલમાં નવો ફોટો અપડેટ કરો.</li>
+          </ul>
+        </div>
+      </div>
+
+        <!-- Auto Retry Countdown Banner -->
+        <div class="p-2 my-2 rounded-3 bg-light border d-flex align-items-center justify-content-between" style="font-size:12.5px;">
+          <span class="text-muted">
+            <i class="bi bi-arrow-repeat text-warning me-1"></i>
+            ફરીથી સ્કેન: <b id="failRetryCount" class="text-warning">5s</b> માં શરૂ થશે
+          </span>
+          <button type="button" id="failPauseBtn" class="btn btn-sm btn-outline-secondary py-0 px-2" style="font-size:11px;" onclick="toggleFailRetry()">
+            Pause
+          </button>
+        </div>
+
+        <a href="/sanchalak/face-scan" class="btn btn-warning fw-bold shadow-sm">
+          <i class="bi bi-arrow-repeat me-1"></i>હમણાં ફરીથી સ્કેન કરો (Try Again Now)
+        </a>
+        
+        {% if child %}
+        <form method="post" action="/sanchalak/manual-attendance">
+          <input type="hidden" name="child_id" value="{{ child.id }}">
+          <input type="hidden" name="live_photo" value="{{ live_photo or '' }}">
+          <button type="submit" class="btn btn-outline-secondary btn-sm w-100" onclick="return confirm('શું તમે આ બાળકની મેન્યુઅલ હાજરી કન્ફર્મ કરવા માંગો છો?')">
+            <i class="bi bi-check-circle me-1"></i>સંચાલક મેન્યુઅલ મંજૂરી (Manual Override)
+          </button>
+        </form>
+        {% endif %}
+
+        <a href="/sanchalak/children" class="btn btn-outline-primary btn-sm">
+          <i class="bi bi-person-lines-fill me-1"></i>બાળકોની યાદી જુઓ / ફોટો અપડેટ કરો
+        </a>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let failMs = 5000;
+let isFailPaused = false;
+const failRetryCountEl = document.getElementById('failRetryCount');
+const failPauseBtnEl = document.getElementById('failPauseBtn');
+
+const failTimer = setInterval(() => {
+  if (isFailPaused) return;
+  failMs -= 200;
+  const sec = Math.ceil(failMs / 1000);
+  if (failRetryCountEl) failRetryCountEl.innerText = sec + 's';
+  if (failMs <= 0) {
+    clearInterval(failTimer);
+    window.location.href = '/sanchalak/face-scan';
+  }
+}, 200);
+
+function toggleFailRetry() {
+  isFailPaused = !isFailPaused;
+  if (isFailPaused) {
+    failPauseBtnEl.innerText = 'Resume';
+    if (failRetryCountEl) failRetryCountEl.innerText = 'Paused';
+  } else {
+    failPauseBtnEl.innerText = 'Pause';
+    if (failRetryCountEl) failRetryCountEl.innerText = Math.ceil(failMs / 1000) + 's';
+  }
+}
+</script>
+{% endblock %}

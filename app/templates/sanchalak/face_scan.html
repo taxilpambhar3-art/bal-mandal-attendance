@@ -1,0 +1,769 @@
+{% extends "partials/shell.html" %}
+{% block title %}Face Scan હાજરી — બાલ મંડળ{% endblock %}
+{% block sidenav %}{% include "sanchalak/_nav.html" %}{% endblock %}
+{% block content %}
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+  <div>
+    <h6 class="fw-bold mb-0">ઓટોમેટિક Face Scan હાજરી (Auto Attendance Kiosk)</h6>
+    <small class="text-muted">{{ mandal.name if mandal else 'બાલ મંડળ' }} · {{ week.date.strftime('%d %B %Y') }} · {{ week.week_label }}</small>
+  </div>
+  <div class="d-flex align-items-center gap-2 flex-wrap">
+    <div class="d-flex align-items-center gap-1 bg-light py-1 px-3 border rounded-pill shadow-sm" style="font-size:12px;">
+      <span class="text-secondary fw-bold"><i class="bi bi-lightning-charge-fill text-warning me-1"></i>સ્કેન સ્પીડ:</span>
+      <select id="kioskDelaySelect" class="form-select form-select-sm border-0 bg-transparent fw-bold text-success py-0 ps-1 pe-4" style="width:auto;cursor:pointer;font-size:12px;">
+        <option value="0" selected>⚡ 0s (Instant / તુરંત)</option>
+        <option value="2">⏱️ 2s</option>
+        <option value="5">⏱️ 5s</option>
+      </select>
+    </div>
+    <div class="form-check form-switch bg-light py-1 px-3 border rounded-pill d-flex align-items-center gap-2 m-0 shadow-sm">
+      <input class="form-check-input ms-0 mt-0" type="checkbox" id="autoScanToggle" checked style="cursor:pointer;">
+      <label class="form-check-label small fw-bold text-success mb-0" for="autoScanToggle" style="cursor:pointer;" id="autoScanLabel">
+        <i class="bi bi-magic me-1"></i>Auto-Scan
+      </label>
+    </div>
+    <span class="badge badge-soft-success py-2 px-3" id="cameraStatus">
+      <i class="bi bi-circle-fill me-1" style="font-size:8px;"></i>કેમેરા ચાલુ
+    </span>
+  </div>
+</div>
+
+<div class="row g-3">
+  <!-- Left Side: Camera & Live Scanner -->
+  <div class="col-lg-7">
+    <div class="panel">
+      <!-- Camera Viewport with Scanner Ring & Overlays -->
+      <div class="camera-box position-relative" id="cameraContainer" style="aspect-ratio: 4/3; min-height: 280px; background:#0f172a; border-radius:14px; overflow:hidden;">
+        <video id="video" autoplay playsinline muted style="width:100%;height:100%;object-fit:cover;"></video>
+        <canvas id="canvas" style="display:none;"></canvas>
+        <canvas id="motionCanvas" style="display:none;"></canvas>
+
+        <!-- Dynamic Scanning Target Ring -->
+        <div class="face-ring" id="faceRing"></div>
+
+        <!-- Camera Flash Overlay Effect -->
+        <div id="flashOverlay" style="position:absolute;inset:0;background:#ffffff;opacity:0;pointer-events:none;transition:opacity 0.25s ease;z-index:10;"></div>
+
+        <!-- Live Status Tag -->
+        <div style="position:absolute;top:12px;left:12px;color:#fff;background:rgba(0,0,0,0.6);padding:3px 12px;border-radius:20px;font-size:11.5px;backdrop-filter:blur(4px);z-index:5;">
+          <span class="spinner-grow spinner-grow-sm text-danger me-1" style="width:8px;height:8px;" role="status"></span>
+          <b>LIVE CAMERA</b>
+        </div>
+
+        <!-- Auto Countdown / Scan Progress Bar in Camera -->
+        <div id="autoScanProgressContainer" style="position:absolute;top:12px;right:12px;display:none;z-index:5;">
+          <div class="badge bg-success py-1 px-3 shadow" style="font-size:12px;">
+            <i class="bi bi-lightning-charge-fill me-1"></i>Auto Scanning: <span id="countdownSec">1s</span>
+          </div>
+        </div>
+
+        <!-- Target Guide Overlay Label -->
+        <div class="cam-label" id="camOverlayLabel" style="z-index:5;">
+          <i class="bi bi-person-bounding-box me-1"></i>બાળક કેમેરા સામે જુએ એટલે ઓટોમેટિક સ્કેન થશે
+        </div>
+
+        <!-- 0-Second Instant Success Floating Toast on Camera -->
+        <div id="instantSuccessToast" class="position-absolute" style="top:12px; left:12px; right:12px; background:rgba(16,185,129,0.95); backdrop-filter:blur(8px); color:#fff; border-radius:12px; padding:8px 12px; display:none; align-items:center; justify-content:space-between; z-index:25; box-shadow:0 8px 24px rgba(0,0,0,0.35); transition:all 0.25s ease;">
+          <div class="d-flex align-items-center gap-2">
+            <img id="instantToastPhoto" src="" style="width:38px;height:38px;border-radius:50%;object-fit:cover;border:2px solid #fff;" alt="">
+            <div>
+              <div class="fw-bold" style="font-size:13.5px;" id="instantToastName">તક્ષિલ પાંભર</div>
+              <small style="font-size:11px;" id="instantToastScore" class="text-white-50">✓ 100% Match · હાજરી નોંધાઈ</small>
+            </div>
+          </div>
+          <span class="badge bg-white text-success fw-bold px-2 py-1 shadow-sm" style="font-size:11px;">
+            <i class="bi bi-lightning-charge-fill me-1 text-warning"></i>0s તુરંત હાજરી
+          </span>
+        </div>
+
+        <!-- In-Camera Success Kiosk Overlay (Used when 2s or 5s delay selected) -->
+        <div id="kioskSuccessOverlay" class="position-absolute" style="inset:0; background:rgba(15,23,42,0.92); backdrop-filter:blur(8px); display:none; flex-direction:column; justify-content:center; align-items:center; z-index:20; padding:20px; text-align:center;">
+          <div class="rounded-circle d-flex align-items-center justify-content-center bg-success text-white mb-2 shadow" style="width:56px;height:56px;">
+            <i class="bi bi-check-lg fs-1"></i>
+          </div>
+          <h5 class="fw-bold text-white mb-1" id="kioskSuccessName">આર્ય પટેલ</h5>
+          <span class="badge badge-soft-success mb-2 px-3 py-1 fs-6" id="kioskSuccessScore">
+            <i class="bi bi-shield-check me-1"></i>95% Match Verified
+          </span>
+          <div class="d-flex align-items-center gap-3 my-2">
+            <div>
+              <small class="text-white-50 d-block mb-1" style="font-size:11px;">લાઈવ સ્કેન</small>
+              <img id="kioskLivePhoto" src="" class="rounded-3 shadow" style="width:68px;height:68px;object-fit:cover;border:2px solid #10b981;" alt="Live">
+            </div>
+            <i class="bi bi-arrow-left-right text-muted fs-5"></i>
+            <div>
+              <small class="text-white-50 d-block mb-1" style="font-size:11px;">રજિસ્ટર્ડ પ્રોફાઇલ</small>
+              <img id="kioskEnrolledPhoto" src="" class="rounded-3 shadow" style="width:68px;height:68px;object-fit:cover;border:2px solid #3b82f6;" alt="Enrolled">
+            </div>
+          </div>
+          
+          <!-- 5-Second Countdown Bar -->
+          <div class="w-100 mt-2" style="max-width:300px;">
+            <div class="d-flex justify-content-between align-items-center text-white-50 mb-1" style="font-size:12px;">
+              <span>આગલા બાળક માટે ઓટો-કેમેરા:</span>
+              <b class="text-success fs-6" id="kioskCountdownSec">5s</b>
+            </div>
+            <div class="progress" style="height:6px; background:rgba(255,255,255,0.2); border-radius:10px;">
+              <div id="kioskProgressBar" class="progress-bar bg-success progress-bar-striped progress-bar-animated" style="width:100%; transition: width 0.1s linear;"></div>
+            </div>
+          </div>
+          
+          <button type="button" class="btn btn-warning btn-sm fw-bold mt-3 px-4 shadow" onclick="dismissKioskSuccessNow()">
+            <i class="bi bi-camera-fill me-1"></i>હમણાં જ આગલા બાળકનું સ્કેન કરો (Next Now)
+          </button>
+        </div>
+
+        <!-- In-Camera Mismatch / Fail Overlay -->
+        <div id="kioskFailOverlay" class="position-absolute" style="inset:0; background:rgba(15,23,42,0.92); backdrop-filter:blur(8px); display:none; flex-direction:column; justify-content:center; align-items:center; z-index:20; padding:20px; text-align:center;">
+          <div class="rounded-circle d-flex align-items-center justify-content-center bg-danger text-white mb-2 shadow" style="width:56px;height:56px;">
+            <i class="bi bi-x-lg fs-1"></i>
+          </div>
+          <h5 class="fw-bold text-danger mb-1">હાજરી નિષ્ફળ (Face Mismatch)</h5>
+          <p class="text-white-50 small mb-2" id="kioskFailMsg">ચહેરો મેળ ખાતો નથી</p>
+          <span class="badge bg-danger mb-3 px-3 py-1" id="kioskFailScore">35% Mismatch</span>
+          
+          <div class="w-100 mt-1 mb-2" style="max-width:280px;">
+            <div class="d-flex justify-content-between align-items-center text-white-50 mb-1" style="font-size:12px;">
+              <span>ઓટોમેટિક રીટ્રાય:</span>
+              <b class="text-warning fs-6" id="failCountdownSec">4s</b>
+            </div>
+          </div>
+
+          <button type="button" class="btn btn-warning btn-sm fw-bold px-4 shadow" onclick="dismissKioskFailNow()">
+            <i class="bi bi-arrow-repeat me-1"></i>ફરીથી સ્કેન કરો (Try Again)
+          </button>
+        </div>
+      </div>
+
+      <!-- Scan Form -->
+      <form id="scanForm" method="post" action="/sanchalak/face-scan" class="mt-3">
+        <input type="hidden" name="photo_data" id="photoData">
+        <input type="hidden" name="client_verified" id="clientVerified">
+        <input type="hidden" name="client_score" id="clientScore">
+
+        <!-- Child Selector Dropdown -->
+        <div class="mb-3">
+          <label class="form-label small fw-bold text-secondary d-flex justify-content-between align-items-center">
+            <span>બાળક ઓળખ પદ્ધતિ (Recognition Mode):</span>
+            <small class="text-primary fw-normal">Auto-Detect અથવા ચોક્કસ બાળક પસંદ કરો</small>
+          </label>
+          <select name="child_id" id="childSelect" class="form-select" onchange="onChildSelectionChange()">
+            <option value="auto" selected>✨ ⭐ ઓટો-ડિટેક્ટ (Auto-Detect Any Child in Mandal)</option>
+            {% if pending %}
+              <optgroup label="બાકી રહેલા બાળકો ({{ pending|length }})">
+                {% for c in pending %}
+                <option value="{{ c.id }}" data-name="{{ c.name }}" data-code="{{ c.child_code }}" data-photo="{{ c.face_photo or '' }}">
+                  {{ c.name }} ({{ c.child_code }}) {% if not c.face_photo %}[⚠️ No Photo]{% endif %}
+                </option>
+                {% endfor %}
+              </optgroup>
+            {% endif %}
+            <optgroup label="બધા નોંધાયેલા બાળકો">
+              {% for c in children %}
+              <option value="{{ c.id }}" data-name="{{ c.name }}" data-code="{{ c.child_code }}" data-photo="{{ c.face_photo or '' }}">
+                {{ c.name }} ({{ c.child_code }}) {% if not c.face_photo %}[⚠️ No Photo]{% endif %}
+              </option>
+              {% endfor %}
+            </optgroup>
+          </select>
+        </div>
+
+        <!-- Reference Enrolled Photo Preview Card -->
+        <div id="referenceCard" class="p-2 mb-3 border rounded-3 bg-light d-flex align-items-center justify-content-between">
+          <div class="d-flex align-items-center gap-2">
+            <img id="refPhotoImg" src="" style="width:44px;height:44px;border-radius:50%;object-fit:cover;border:2px solid #3b82f6;display:none;" alt="">
+            <div id="refPhotoPlaceholder" style="width:44px;height:44px;border-radius:50%;background:#e0f2fe;display:flex;align-items:center;justify-content:center;color:#0284c7;font-weight:bold;">
+              <i class="bi bi-people-fill fs-5"></i>
+            </div>
+            <div>
+              <small class="text-muted d-block fw-semibold" style="font-size:11px;">ચકાસણી મોડ (Matching Mode):</small>
+              <span id="refChildName" class="fw-bold text-dark" style="font-size:13px;">ઓટો-ડિટેક્ટ (બધા બાળકોમાંથી આપમેળે ઓળખશે)</span>
+            </div>
+          </div>
+          <span id="refBadge" class="badge badge-soft-primary"><i class="bi bi-stars me-1"></i>Auto AI</span>
+        </div>
+
+        <!-- Buttons & Flip Cam -->
+        <div class="d-flex gap-2">
+          <button type="button" id="captureBtn" class="btn btn-warning fw-bold flex-grow-1 shadow-sm">
+            <i class="bi bi-camera-fill me-1"></i>મેન્યુઅલ સ્કેન કરો (Manual Capture)
+          </button>
+          <button type="button" id="switchCamBtn" class="btn btn-outline-secondary" title="કેમેરો બદલો">
+            <i class="bi bi-arrow-clockwise"></i>
+          </button>
+        </div>
+      </form>
+
+      <div class="note-box mt-3 py-2 px-3" style="font-size:12px;">
+        <i class="bi bi-lightning-charge-fill me-1 text-warning"></i>
+        <b>ઓટોમેટિક હેન્ડ્સ-ફ્રી સ્કેન (0s Instant):</b> કોઈ બટન દબાવવાની જરૂર નથી! બાળક કેમેરા સામે આવે એટલે તુરંત સ્કેન થશે અને ૦ સેકન્ડમાં (વિના વિલંબે) આગલા બાળક માટે કેમેરા સતત ચાલુ રહેશે.
+      </div>
+    </div>
+  </div>
+
+  <!-- Right Side: Today's Attendance Feed -->
+  <div class="col-lg-5">
+    <div class="panel h-100">
+      <div class="d-flex justify-content-between align-items-center mb-3">
+        <h6 class="mb-0 text-secondary">
+          <i class="bi bi-check2-circle text-success me-1"></i>આજે હાજર થયેલા (Verified)
+        </h6>
+        <span class="badge badge-soft-success fw-bold" id="todayCountBadge">{{ today_list|length }}</span>
+      </div>
+
+      <div style="max-height:430px;overflow-y:auto;" class="pe-1" id="todayFeed">
+        {% for a in today_list %}
+        <div class="d-flex align-items-center gap-2 p-2 border-bottom">
+          {% if a.scan_photo %}
+          <img src="/static/uploads/{{ a.scan_photo }}" class="rounded-circle shadow-sm" style="width:38px;height:38px;object-fit:cover;flex:none;border:2px solid #10b981;" alt="">
+          {% elif a.child.face_photo %}
+          <img src="/static/uploads/{{ a.child.face_photo }}" class="rounded-circle shadow-sm" style="width:38px;height:38px;object-fit:cover;flex:none;border:2px solid #3b82f6;" alt="">
+          {% else %}
+          <div style="width:38px;height:38px;border-radius:50%;background:#cbd5e1;flex:none;display:flex;align-items:center;justify-content:center;color:#475569;font-weight:600;">
+            {{ a.child.name[0] }}
+          </div>
+          {% endif %}
+          <div class="flex-grow-1">
+            <div style="font-size:13px;" class="fw-semibold">{{ a.child.name }}</div>
+            <small class="text-muted">{{ format_dt(a.scanned_at) }} · <span class="text-success fw-bold">✓ Verified</span></small>
+          </div>
+          <i class="bi bi-check-circle-fill text-success fs-5"></i>
+        </div>
+        {% else %}
+        <div class="text-center py-5 text-muted small" id="emptyFeedNotice">
+          <i class="bi bi-camera fs-2 d-block text-secondary mb-2"></i>
+          આજે હજુ કોઈ હાજરી નોંધાઈ નથી.<br>બાળક કેમેરા સામે ઊભું રહેતાં જ હાજરી નોંધાશે.
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<!-- Local Face API for real-time neural face descriptors -->
+<script src="/static/js/face-api.min.js"></script>
+
+<script>
+(function() {
+  const video = document.getElementById('video');
+  const canvas = document.getElementById('canvas');
+  const captureBtn = document.getElementById('captureBtn');
+  const switchCamBtn = document.getElementById('switchCamBtn');
+  const photoDataInput = document.getElementById('photoData');
+  const clientVerifiedInput = document.getElementById('clientVerified');
+  const clientScoreInput = document.getElementById('clientScore');
+  const scanForm = document.getElementById('scanForm');
+  const cameraStatus = document.getElementById('cameraStatus');
+  const childSelect = document.getElementById('childSelect');
+  const refPhotoImg = document.getElementById('refPhotoImg');
+  const refPhotoPlaceholder = document.getElementById('refPhotoPlaceholder');
+  const refChildName = document.getElementById('refChildName');
+  const refBadge = document.getElementById('refBadge');
+  const camOverlayLabel = document.getElementById('camOverlayLabel');
+  const faceRing = document.getElementById('faceRing');
+  const autoScanToggle = document.getElementById('autoScanToggle');
+  const autoScanLabel = document.getElementById('autoScanLabel');
+  const autoScanProgressContainer = document.getElementById('autoScanProgressContainer');
+  const countdownSec = document.getElementById('countdownSec');
+  const flashOverlay = document.getElementById('flashOverlay');
+
+  let currentStream = null;
+  let useFacingMode = 'user';
+  let isAiModelLoaded = false;
+  let enrolledDescriptor = null;
+  let isAutoScanning = true;
+  let isScanTriggered = false;
+  let faceHoldTicks = 0;
+  let REQUIRED_HOLD_TICKS = 1; // Snappy 0s Instant trigger
+
+  const kioskDelaySelect = document.getElementById('kioskDelaySelect');
+  if (kioskDelaySelect) {
+    kioskDelaySelect.addEventListener('change', () => {
+      REQUIRED_HOLD_TICKS = kioskDelaySelect.value === '0' ? 1 : 2;
+    });
+  }
+
+  let kioskTimer = null;
+  let failTimer = null;
+  let toastTimer = null;
+
+  // Audio Chime using Web Audio API
+  function playScanChime() {
+    try {
+      const ctx = new (window.AudioContext || window.webkitAudioContext)();
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(880, ctx.currentTime);
+      gain.gain.setValueAtTime(0.2, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.28);
+      osc.start();
+      osc.stop(ctx.currentTime + 0.28);
+    } catch (e) {}
+  }
+
+  // Camera Flash Effect
+  function triggerFlashEffect() {
+    flashOverlay.style.opacity = '0.85';
+    setTimeout(() => {
+      flashOverlay.style.opacity = '0';
+    }, 180);
+  }
+
+  // Start Camera
+  async function startCamera() {
+    if (currentStream) {
+      currentStream.getTracks().forEach(t => t.stop());
+    }
+    try {
+      const constraints = {
+        video: {
+          facingMode: useFacingMode,
+          width: { ideal: 640 },
+          height: { ideal: 480 }
+        },
+        audio: false
+      };
+      currentStream = await navigator.mediaDevices.getUserMedia(constraints);
+      video.srcObject = currentStream;
+      cameraStatus.innerHTML = '<i class="bi bi-circle-fill me-1" style="font-size:8px;"></i>કેમેરા ચાલુ';
+      cameraStatus.className = 'badge badge-soft-success py-2 px-3';
+    } catch (err) {
+      console.warn('Camera error:', err);
+      cameraStatus.innerHTML = '<i class="bi bi-exclamation-triangle-fill me-1"></i>કેમેરા ઍક્સેસ નથી';
+      cameraStatus.className = 'badge badge-soft-warning py-2 px-3';
+    }
+  }
+
+  startCamera();
+
+  switchCamBtn.addEventListener('click', () => {
+    useFacingMode = useFacingMode === 'user' ? 'environment' : 'user';
+    startCamera();
+  });
+
+  // Toggle Auto-Scan
+  autoScanToggle.addEventListener('change', () => {
+    isAutoScanning = autoScanToggle.checked;
+    if (isAutoScanning) {
+      autoScanLabel.innerText = 'Auto-Scan Active (Hands-Free)';
+      autoScanLabel.className = 'form-check-label small fw-bold text-success mb-0';
+    } else {
+      autoScanLabel.innerText = 'Manual Mode (Click to Scan)';
+      autoScanLabel.className = 'form-check-label small fw-bold text-secondary mb-0';
+      resetAutoScanUI();
+    }
+  });
+
+  // Load Face API Models
+  async function loadFaceModels() {
+    try {
+      if (typeof faceapi !== 'undefined') {
+        const MODEL_URL = '/static/models';
+        await Promise.all([
+          faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL),
+          faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL),
+          faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL)
+        ]);
+        isAiModelLoaded = true;
+        updateEnrolledReference();
+      }
+    } catch (err) {
+      console.warn('Face API models fallback to canvas motion detector:', err);
+    }
+  }
+
+  loadFaceModels();
+
+  // Child selection change handler
+  window.onChildSelectionChange = function() {
+    updateEnrolledReference();
+  };
+
+  async function updateEnrolledReference() {
+    const selectedOpt = childSelect.options[childSelect.selectedIndex];
+    if (!selectedOpt) return;
+
+    if (selectedOpt.value === 'auto') {
+      enrolledDescriptor = null;
+      refChildName.innerText = 'ઓટો-ડિટેક્ટ (બધા બાળકોમાંથી આપમેળે ઓળખશે)';
+      refPhotoImg.style.display = 'none';
+      refPhotoPlaceholder.style.display = 'flex';
+      refBadge.className = 'badge badge-soft-primary';
+      refBadge.innerHTML = '<i class="bi bi-stars me-1"></i>Auto AI';
+      return;
+    }
+
+    const photoName = selectedOpt.getAttribute('data-photo');
+    const childName = selectedOpt.getAttribute('data-name');
+    const childCode = selectedOpt.getAttribute('data-code');
+
+    refChildName.innerText = childName + ' (' + childCode + ')';
+
+    if (photoName) {
+      refPhotoImg.src = '/static/uploads/' + photoName;
+      refPhotoImg.style.display = 'block';
+      refPhotoPlaceholder.style.display = 'none';
+      refBadge.className = 'badge badge-soft-success';
+      refBadge.innerHTML = '<i class="bi bi-check-lg me-1"></i>Enrolled Face';
+
+      if (isAiModelLoaded) {
+        enrolledDescriptor = null;
+        try {
+          const img = new Image();
+          img.crossOrigin = 'anonymous';
+          img.src = '/static/uploads/' + photoName;
+          await img.decode();
+          const detection = await faceapi.detectSingleFace(img, new faceapi.TinyFaceDetectorOptions())
+            .withFaceLandmarks()
+            .withFaceDescriptor();
+          if (detection) {
+            enrolledDescriptor = detection.descriptor;
+          }
+        } catch (e) {
+          console.log('Error computing reference descriptor:', e);
+        }
+      }
+    } else {
+      enrolledDescriptor = null;
+      refPhotoImg.style.display = 'none';
+      refPhotoPlaceholder.style.display = 'flex';
+      refBadge.className = 'badge badge-soft-warning';
+      refBadge.innerHTML = '<i class="bi bi-exclamation-triangle me-1"></i>No Face Photo';
+    }
+  }
+
+  // Initial reference update
+  updateEnrolledReference();
+
+  function resetAutoScanUI() {
+    faceHoldTicks = 0;
+    autoScanProgressContainer.style.display = 'none';
+    faceRing.classList.remove('face-detected');
+    camOverlayLabel.innerHTML = '<i class="bi bi-person-bounding-box me-1"></i>બાળક કેમેરા સામે જુએ એટલે ઓટોમેટિક સ્કેન થશે';
+  }
+
+  // Real-Time Detection Loop (Runs every 280ms)
+  setInterval(async () => {
+    if (!isAutoScanning || isScanTriggered || !video.videoWidth) return;
+
+    let facePresent = false;
+
+    // Method 1: Face-API Tiny Face Detector
+    if (isAiModelLoaded) {
+      try {
+        const detection = await faceapi.detectSingleFace(
+          video,
+          new faceapi.TinyFaceDetectorOptions({ inputSize: 224, scoreThreshold: 0.45 })
+        );
+        if (detection) {
+          facePresent = true;
+        }
+      } catch (err) {}
+    }
+
+    // Method 2: High-speed skin color & luminance canvas analysis fallback
+    if (!facePresent) {
+      facePresent = checkCenterSkinCluster();
+    }
+
+    if (facePresent) {
+      faceHoldTicks++;
+      faceRing.classList.add('face-detected');
+      autoScanProgressContainer.style.display = 'block';
+
+      const remainingSec = Math.max(0, Math.ceil((REQUIRED_HOLD_TICKS - faceHoldTicks) * 0.3));
+      countdownSec.innerText = remainingSec > 0 ? remainingSec + 's' : 'Scanning...';
+      camOverlayLabel.innerHTML = '<span class="text-success fw-bold"><i class="bi bi-check-circle-fill me-1"></i>ચહેરો પકડાયો! સ્થિર રહો...</span>';
+
+      if (faceHoldTicks >= REQUIRED_HOLD_TICKS) {
+        // Trigger Automatic Scan!
+        isScanTriggered = true;
+        playScanChime();
+        triggerFlashEffect();
+        camOverlayLabel.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>ઓટો-સ્કેન ચકાસણી થાય છે...';
+        await performCaptureAndSubmit();
+      }
+    } else {
+      if (faceHoldTicks > 0) {
+        faceHoldTicks--;
+      } else {
+        resetAutoScanUI();
+      }
+    }
+  }, 280);
+
+  // Fast skin pixel density check in the center oval region
+  function checkCenterSkinCluster() {
+    try {
+      const motionCanvas = document.getElementById('motionCanvas');
+      motionCanvas.width = 120;
+      motionCanvas.height = 90;
+      const mctx = motionCanvas.getContext('2d');
+      mctx.drawImage(video, 0, 0, 120, 90);
+      const imgData = mctx.getImageData(30, 15, 60, 60).data;
+      let skinPixels = 0;
+      const totalPixels = 60 * 60;
+      for (let i = 0; i < imgData.length; i += 4) {
+        const r = imgData[i];
+        const g = imgData[i + 1];
+        const b = imgData[i + 2];
+        if (r > 95 && g > 40 && b > 20 && (r - g) > 15 && r > b) {
+          skinPixels++;
+        }
+      }
+      return (skinPixels / totalPixels) > 0.22;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  // Manual Click Button
+  captureBtn.addEventListener('click', async () => {
+    isScanTriggered = true;
+    playScanChime();
+    triggerFlashEffect();
+    captureBtn.disabled = true;
+    captureBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>સ્કેનિંગ...';
+    await performCaptureAndSubmit();
+  });
+
+  // Capture frame and submit seamlessly via AJAX without leaving camera!
+  async function performCaptureAndSubmit() {
+    const width = video.videoWidth || 640;
+    const height = video.videoHeight || 480;
+    canvas.width = width;
+    canvas.height = height;
+    const ctx = canvas.getContext('2d');
+
+    if (video.videoWidth) {
+      ctx.drawImage(video, 0, 0, width, height);
+    } else {
+      ctx.fillStyle = '#0f172a';
+      ctx.fillRect(0, 0, width, height);
+      ctx.fillStyle = '#38bdf8';
+      ctx.font = '24px sans-serif';
+      ctx.fillText('Automatic Attendance Scan', 180, 240);
+    }
+
+    const dataUrl = canvas.toDataURL('image/jpeg', 0.88);
+    photoDataInput.value = dataUrl;
+
+    // If client Face-API has enrolled descriptor for specific child:
+    if (isAiModelLoaded && enrolledDescriptor && video.videoWidth) {
+      try {
+        const liveDetection = await faceapi.detectSingleFace(video, new faceapi.TinyFaceDetectorOptions())
+          .withFaceLandmarks()
+          .withFaceDescriptor();
+
+        if (liveDetection) {
+          const dist = faceapi.euclideanDistance(enrolledDescriptor, liveDetection.descriptor);
+          const isMatch = dist < 0.58;
+          const score = Math.max(10, Math.min(99, Math.round((1.0 - (dist / 0.80)) * 100)));
+          clientVerifiedInput.value = isMatch ? 'true' : 'false';
+          clientScoreInput.value = score;
+        } else {
+          clientVerifiedInput.value = 'false';
+          clientScoreInput.value = '25';
+        }
+      } catch (err) {
+        console.warn('Client match eval fallback:', err);
+      }
+    }
+
+    // Submit seamlessly via AJAX
+    try {
+      const formData = new FormData(scanForm);
+      const resp = await fetch('/sanchalak/face-scan?ajax=1', {
+        method: 'POST',
+        body: formData,
+        headers: {
+          'X-Requested-With': 'XMLHttpRequest'
+        }
+      });
+      const data = await resp.json();
+
+      if (data.success && data.is_match) {
+        // Show in-camera 5-second success overlay
+        showKioskSuccess(data);
+      } else {
+        // Show in-camera fail/mismatch overlay
+        showKioskFail(data);
+      }
+    } catch (err) {
+      console.warn('AJAX fetch error, falling back to standard submit:', err);
+      scanForm.submit();
+    }
+  }
+
+  // Show In-Camera Success (0s Instant or 2s / 5s Countdown Overlay)
+  function showKioskSuccess(data) {
+    // 1. Immediately update today's verified feed
+    updateLiveFeed(data);
+
+    const delaySec = parseInt(document.getElementById('kioskDelaySelect')?.value || '0', 10);
+
+    // 0-SECOND INSTANT MODE (0s scanning delay requested)
+    if (delaySec === 0) {
+      showInstantToast(data);
+
+      if (childSelect && childSelect.value !== 'auto') {
+        childSelect.value = 'auto';
+        updateEnrolledReference();
+      }
+
+      // Camera is ready for next child immediately with 0s delay!
+      setTimeout(() => {
+        isScanTriggered = false;
+        faceHoldTicks = 0;
+        captureBtn.disabled = false;
+        captureBtn.innerHTML = '<i class="bi bi-camera-fill me-1"></i>મેન્યુઅલ સ્કેન કરો (Manual Capture)';
+        resetAutoScanUI();
+      }, 400); // 400ms frame reset buffer
+      return;
+    }
+
+    // Modal Countdown Overlay Mode (for 2s or 5s)
+    document.getElementById('kioskSuccessName').innerText = data.child.name + ' (' + data.child.child_code + ')';
+    document.getElementById('kioskSuccessScore').innerHTML = '<i class="bi bi-shield-check me-1"></i>' + data.confidence + '% Match Verified';
+
+    document.getElementById('kioskLivePhoto').src = '/static/uploads/' + data.live_photo;
+    document.getElementById('kioskEnrolledPhoto').src = data.child.face_photo ? '/static/uploads/' + data.child.face_photo : '/static/uploads/' + data.live_photo;
+
+    const overlay = document.getElementById('kioskSuccessOverlay');
+    overlay.style.display = 'flex';
+
+    let totalMs = delaySec * 1000;
+    let remainingMs = totalMs;
+    const countdownEl = document.getElementById('kioskCountdownSec');
+    const progressEl = document.getElementById('kioskProgressBar');
+
+    if (kioskTimer) clearInterval(kioskTimer);
+    kioskTimer = setInterval(() => {
+      remainingMs -= 100;
+      const sec = Math.ceil(remainingMs / 1000);
+      const pct = Math.max(0, (remainingMs / totalMs) * 100);
+
+      countdownEl.innerText = sec + 's';
+      progressEl.style.width = pct + '%';
+
+      if (remainingMs <= 0) {
+        clearInterval(kioskTimer);
+        dismissKioskSuccessNow();
+      }
+    }, 100);
+  }
+
+  // 0-second Instant Floating Toast Notification on Camera
+  function showInstantToast(data) {
+    const toast = document.getElementById('instantSuccessToast');
+    if (!toast) return;
+    document.getElementById('instantToastName').innerText = data.child.name + ' (' + data.child.child_code + ')';
+    document.getElementById('instantToastScore').innerText = '✓ ' + data.confidence + '% Match Verified · હાજરી સફળ!';
+    const imgEl = document.getElementById('instantToastPhoto');
+    if (imgEl) {
+      imgEl.src = '/static/uploads/' + (data.child.face_photo || data.live_photo);
+    }
+    toast.style.display = 'flex';
+    toast.style.opacity = '1';
+
+    if (toastTimer) clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => {
+      toast.style.opacity = '0';
+      setTimeout(() => {
+        toast.style.display = 'none';
+      }, 250);
+    }, 2200);
+  }
+
+  // Dismiss Success Overlay and resume scanning for next child immediately
+  window.dismissKioskSuccessNow = function() {
+    if (kioskTimer) clearInterval(kioskTimer);
+    const overlay = document.getElementById('kioskSuccessOverlay');
+    overlay.style.display = 'none';
+
+    // Reset dropdown to Auto-Detect mode for next child
+    if (childSelect && childSelect.value !== 'auto') {
+      childSelect.value = 'auto';
+      updateEnrolledReference();
+    }
+
+    // Brief 1.5s cooldown so previous child can step away cleanly
+    setTimeout(() => {
+      isScanTriggered = false;
+      faceHoldTicks = 0;
+      captureBtn.disabled = false;
+      captureBtn.innerHTML = '<i class="bi bi-camera-fill me-1"></i>મેન્યુઅલ સ્કેન કરો (Manual Capture)';
+      resetAutoScanUI();
+    }, 1200);
+  };
+
+  // Show In-Camera Mismatch / Fail Overlay
+  function showKioskFail(data) {
+    document.getElementById('kioskFailMsg').innerText = data.message || 'ચહેરો મેળ ખાતો નથી (Face Mismatch)';
+    document.getElementById('kioskFailScore').innerText = (data.confidence || 0) + '% Match (Mismatch)';
+
+    const overlay = document.getElementById('kioskFailOverlay');
+    overlay.style.display = 'flex';
+
+    let failRemaining = 4;
+    const failSecEl = document.getElementById('failCountdownSec');
+
+    if (failTimer) clearInterval(failTimer);
+    failTimer = setInterval(() => {
+      failRemaining--;
+      if (failSecEl) failSecEl.innerText = failRemaining + 's';
+      if (failRemaining <= 0) {
+        clearInterval(failTimer);
+        dismissKioskFailNow();
+      }
+    }, 1000);
+  }
+
+  window.dismissKioskFailNow = function() {
+    if (failTimer) clearInterval(failTimer);
+    const overlay = document.getElementById('kioskFailOverlay');
+    overlay.style.display = 'none';
+
+    isScanTriggered = false;
+    faceHoldTicks = 0;
+    captureBtn.disabled = false;
+    captureBtn.innerHTML = '<i class="bi bi-camera-fill me-1"></i>મેન્યુઅલ સ્કેન કરો (Manual Capture)';
+    resetAutoScanUI();
+  };
+
+  // Append new attendance directly to the live feed on the right
+  function updateLiveFeed(data) {
+    const feed = document.getElementById('todayFeed');
+    const badge = document.getElementById('todayCountBadge');
+
+    if (badge && data.today_total) {
+      badge.innerText = data.today_total;
+    } else if (badge) {
+      badge.innerText = parseInt(badge.innerText || '0') + 1;
+    }
+
+    if (feed) {
+      const notice = document.getElementById('emptyFeedNotice');
+      if (notice) notice.remove();
+
+      const row = document.createElement('div');
+      row.className = 'd-flex align-items-center gap-2 p-2 border-bottom bg-light rounded-3 mb-1';
+      row.innerHTML = `
+        <img src="/static/uploads/${data.live_photo}" class="rounded-circle shadow-sm" style="width:38px;height:38px;object-fit:cover;flex:none;border:2px solid #10b981;" alt="">
+        <div class="flex-grow-1">
+          <div style="font-size:13px;" class="fw-semibold text-dark">${data.child.name}</div>
+          <small class="text-muted">${data.scanned_at_str} · <span class="text-success fw-bold">✓ Verified</span></small>
+        </div>
+        <i class="bi bi-check-circle-fill text-success fs-5"></i>
+      `;
+      feed.prepend(row);
+    }
+  }
+})();
+</script>
+{% endblock %}

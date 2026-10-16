@@ -1,0 +1,95 @@
+{% extends "partials/shell.html" %}
+{% block title %}Top Attendees — Branch Admin{% endblock %}
+{% block sidenav %}{% include "branch_admin/_nav.html" %}{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+  <div>
+    <h5 class="fw-bold mb-1">
+      <i class="bi bi-trophy-fill text-warning me-2"></i>સૌથી વધુ હાજરી ધરાવતા બાળકો (Top Attendees)
+    </h5>
+    <small class="text-muted">{{ branch.name }} શાખા · {{ month_label }} દરમિયાન સૌથી નિયમિત બાળકો</small>
+  </div>
+  <div class="d-flex gap-2 align-items-center">
+    <form method="get" action="/branch-admin/top-attendees" class="d-flex gap-2">
+      <select name="mandal_id" class="form-select form-select-sm" onchange="this.form.submit()">
+        <option value="">તમામ Mandals</option>
+        {% for m in mandals %}
+        <option value="{{ m.id }}" {% if selected_mandal == m.id %}selected{% endif %}>{{ m.name }}</option>
+        {% endfor %}
+      </select>
+    </form>
+  </div>
+</div>
+
+<div class="panel p-0 overflow-hidden">
+  <div class="table-responsive">
+    <table class="table mock table-hover align-middle mb-0">
+      <thead>
+        <tr>
+          <th style="width: 70px;">Rank</th>
+          <th>બાળક</th>
+          <th>બાલ મંડળ</th>
+          <th>હાજરીની સંખ્યા</th>
+          <th class="text-end">સ્થિતિ</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for item in ranking %}
+        {% set c = item.child %}
+        {% set m = item.mandal %}
+        <tr>
+          <td>
+            {% if loop.index == 1 %}
+            <span class="badge bg-warning text-dark fw-bold fs-6 px-2 py-1 shadow-sm">🥇 1</span>
+            {% elif loop.index == 2 %}
+            <span class="badge bg-secondary text-white fw-bold fs-6 px-2 py-1 shadow-sm">🥈 2</span>
+            {% elif loop.index == 3 %}
+            <span class="badge text-white fw-bold fs-6 px-2 py-1 shadow-sm" style="background:#b45309;">🥉 3</span>
+            {% else %}
+            <span class="badge bg-light text-dark fw-bold px-2 py-1 border">{{ loop.index }}</span>
+            {% endif %}
+          </td>
+          <td>
+            <div class="d-flex align-items-center gap-2">
+              {% if c.face_photo %}
+              <img src="/static/uploads/{{ c.face_photo }}" class="rounded-circle shadow-sm" style="width:40px;height:40px;object-fit:cover;border:2px solid #10b981;" alt="">
+              {% else %}
+              <div style="width:40px;height:40px;border-radius:50%;background:#e2e8f0;display:flex;align-items:center;justify-content:center;font-weight:700;color:#64748b;">
+                {{ c.name[0] }}
+              </div>
+              {% endif %}
+              <div>
+                <div class="fw-bold text-dark">{{ c.name }}</div>
+                <small class="text-muted font-monospace">{{ c.child_code }}</small>
+              </div>
+            </div>
+          </td>
+          <td>
+            <span class="badge badge-soft-primary">{{ m.name if m else '—' }}</span>
+          </td>
+          <td>
+            <div class="d-flex align-items-center gap-2">
+              <span class="fw-bold fs-5 text-success">{{ item.count }}</span>
+              <small class="text-muted">વાર હાજર</small>
+            </div>
+          </td>
+          <td class="text-end">
+            {% if item.count >= 3 %}
+            <span class="badge badge-soft-success fw-bold">🌟 ઉત્કૃષ્ટ હાજરી</span>
+            {% elif item.count >= 1 %}
+            <span class="badge badge-soft-info fw-bold">નિયમિત</span>
+            {% else %}
+            <span class="badge badge-soft-warning">અનિયમિત</span>
+            {% endif %}
+          </td>
+        </tr>
+        {% else %}
+        <tr>
+          <td colspan="5" class="text-center py-5 text-muted">કોઈ રેકોર્ડ મળ્યો નથી.</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

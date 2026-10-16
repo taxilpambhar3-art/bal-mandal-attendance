@@ -1,0 +1,399 @@
+{% extends "partials/shell.html" %}
+{% block title %}Super Admin Dashboard — બાલ મંડળ{% endblock %}
+{% block sidenav %}{% include "super_admin/_nav.html" %}{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+  <div>
+    <h5 class="fw-bold mb-1">
+      <i class="bi bi-shield-check text-primary me-2"></i>Super Admin — Consolidated Dashboard
+    </h5>
+    <small class="text-muted">
+      Admin: {{ user.full_name }} · {{ week.date.strftime('%d %B %Y') }} · <span class="badge badge-soft-info">{{ week.week_label }} ({{ gujarati_month(week.month) }})</span>
+    </small>
+  </div>
+  <div class="d-flex gap-2">
+    <a href="/super-admin/credentials" class="btn btn-outline-warning btn-sm fw-bold shadow-sm px-3 py-2 text-dark bg-white border">
+      <i class="bi bi-key-fill text-warning me-1"></i>Login ID & Passwords
+    </a>
+    <a href="/super-admin/branches/add" class="btn btn-primary btn-sm fw-bold shadow-sm px-3 py-2">
+      <i class="bi bi-plus-lg me-1"></i>નવી Branch ઉમેરો
+    </a>
+  </div>
+</div>
+
+<!-- KPI Cards -->
+<div class="row g-3 mb-4">
+  <div class="col-6 col-lg-3">
+    <div class="stat-card">
+      <div class="ico bg-primary-subtle text-primary"><i class="bi bi-building-fill"></i></div>
+      <h3>{{ total_branches }}</h3>
+      <p>કુલ Branches (Statewide)</p>
+    </div>
+  </div>
+  <div class="col-6 col-lg-3">
+    <div class="stat-card">
+      <div class="ico bg-success-subtle text-success"><i class="bi bi-diagram-3-fill"></i></div>
+      <h3>{{ total_bm }}</h3>
+      <p>કુલ Bal Mandals</p>
+    </div>
+  </div>
+  <div class="col-6 col-lg-3">
+    <div class="stat-card">
+      <div class="ico bg-warning-subtle text-warning"><i class="bi bi-people-fill"></i></div>
+      <h3>{{ total_children }}</h3>
+      <p>કુલ બાળકો</p>
+    </div>
+  </div>
+  <div class="col-6 col-lg-3">
+    <div class="stat-card">
+      <div class="ico bg-info-subtle text-info"><i class="bi bi-graph-up"></i></div>
+      <h3>{{ rate }}%</h3>
+      <p>આ અઠવાડિયાની હાજરી દર</p>
+    </div>
+  </div>
+</div>
+
+<!-- Dual Data Explorer Cards (Branch Admin Data & Sanchalak Data) -->
+<div class="row g-3 mb-4">
+  <div class="col-md-6">
+    <div class="p-3 bg-white border rounded-3 shadow-sm h-100" style="border-top: 3px solid #3b82f6 !important;">
+      <div class="d-flex justify-content-between align-items-center mb-2">
+        <h6 class="mb-0 fw-bold text-primary">
+          <i class="bi bi-building me-2"></i>Branch Admin Data (બ્રાન્ચ એડમિન ડેટા)
+        </h6>
+        <span class="badge badge-soft-primary">{{ total_branches }} Branches · {{ total_bm }} Mandals</span>
+      </div>
+      <p class="small text-muted mb-3" style="font-size:12px;">
+        રાજ્યની તમામ Branches, બાલ મંડળો, Branch Admins સંપર્ક અને મંડળ પ્રદર્શન સમરી.
+      </p>
+      <div class="d-flex gap-2 flex-wrap">
+        <a href="/super-admin/branches" class="btn btn-outline-primary btn-sm py-1 px-3 fw-semibold">
+          <i class="bi bi-building me-1"></i>બધી Branches ({{ total_branches }})
+        </a>
+        <a href="/super-admin/mandals" class="btn btn-outline-primary btn-sm py-1 px-3 fw-semibold">
+          <i class="bi bi-diagram-3 me-1"></i>બધા Bal Mandals ({{ total_bm }})
+        </a>
+        <a href="/super-admin/users?role=branch_admin" class="btn btn-outline-primary btn-sm py-1 px-3 fw-semibold">
+          <i class="bi bi-person-badge me-1"></i>Branch Admins ({{ total_admins }})
+        </a>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-6">
+    <div class="p-3 bg-white border rounded-3 shadow-sm h-100" style="border-top: 3px solid #10b981 !important;">
+      <div class="d-flex justify-content-between align-items-center mb-2">
+        <h6 class="mb-0 fw-bold text-success">
+          <i class="bi bi-person-hearts me-2"></i>Sanchalak Data (સંચાલક ડેટા)
+        </h6>
+        <span class="badge badge-soft-success">{{ total_children }} બાળકો · {{ total_sanchalaks }} Sanchalaks</span>
+      </div>
+      <p class="small text-muted mb-3" style="font-size:12px;">
+        બધા મંડળોના રજિસ્ટર્ડ બાળકો, વાલીઓની વિગત, ફેસ ફોટો અને રીઅલ-ટાઇમ કેમેરા હાજરી સ્કેન.
+      </p>
+      <div class="d-flex gap-2 flex-wrap">
+        <a href="/super-admin/children" class="btn btn-outline-success btn-sm py-1 px-3 fw-semibold">
+          <i class="bi bi-people me-1"></i>બધા બાળકો ({{ total_children }})
+        </a>
+        <a href="/super-admin/attendance" class="btn btn-outline-success btn-sm py-1 px-3 fw-semibold">
+          <i class="bi bi-camera-video me-1"></i>લાઈવ Scans Log
+        </a>
+        <a href="/super-admin/users?role=sanchalak" class="btn btn-outline-success btn-sm py-1 px-3 fw-semibold">
+          <i class="bi bi-person-check me-1"></i>Sanchalaks ({{ total_sanchalaks }})
+        </a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Main Row: Trend Chart & Top Performers -->
+<div class="row g-3 mb-4">
+  <div class="col-lg-7">
+    <div class="panel h-100">
+      <div class="d-flex justify-content-between align-items-center mb-2">
+        <h6 class="mb-0"><i class="bi bi-bar-chart-line-fill text-info me-2"></i>છેલ્લા ૬ અઠવાડિયાની હાજરી (Attendance Trend)</h6>
+        <span class="badge badge-soft-info">Week 1–5 Reset</span>
+      </div>
+      <div class="chart-container" style="height: 220px;">
+        <canvas id="superDashChart"></canvas>
+      </div>
+      <small class="text-muted d-block mt-2" style="font-size: 11px;">
+        * નવા મહિનાનું Week 1 દર મહિને 1 થી ફરી શરૂ થાય છે.
+      </small>
+    </div>
+  </div>
+
+  <!-- Top Performing Branches -->
+  <div class="col-lg-5">
+    <div class="panel h-100">
+      <div class="d-flex justify-content-between align-items-center mb-3">
+        <h6 class="mb-0"><i class="bi bi-trophy-fill text-warning me-2"></i>Top Performing Branches</h6>
+        <span class="badge badge-soft-warning">Ranked by %</span>
+      </div>
+      {% for r in branch_rows[:3] %}
+      <div class="d-flex align-items-center mb-3 p-2 bg-light rounded-3 border">
+        <div class="me-2" style="width: 32px; height: 32px; border-radius: 50%; background: {% if loop.index==1 %}#fef3c7{% elif loop.index==2 %}#e2e8f0{% else %}#fde8d0{% endif %}; color: {% if loop.index==1 %}#92400e{% elif loop.index==2 %}#475569{% else %}#9a3412{% endif %}; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 800; flex:none;">
+          {{ loop.index }}
+        </div>
+        <div class="flex-grow-1">
+          <div class="d-flex justify-content-between align-items-center">
+            <span class="fw-bold text-dark" style="font-size: 13px;">{{ r.branch.name }}</span>
+            <small class="fw-bold text-success">{{ r.rate }}%</small>
+          </div>
+          <small class="text-muted d-block" style="font-size:10.5px;">
+            <i class="bi bi-geo-alt-fill text-danger me-1"></i>{{ r.branch.city }} ·
+            Admin: <b>{{ r.admin.full_name if r.admin else 'Not Assigned' }}</b> ·
+            <span class="text-primary fw-semibold">{{ r.mandals }} Mandals</span> ·
+            <span class="text-success fw-semibold">{{ r.present }}/{{ r.children }} હાજર</span>
+          </small>
+          <div class="progress mt-1" style="height: 6px;">
+            <div class="progress-bar {% if loop.index==1 %}bg-success{% elif loop.index==2 %}bg-primary{% else %}bg-warning{% endif %}"
+                 style="width: {{ r.rate }}%;"></div>
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+
+<!-- ========================================================================= -->
+<!-- Dedicated Particular Branch Summary Section (દરેક બ્રાન્ચની વિગતવાર સમરી) -->
+<!-- ========================================================================= -->
+<div class="panel mt-4" id="particularBranchSummarySection">
+  <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+    <div>
+      <h6 class="mb-0 fw-bold text-dark fs-6">
+        <i class="bi bi-building-check text-primary me-2"></i>Particular Branch Summary (બ્રાન્ચ-વાઇઝ વિગતવાર સમરી)
+      </h6>
+      <small class="text-muted">દરેક Branch ના Admin, Bal Mandals, સભાઓ અને હાજરીની સંપૂર્ણ વિગત</small>
+    </div>
+    <div>
+      <span class="badge badge-soft-primary px-3 py-2 fw-bold">
+        <i class="bi bi-building me-1"></i>{{ branch_rows|length }} Branches Active
+      </span>
+    </div>
+  </div>
+
+  <div class="row g-3">
+    {% for r in branch_rows %}
+    <div class="col-lg-6">
+      <div class="border rounded-3 p-3 bg-white shadow-sm h-100 position-relative" style="border-left: 4px solid #3b82f6 !important;">
+        <!-- Header of Branch Card -->
+        <div class="d-flex justify-content-between align-items-start mb-2">
+          <div>
+            <div class="d-flex align-items-center gap-2">
+              <span class="badge bg-primary-subtle text-primary border border-primary-subtle" style="font-size:11px;">{{ r.branch.code }}</span>
+              <h6 class="fw-bold text-dark mb-0 fs-6">{{ r.branch.name }}</h6>
+            </div>
+            <small class="text-muted d-block mt-1">
+              <i class="bi bi-geo-alt-fill text-danger me-1"></i>{{ r.branch.city }} ·
+              <i class="bi bi-person-badge text-primary me-1"></i>Admin: <b>{{ r.admin.full_name if r.admin else 'Not Assigned' }}</b>{% if r.admin and r.admin.mobile %} ({{ r.admin.mobile }}){% endif %}
+            </small>
+          </div>
+          <div>
+            <a href="/super-admin/branches/{{ r.branch.id }}/summary" class="btn btn-sm btn-outline-primary fw-semibold py-1 px-2" style="font-size:11px;">
+              View Full Summary <i class="bi bi-arrow-right-short"></i>
+            </a>
+          </div>
+        </div>
+
+        <!-- 4 Mini Metric Pills for this branch -->
+        <div class="row g-2 text-center my-2">
+          <div class="col-3">
+            <div class="p-2 bg-light rounded-2 border">
+              <small class="text-muted d-block" style="font-size:10px;">Mandals</small>
+              <b class="text-primary fs-6">{{ r.mandals }}</b>
+            </div>
+          </div>
+          <div class="col-3">
+            <div class="p-2 bg-light rounded-2 border">
+              <small class="text-muted d-block" style="font-size:10px;">બાળકો</small>
+              <b class="text-dark fs-6">{{ r.children }}</b>
+            </div>
+          </div>
+          <div class="col-3">
+            <div class="p-2 bg-light rounded-2 border">
+              <small class="text-muted d-block" style="font-size:10px;">હાજર</small>
+              <b class="text-success fs-6">{{ r.present }}</b>
+            </div>
+          </div>
+          <div class="col-3">
+            <div class="p-2 bg-light rounded-2 border">
+              <small class="text-muted d-block" style="font-size:10px;">હાજરી %</small>
+              <b class="{% if r.rate >= 75 %}text-success{% elif r.rate >= 50 %}text-warning{% else %}text-danger{% endif %} fs-6">{{ r.rate }}%</b>
+            </div>
+          </div>
+        </div>
+
+        <!-- Progress Bar -->
+        <div class="progress mb-3" style="height: 6px;">
+          <div class="progress-bar {% if r.rate >= 75 %}bg-success{% elif r.rate >= 50 %}bg-warning{% else %}bg-danger{% endif %}"
+               style="width: {{ r.rate }}%;"></div>
+        </div>
+
+        <!-- Bal Mandals List under this Branch -->
+        <div class="mt-2">
+          <div class="d-flex justify-content-between align-items-center mb-1">
+            <small class="fw-bold text-secondary" style="font-size:11px;">
+              <i class="bi bi-diagram-3 text-primary me-1"></i>Bal Mandals Breakdown:
+            </small>
+            <small class="text-muted" style="font-size:10px;">{{ r.mandals_detail|length }} સભાઓ</small>
+          </div>
+          <div class="table-responsive">
+            <table class="table table-sm table-bordered mb-0 align-middle bg-light" style="font-size:11px;">
+              <thead class="table-white text-muted">
+                <tr>
+                  <th>Mandal</th>
+                  <th>વાર</th>
+                  <th>સંચાલક</th>
+                  <th>હાજરી</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for m in r.mandals_detail %}
+                <tr>
+                  <td class="fw-semibold text-dark">{{ m.name }}</td>
+                  <td>{{ m.weekday }}</td>
+                  <td>{{ m.sanchalak_name }}</td>
+                  <td>
+                    <span class="badge {% if m.rate >= 75 %}bg-success{% elif m.rate >= 50 %}bg-warning{% else %}bg-danger{% endif %}" style="font-size:10px;">
+                      {{ m.present_count }}/{{ m.children_count }} ({{ m.rate }}%)
+                    </span>
+                  </td>
+                </tr>
+                {% else %}
+                <tr>
+                  <td colspan="4" class="text-muted text-center py-2" style="font-size:11px;">કોઈ Bal Mandal નોંધાયેલ નથી</td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+
+<!-- ========================================================================= -->
+<!-- Recent Live Attendance Scans Across all Sanchalaks (સંચાલક સ્કેન ડેટા) -->
+<!-- ========================================================================= -->
+<div class="panel mt-4">
+  <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+    <div>
+      <h6 class="mb-0 fw-bold text-dark fs-6">
+        <i class="bi bi-camera-reels-fill text-success me-2"></i>તાજેતરમાં થયેલા લાઈવ ફેસ સ્કેન (Recent Sanchalak Attendance Scans)
+      </h6>
+      <small class="text-muted">સંચાલકો દ્વારા કેમેરા સ્કેનથી લીધેલી લાઈવ હાજરીના ફોટો સ્નેપશોટ અને ટાઈમસ્ટેમ્પ</small>
+    </div>
+    <a href="/super-admin/attendance" class="btn btn-outline-success btn-sm fw-semibold">
+      બધા સ્કેન રેકોર્ડ્સ જુઓ <i class="bi bi-arrow-right ms-1"></i>
+    </a>
+  </div>
+
+  <div class="table-responsive">
+    <table class="table mock table-hover align-middle mb-0">
+      <thead>
+        <tr>
+          <th>લાઈવ ફોટો</th>
+          <th>બાળકનું નામ</th>
+          <th>Branch</th>
+          <th>Bal Mandal</th>
+          <th>તારીખ</th>
+          <th>સ્કેન સમય</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for a in recent_scans %}
+        <tr>
+          <td>
+            {% if a.scan_photo %}
+            <img src="/static/uploads/{{ a.scan_photo }}" class="rounded-3 shadow-sm" style="width:40px;height:40px;object-fit:cover;border:2px solid #10b981;" alt="Scan">
+            {% elif a.child and a.child.face_photo %}
+            <img src="/static/uploads/{{ a.child.face_photo }}" class="rounded-3 shadow-sm" style="width:40px;height:40px;object-fit:cover;border:2px solid #3b82f6;" alt="Enrolled">
+            {% else %}
+            <div class="rounded-3 bg-light text-secondary d-flex align-items-center justify-content-center border" style="width:40px;height:40px;">
+              <i class="bi bi-camera text-muted"></i>
+            </div>
+            {% endif %}
+          </td>
+          <td>
+            {% if a.child %}
+            <b class="text-dark">{{ a.child.name }}</b>
+            <small class="text-muted d-block">{{ a.child.child_code }}</small>
+            {% else %}
+            <span class="text-muted">Unknown</span>
+            {% endif %}
+          </td>
+          <td>
+            {% if a.bal_mandal and a.bal_mandal.branch %}
+            <span class="fw-semibold text-primary">{{ a.bal_mandal.branch.name }}</span>
+            <small class="text-muted d-block">{{ a.bal_mandal.branch.city }}</small>
+            {% else %}
+            <span class="text-muted">—</span>
+            {% endif %}
+          </td>
+          <td>
+            {% if a.bal_mandal %}
+            <span class="badge bg-light text-dark border">
+              <i class="bi bi-diagram-3 text-success me-1"></i>{{ a.bal_mandal.name }}
+            </span>
+            {% else %}
+            <span class="text-muted">—</span>
+            {% endif %}
+          </td>
+          <td><b>{{ a.attendance_date.strftime('%d-%m-%Y') }}</b></td>
+          <td>
+            <span class="text-secondary">{{ a.scanned_at.strftime('%I:%M %p') if a.scanned_at else '—' }}</span>
+          </td>
+          <td>
+            <span class="badge badge-soft-success">
+              <i class="bi bi-check-circle-fill me-1"></i>Verified Present
+            </span>
+          </td>
+        </tr>
+        {% else %}
+        <tr>
+          <td colspan="7" class="text-center text-muted py-4">
+            હજુ સુધી કોઈ લાઈવ સ્કેન થયેલ નથી.
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+const weekStats = {{ week_stats | tojson }};
+const ctxSuperDash = document.getElementById('superDashChart').getContext('2d');
+
+new Chart(ctxSuperDash, {
+  type: 'bar',
+  data: {
+    labels: weekStats.map(s => 'W' + s.week),
+    datasets: [{
+      label: 'હાજરી %',
+      data: weekStats.map(s => s.rate),
+      backgroundColor: 'rgba(59, 130, 246, 0.85)',
+      hoverBackgroundColor: 'rgba(29, 78, 216, 1)',
+      borderRadius: 6,
+      barPercentage: 0.6
+    }]
+  },
+  options: {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: { legend: { display: false } },
+    scales: {
+      x: { grid: { display: false } },
+      y: { min: 0, max: 100, title: { display: true, text: '%' } }
+    }
+  }
+});
+</script>
+{% endblock %}

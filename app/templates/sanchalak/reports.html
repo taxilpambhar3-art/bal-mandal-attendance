@@ -1,0 +1,341 @@
+{% extends "partials/shell.html" %}
+{% block title %}હાજરી રિપોર્ટ — બાલ મંડળ{% endblock %}
+{% block sidenav %}{% include "sanchalak/_nav.html" %}{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+  <div>
+    <h5 class="fw-bold mb-1"><i class="bi bi-bar-chart-line text-warning me-2"></i>હાજરી રિપોર્ટ (Attendance Analytics)</h5>
+    <small class="text-muted">{{ mandal.name if mandal else 'બાલ મંડળ' }} · {{ mandal.branch.name if mandal and mandal.branch else '' }} · {{ month_label }}</small>
+  </div>
+  <div class="d-flex gap-2">
+    <button type="button" class="btn btn-sm btn-outline-success shadow-sm" onclick="exportTableToCSV()">
+      <i class="bi bi-file-earmark-spreadsheet me-1"></i>Excel Export
+    </button>
+    <button type="button" class="btn btn-sm btn-outline-danger shadow-sm" onclick="window.print()">
+      <i class="bi bi-file-earmark-pdf me-1"></i>PDF Print
+    </button>
+  </div>
+</div>
+
+<!-- Filter Bar -->
+<div class="panel mb-4 py-3">
+  <form method="get" action="/sanchalak/reports">
+    <div class="row g-3 align-items-end">
+      <div class="col-md-3">
+        <label class="form-label small mb-1 fw-bold text-secondary">રિપોર્ટનો પ્રકાર (View Type)</label>
+        <select class="form-select form-select-sm" id="viewTypeSelect" onchange="if(this.value==='custom') window.location.href='/sanchalak/reports/custom';">
+          <option value="month" selected>📅 મહિના પ્રમાણે (Monthly)</option>
+          <option value="week">📊 Week પ્રમાણે (Weekly)</option>
+          <option value="custom">🗓️ Custom Date Range</option>
+        </select>
+      </div>
+      <div class="col-md-3">
+        <label class="form-label small mb-1 fw-bold text-secondary">મહિનો (Month)</label>
+        <select name="month" class="form-select form-select-sm">
+          {% for m in range(1, 13) %}
+          <option value="{{ m }}" {% if m == month %}selected{% endif %}>{{ gujarati_month(m) }} {{ year }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-md-3">
+        <label class="form-label small mb-1 fw-bold text-secondary">Week Number</label>
+        <select name="week" class="form-select form-select-sm">
+          <option value="">બધા Weeks (All Weeks)</option>
+          {% for w in range(1, 6) %}
+          <option value="{{ w }}" {% if week_filter == w %}selected{% endif %}>Week {{ w }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-md-3">
+        <button type="submit" class="btn btn-sm btn-warning w-100 fw-bold shadow-sm">
+          <i class="bi bi-funnel-fill me-1"></i>રિપોર્ટ અપડેટ કરો
+        </button>
+      </div>
+    </div>
+  </form>
+</div>
+
+<!-- KPI Cards -->
+<div class="row g-3 mb-4">
+  <div class="col-6 col-lg-3">
+    <div class="stat-card">
+      <div class="ico bg-primary-subtle text-primary"><i class="bi bi-people-fill"></i></div>
+      <h3>{{ total }}</h3>
+      <p>કુલ નોંધાયેલા બાળકો</p>
+    </div>
+  </div>
+  <div class="col-6 col-lg-3">
+    <div class="stat-card">
+      <div class="ico bg-success-subtle text-success"><i class="bi bi-check-circle-fill"></i></div>
+      <h3>{{ total_present_sum }}</h3>
+      <p>કુલ હાજરી (Total Scans)</p>
+    </div>
+  </div>
+  <div class="col-6 col-lg-3">
+    <div class="stat-card">
+      <div class="ico bg-info-subtle text-info"><i class="bi bi-calendar3-week-fill"></i></div>
+      <h3>5</h3>
+      <p>મહિનાના સત્રો (Weeks 1–5)</p>
+    </div>
+  </div>
+  <div class="col-6 col-lg-3">
+    <div class="stat-card">
+      <div class="ico bg-warning-subtle text-warning"><i class="bi bi-graph-up-arrow"></i></div>
+      <h3>{{ avg }}%</h3>
+      <p>સરેરાશ હાજરી દર</p>
+    </div>
+  </div>
+</div>
+
+<!-- Interactive Chart Graphs Section -->
+<div class="row g-3 mb-4">
+  <!-- Main Bar + Line Chart -->
+  <div class="col-lg-8">
+    <div class="panel h-100">
+      <div class="d-flex justify-content-between align-items-center mb-3">
+        <h6 class="mb-0"><i class="bi bi-bar-chart-fill text-primary me-2"></i>અઠવાડિક હાજરી ગ્રાફ (Weekly Attendance Graph)</h6>
+        <span class="badge badge-soft-info">Week 1–5 દર મહિને Reset</span>
+      </div>
+      <div class="chart-container">
+        <canvas id="weeklyAttendanceChart"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <!-- Overall Doughnut Chart -->
+  <div class="col-lg-4">
+    <div class="panel h-100">
+      <h6 class="mb-3"><i class="bi bi-pie-chart-fill text-success me-2"></i>હાજરી વિતરણ (Attendance Ratio)</h6>
+      <div class="chart-container-sm d-flex align-items-center justify-content-center">
+        <canvas id="ratioChart"></canvas>
+      </div>
+      <div class="d-flex justify-content-around mt-3 text-center" style="font-size:12.5px;">
+        <div>
+          <span class="d-inline-block rounded-circle bg-success me-1" style="width:10px;height:10px;"></span>
+          <span class="text-muted">હાજર:</span> <b class="text-success">{{ total_present_sum }}</b>
+        </div>
+        <div>
+          <span class="d-inline-block rounded-circle bg-danger me-1" style="width:10px;height:10px;"></span>
+          <span class="text-muted">ગેરહાજર:</span> <b class="text-danger">{{ (total * 5) - total_present_sum if (total * 5) >= total_present_sum else 0 }}</b>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Week-wise Breakdown Table -->
+<div class="panel p-0 overflow-hidden mb-4">
+  <div class="p-3 pb-2 d-flex justify-content-between align-items-center border-bottom">
+    <h6 class="mb-0"><i class="bi bi-table text-secondary me-2"></i>અઠવાડિક વિગતવાર ડેટા (Week-by-Week Breakdown)</h6>
+    <small class="text-muted">{{ month_label }}</small>
+  </div>
+  <div class="table-responsive">
+    <table class="table mock table-hover mb-0 align-middle" id="reportsTable">
+      <thead>
+        <tr>
+          <th>અઠવાડિયું</th>
+          <th>દિવસ</th>
+          <th>કુલ બાળકો</th>
+          <th>હાજર</th>
+          <th>ગેરહાજર</th>
+          <th>હાજરી ટકાવારી (%)</th>
+          <th>સ્થિતિ</th>
+          <th>Action</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for r in week_rows %}
+        <tr class="{% if r.week == week.week_number %}table-primary-subtle{% endif %}">
+          <td><b class="text-primary">Week {{ r.week }}</b></td>
+          <td>{{ mandal.weekday if mandal else '—' }}</td>
+          <td>{{ total }}</td>
+          <td class="fw-bold text-success">{{ r.present }}</td>
+          <td class="fw-bold text-danger">{{ r.absent }}</td>
+          <td>
+            <div class="d-flex align-items-center gap-2">
+              <div class="progress flex-grow-1" style="height: 8px;">
+                <div class="progress-bar {% if r.rate >= 85 %}bg-success{% elif r.rate >= 70 %}bg-warning{% else %}bg-danger{% endif %}"
+                     role="progressbar" style="width: {{ r.rate }}%;" aria-valuenow="{{ r.rate }}" aria-valuemin="0" aria-valuemax="100"></div>
+              </div>
+              <span class="fw-bold" style="font-size:12px;">{{ r.rate }}%</span>
+            </div>
+          </td>
+          <td>
+            {% if r.rate >= 90 %}
+            <span class="badge badge-soft-success"><i class="bi bi-stars me-1"></i>ઉત્તમ (90%+)</span>
+            {% elif r.rate >= 75 %}
+            <span class="badge badge-soft-warning"><i class="bi bi-hand-thumbs-up me-1"></i>સારું (75%+)</span>
+            {% elif r.present > 0 %}
+            <span class="badge badge-soft-danger"><i class="bi bi-exclamation-circle me-1"></i>ઓછું (&lt;75%)</span>
+            {% else %}
+            <span class="badge badge-soft-secondary">બાકી / ચાલુ</span>
+            {% endif %}
+          </td>
+          <td>
+            <a href="/sanchalak/history" class="btn btn-sm btn-outline-primary py-0 px-2" title="ઇતિહાસ જુઓ">
+              વિગત <i class="bi bi-chevron-right"></i>
+            </a>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Data from server
+const weekData = {{ week_rows | tojson }};
+const totalKids = {{ total }};
+const totalPresent = {{ total_present_sum }};
+const totalPossible = totalKids * 5;
+const totalAbsent = Math.max(totalPossible - totalPresent, 0);
+
+const labels = weekData.map(w => 'Week ' + w.week);
+const presentCounts = weekData.map(w => w.present);
+const rates = weekData.map(w => w.rate);
+
+// 1. Weekly Attendance Mixed Bar + Line Chart
+const ctxWeekly = document.getElementById('weeklyAttendanceChart').getContext('2d');
+new Chart(ctxWeekly, {
+  type: 'bar',
+  data: {
+    labels: labels,
+    datasets: [
+      {
+        type: 'line',
+        label: 'હાજરી ટકા (%)',
+        data: rates,
+        borderColor: '#f59e0b',
+        backgroundColor: 'rgba(245, 158, 11, 0.15)',
+        borderWidth: 3,
+        tension: 0.35,
+        fill: true,
+        pointBackgroundColor: '#f59e0b',
+        pointRadius: 5,
+        pointHoverRadius: 7,
+        yAxisID: 'yRate'
+      },
+      {
+        type: 'bar',
+        label: 'હાજર બાળકોની સંખ્યા',
+        data: presentCounts,
+        backgroundColor: 'rgba(37, 99, 235, 0.8)',
+        hoverBackgroundColor: 'rgba(29, 78, 216, 1)',
+        borderRadius: 8,
+        barPercentage: 0.55,
+        yAxisID: 'yCount'
+      }
+    ]
+  },
+  options: {
+    responsive: true,
+    maintainAspectRatio: false,
+    interaction: {
+      mode: 'index',
+      intersect: false,
+    },
+    plugins: {
+      legend: {
+        position: 'top',
+        labels: {
+          font: { family: "'Plus Jakarta Sans', sans-serif", weight: '600' }
+        }
+      },
+      tooltip: {
+        padding: 12,
+        backgroundColor: 'rgba(15, 23, 42, 0.9)',
+        titleFont: { family: "'Plus Jakarta Sans', sans-serif", size: 13, weight: 'bold' },
+        bodyFont: { family: "'Plus Jakarta Sans', sans-serif", size: 12 },
+        callbacks: {
+          label: function(context) {
+            if (context.dataset.yAxisID === 'yRate') {
+              return ' હાજરી દર: ' + context.parsed.y + '%';
+            } else {
+              return ' હાજર સંખ્યા: ' + context.parsed.y + ' બાળકો';
+            }
+          }
+        }
+      }
+    },
+    scales: {
+      x: {
+        grid: { display: false }
+      },
+      yCount: {
+        type: 'linear',
+        position: 'left',
+        title: { display: true, text: 'હાજર બાળકો' },
+        min: 0,
+        suggestedMax: Math.max(...presentCounts, 10) + 2,
+        grid: { color: '#f1f5f9' }
+      },
+      yRate: {
+        type: 'linear',
+        position: 'right',
+        title: { display: true, text: 'ટકાવારી (%)' },
+        min: 0,
+        max: 100,
+        grid: { display: false }
+      }
+    }
+  }
+});
+
+// 2. Attendance Ratio Doughnut Chart
+const ctxRatio = document.getElementById('ratioChart').getContext('2d');
+new Chart(ctxRatio, {
+  type: 'doughnut',
+  data: {
+    labels: ['હાજર (Present)', 'ગેરહાજર (Absent)'],
+    datasets: [{
+      data: [totalPresent, totalAbsent],
+      backgroundColor: ['#10b981', '#ef4444'],
+      hoverBackgroundColor: ['#059669', '#dc2626'],
+      borderWidth: 2,
+      borderColor: '#ffffff'
+    }]
+  },
+  options: {
+    responsive: true,
+    maintainAspectRatio: false,
+    cutout: '72%',
+    plugins: {
+      legend: { display: false },
+      tooltip: {
+        callbacks: {
+          label: function(context) {
+            const val = context.raw || 0;
+            const pct = totalPossible > 0 ? Math.round((val / totalPossible) * 100) : 0;
+            return ' ' + context.label + ': ' + val + ' (' + pct + '%)';
+          }
+        }
+      }
+    }
+  }
+});
+
+// CSV Export Utility
+function exportTableToCSV() {
+  let csv = [];
+  const rows = document.querySelectorAll('#reportsTable tr');
+  for (let i = 0; i < rows.length; i++) {
+    let row = [], cols = rows[i].querySelectorAll('td, th');
+    for (let j = 0; j < cols.length - 1; j++) {
+      row.push('"' + cols[j].innerText.trim().replace(/"/g, '""') + '"');
+    }
+    csv.push(row.join(','));
+  }
+  const csvFile = new Blob([csv.join('\n')], { type: 'text/csv' });
+  const downloadLink = document.createElement('a');
+  downloadLink.download = 'attendance_report_{{ month_label }}.csv';
+  downloadLink.href = window.URL.createObjectURL(csvFile);
+  downloadLink.style.display = 'none';
+  document.body.appendChild(downloadLink);
+  downloadLink.click();
+  document.body.removeChild(downloadLink);
+}
+</script>
+{% endblock %}

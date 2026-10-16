@@ -1,0 +1,77 @@
+{% extends "partials/shell.html" %}
+{% block title %}Session History — બાલ મંડળ{% endblock %}
+{% block sidenav %}{% include "sanchalak/_nav.html" %}{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <div>
+    <h6 class="fw-bold mb-0">Session History</h6>
+    <small class="text-muted">{{ mandal.name if mandal else 'બાલ મંડળ' }} · અગાઉના તમામ Sessions અને સ્કેન ફોટા</small>
+  </div>
+  <div class="input-group input-group-sm" style="width:230px;">
+    <span class="input-group-text bg-light"><i class="bi bi-calendar3"></i></span>
+    <input class="form-control" value="બધા સત્રો (All Sessions)" readonly>
+  </div>
+</div>
+
+<div class="panel p-0 overflow-hidden">
+  <div class="table-responsive">
+    <table class="table mock table-hover mb-0 align-middle">
+      <thead>
+        <tr>
+          <th>Session ID</th>
+          <th>તારીખ</th>
+          <th>Week</th>
+          <th>સમય</th>
+          <th>બાળક</th>
+          <th>સ્કેન ફોટો</th>
+          <th>Action</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for a in rows %}
+        <tr>
+          <td>
+            <small class="text-muted fw-bold">SES-{{ a.attendance_date.strftime('%Y%m%d') }}-{{ a.id }}</small>
+          </td>
+          <td>{{ a.attendance_date.strftime('%d %b %Y') }}</td>
+          <td><span class="badge badge-soft-secondary">W{{ a.week_number }}</span></td>
+          <td>{{ format_dt(a.scanned_at) }}</td>
+          <td class="fw-semibold">{{ a.child.name }} ({{ a.child.child_code }})</td>
+          <td>
+            {% if a.scan_photo %}
+            <span class="badge badge-soft-info"><i class="bi bi-image me-1"></i>૧ ફોટો</span>
+            {% else %}
+            <span class="badge badge-soft-secondary">—</span>
+            {% endif %}
+          </td>
+          <td>
+            <div class="d-flex gap-1 justify-content-end">
+              <a href="/sanchalak/face-scan/result/{{ a.id }}" class="btn btn-outline-primary btn-sm py-0 px-2" title="વિગતો જુઓ">જુઓ</a>
+              <form method="post" action="/sanchalak/attendance/{{ a.id }}/delete" onsubmit="return confirm('શું તમે આ હાજરી સ્કેન રદ કરવા માંગો છો?');" style="display:inline;">
+                <button type="submit" class="btn btn-outline-danger btn-sm py-0 px-2" title="Delete Scan">
+                  <i class="bi bi-trash"></i>
+                </button>
+              </form>
+            </div>
+          </td>
+        </tr>
+        {% else %}
+        <tr>
+          <td colspan="7" class="text-center text-muted p-4">કોઈ ઇતિહાસ મળ્યો નથી</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  <div class="d-flex justify-content-between align-items-center p-3 border-top">
+    <small class="text-muted">કુલ {{ rows|length }} sessions/records</small>
+    <nav>
+      <ul class="pagination pagination-sm mb-0">
+        <li class="page-item disabled"><a class="page-link" href="#">«</a></li>
+        <li class="page-item active"><a class="page-link" href="#">1</a></li>
+        <li class="page-item"><a class="page-link" href="#">»</a></li>
+      </ul>
+    </nav>
+  </div>
+</div>
+{% endblock %}

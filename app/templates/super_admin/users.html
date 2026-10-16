@@ -1,0 +1,162 @@
+{% extends "partials/shell.html" %}
+{% block title %}Admins & Sanchalaks — Super Admin{% endblock %}
+{% block sidenav %}{% include "super_admin/_nav.html" %}{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+  <div>
+    <h5 class="fw-bold mb-1">
+      <i class="bi bi-people-fill text-primary me-2"></i>તમામ Admins & Sanchalaks (Staff Directory)
+    </h5>
+    <small class="text-muted">રાજ્યભરના તમામ Branch Admins અને Bal Mandal Sanchalaks ની સંપૂર્ણ વિગતો</small>
+  </div>
+  <div class="d-flex align-items-center gap-2">
+    <a href="/super-admin/credentials" class="btn btn-outline-warning btn-sm text-dark bg-white border fw-semibold shadow-sm">
+      <i class="bi bi-key-fill text-warning me-1"></i>Login ID & Passwords
+    </a>
+    <span class="badge badge-soft-primary px-3 py-2 fw-bold fs-6">
+      કુલ સભ્યો: {{ users|length }}
+    </span>
+  </div>
+</div>
+
+<!-- Filters Bar -->
+<div class="panel py-3 mb-4">
+  <form method="get" action="/super-admin/users" class="row g-2 align-items-center">
+    <div class="col-md-3">
+      <label class="form-label small fw-bold text-secondary mb-1">Role દ્વારા Filter કરો:</label>
+      <select name="role" class="form-select form-select-sm" onchange="this.form.submit()">
+        <option value="">બધા Roles (All Admins & Sanchalaks)</option>
+        <option value="branch_admin" {% if selected_role == 'branch_admin' %}selected{% endif %}>🏢 ફક્ત Branch Admins</option>
+        <option value="sanchalak" {% if selected_role == 'sanchalak' %}selected{% endif %}>👦 ફક્ત Sanchalaks (Coordinators)</option>
+      </select>
+    </div>
+    <div class="col-md-3">
+      <label class="form-label small fw-bold text-secondary mb-1">Branch દ્વારા Filter કરો:</label>
+      <select name="branch_id" class="form-select form-select-sm" onchange="this.form.submit()">
+        <option value="">તમામ Branches</option>
+        {% for b in branches %}
+        <option value="{{ b.id }}" {% if selected_branch == b.id %}selected{% endif %}>{{ b.name }} ({{ b.city }})</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="col-md-3">
+      <label class="form-label small fw-bold text-secondary mb-1">Bal Mandal Filter:</label>
+      <select name="mandal_id" class="form-select form-select-sm" onchange="this.form.submit()">
+        <option value="">તમામ Bal Mandals</option>
+        {% for m in mandals %}
+        <option value="{{ m.id }}" {% if selected_mandal == m.id %}selected{% endif %}>{{ m.name }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="col-md-3 d-flex align-items-end gap-2">
+      <button type="submit" class="btn btn-primary btn-sm flex-grow-1 fw-bold">
+        <i class="bi bi-funnel-fill me-1"></i>Filter
+      </button>
+      {% if selected_role or selected_branch or selected_mandal %}
+      <a href="/super-admin/users" class="btn btn-outline-secondary btn-sm" title="Clear Filters">
+        <i class="bi bi-x-circle"></i>
+      </a>
+      {% endif %}
+    </div>
+  </form>
+</div>
+
+<!-- Users Master Table -->
+<div class="panel p-0 overflow-hidden">
+  <div class="table-responsive">
+    <table class="table mock table-hover align-middle mb-0">
+      <thead>
+        <tr>
+          <th>નામ (Full Name)</th>
+          <th>Username</th>
+          <th>Role</th>
+          <th>Mobile</th>
+          <th>Assigned Branch</th>
+          <th>Assigned Bal Mandal</th>
+          <th>Status</th>
+          <th class="text-end">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for u in users %}
+        <tr>
+          <td>
+            <div class="d-flex align-items-center gap-2">
+              <div class="rounded-circle {% if u.role == 'branch_admin' %}bg-primary{% else %}bg-success{% endif %} text-white d-flex align-items-center justify-content-center fw-bold" style="width:36px;height:36px;flex:none;font-size:14px;">
+                {{ u.full_name[0] }}
+              </div>
+              <div>
+                <b class="text-dark">{{ u.full_name }}</b>
+                <small class="text-muted d-block">ID: #{{ u.id }}</small>
+              </div>
+            </div>
+          </td>
+          <td>
+            <span class="badge bg-light text-dark border">{{ u.username }}</span>
+          </td>
+          <td>
+            {% if u.role == 'branch_admin' %}
+            <span class="badge badge-soft-primary"><i class="bi bi-building me-1"></i>Branch Admin</span>
+            {% elif u.role == 'sanchalak' %}
+            <span class="badge badge-soft-success"><i class="bi bi-person-badge me-1"></i>Sanchalak</span>
+            {% else %}
+            <span class="badge badge-soft-secondary">{{ u.role }}</span>
+            {% endif %}
+          </td>
+          <td>
+            {% if u.mobile %}
+            <span><i class="bi bi-telephone text-secondary me-1"></i>{{ u.mobile }}</span>
+            {% else %}
+            <span class="text-muted">—</span>
+            {% endif %}
+          </td>
+          <td>
+            {% if u.branch %}
+            <a href="/super-admin/branches/{{ u.branch.id }}/summary" class="fw-semibold text-primary text-decoration-none">
+              <i class="bi bi-building me-1"></i>{{ u.branch.name }}
+            </a>
+            <small class="text-muted d-block">{{ u.branch.city }}</small>
+            {% else %}
+            <span class="text-muted">—</span>
+            {% endif %}
+          </td>
+          <td>
+            {% if u.bal_mandal %}
+            <span class="badge bg-light text-dark border">
+              <i class="bi bi-diagram-3 text-success me-1"></i>{{ u.bal_mandal.name }}
+            </span>
+            {% else %}
+            <span class="text-muted">—</span>
+            {% endif %}
+          </td>
+          <td>
+            {% if u.is_active %}
+            <span class="badge badge-soft-success">Active</span>
+            {% else %}
+            <span class="badge badge-soft-secondary">Inactive</span>
+            {% endif %}
+          </td>
+          <td class="text-end">
+            {% if u.id != user.id %}
+            <form method="post" action="/super-admin/users/{{ u.id }}/delete" onsubmit="return confirm('શું તમે ખરેખર યુઝર \'{{ u.full_name }}\' ({{ u.username }}) ને ડિલીટ કરવા માંગો છો?');" style="display:inline;">
+              <button type="submit" class="btn btn-outline-danger btn-sm py-1 px-2" title="Delete User">
+                <i class="bi bi-trash"></i>
+              </button>
+            </form>
+            {% else %}
+            <span class="badge bg-light text-muted" style="font-size:10px;">Self</span>
+            {% endif %}
+          </td>
+        </tr>
+        {% else %}
+        <tr>
+          <td colspan="8" class="text-center text-muted py-5">
+            કોઈ Admin અથવા Sanchalak મળ્યા નથી.
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

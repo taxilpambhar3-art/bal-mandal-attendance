@@ -1,0 +1,123 @@
+{% extends "partials/shell.html" %}
+{% block title %}લાઈવ Attendance Scans — Branch Admin{% endblock %}
+{% block sidenav %}{% include "branch_admin/_nav.html" %}{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+  <div>
+    <h5 class="fw-bold mb-1">
+      <i class="bi bi-clock-history text-success me-2"></i>લાઈવ હાજરી Scans & History (Attendance Logs)
+    </h5>
+    <small class="text-muted">{{ branch.name }} શાખા હેઠળના તમામ બાળ મંડળોમાં થયેલા કેમેરા સ્કેન, ફોટો સ્નેપશોટ અને હાજરી લોગ</small>
+  </div>
+</div>
+
+<!-- Filters Bar -->
+<div class="panel py-3 mb-4">
+  <form method="get" action="/branch-admin/attendance" class="row g-2 align-items-end">
+    <div class="col-md-4">
+      <label class="form-label small fw-bold text-secondary mb-1">તારીખ (Date):</label>
+      <input type="date" name="scan_date" class="form-control form-control-sm" value="{{ selected_date }}">
+    </div>
+    <div class="col-md-5">
+      <label class="form-label small fw-bold text-secondary mb-1">Bal Mandal Filter:</label>
+      <select name="mandal_id" class="form-select form-select-sm" onchange="this.form.submit()">
+        <option value="">તમામ Bal Mandals (All Mandals)</option>
+        {% for m in mandals %}
+        <option value="{{ m.id }}" {% if selected_mandal == m.id %}selected{% endif %}>{{ m.name }} ({{ m.weekday }})</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="col-md-3 d-flex gap-2">
+      <button type="submit" class="btn btn-primary btn-sm flex-grow-1 fw-bold">
+        <i class="bi bi-funnel-fill me-1"></i>Filter
+      </button>
+      {% if selected_date or selected_mandal %}
+      <a href="/branch-admin/attendance" class="btn btn-outline-secondary btn-sm" title="Clear">
+        <i class="bi bi-x-circle"></i>
+      </a>
+      {% endif %}
+    </div>
+  </form>
+</div>
+
+<!-- Attendance Scans Log Table -->
+<div class="panel p-0 overflow-hidden">
+  <div class="table-responsive">
+    <table class="table mock table-hover align-middle mb-0">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>લાઈવ સ્કેન ફોટો</th>
+          <th>બાળક વિગત</th>
+          <th>બાલ મંડળ</th>
+          <th>હાજરી તારીખ</th>
+          <th>સ્કેન સમય</th>
+          <th>Status</th>
+          <th class="text-end">Action</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for a in scans %}
+        <tr>
+          <td>{{ loop.index }}</td>
+          <td>
+            {% if a.scan_photo %}
+            <a href="/static/uploads/{{ a.scan_photo }}" target="_blank">
+              <img src="/static/uploads/{{ a.scan_photo }}" class="rounded shadow-sm" style="width:48px;height:48px;object-fit:cover;border:2px solid #10b981;" alt="Scan Photo">
+            </a>
+            {% else %}
+            <span class="badge bg-light text-secondary border">મેન્યુઅલ</span>
+            {% endif %}
+          </td>
+          <td>
+            <div class="d-flex align-items-center gap-2">
+              {% if a.child and a.child.face_photo %}
+              <img src="/static/uploads/{{ a.child.face_photo }}" class="rounded-circle shadow-sm" style="width:36px;height:36px;object-fit:cover;border:1.5px solid #3b82f6;" alt="">
+              {% else %}
+              <div style="width:36px;height:36px;border-radius:50%;background:#e2e8f0;display:flex;align-items:center;justify-content:center;font-weight:700;color:#64748b;">
+                {{ a.child.name[0] if a.child else '?' }}
+              </div>
+              {% endif %}
+              <div>
+                <div class="fw-bold text-dark">{{ a.child.name if a.child else 'બાળક' }}</div>
+                <small class="text-muted font-monospace">{{ a.child.child_code if a.child else '—' }}</small>
+              </div>
+            </div>
+          </td>
+          <td>
+            <span class="badge badge-soft-primary">{{ a.bal_mandal.name if a.bal_mandal else '—' }}</span>
+          </td>
+          <td>
+            <span class="fw-semibold text-dark">{{ a.attendance_date.strftime('%d/%m/%Y') }}</span>
+          </td>
+          <td>
+            <small class="text-muted">
+              <i class="bi bi-clock me-1"></i>{{ format_dt(a.scanned_at) }}
+            </small>
+          </td>
+          <td>
+            <span class="badge badge-soft-success fw-bold">
+              <i class="bi bi-check-circle-fill me-1"></i>{{ a.status | capitalize }}
+            </span>
+          </td>
+          <td class="text-end">
+            <form method="post" action="/branch-admin/attendance/{{ a.id }}/delete" onsubmit="return confirm('શું તમે આ હાજરી રેકોર્ડ રદ કરવા માંગો છો?')">
+              <button type="submit" class="btn btn-outline-danger btn-sm" title="Delete">
+                <i class="bi bi-trash"></i>
+              </button>
+            </form>
+          </td>
+        </tr>
+        {% else %}
+        <tr>
+          <td colspan="8" class="text-center py-5 text-muted">
+            <i class="bi bi-inbox fs-1 d-block mb-2 text-secondary"></i>
+            કોઈ હાજરી સ્કેન રેકોર્ડ્સ મળ્યા નથી.
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

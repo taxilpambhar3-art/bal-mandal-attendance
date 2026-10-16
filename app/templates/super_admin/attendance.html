@@ -1,0 +1,150 @@
+{% extends "partials/shell.html" %}
+{% block title %}લાઈવ Attendance Scans — Super Admin{% endblock %}
+{% block sidenav %}{% include "super_admin/_nav.html" %}{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+  <div>
+    <h5 class="fw-bold mb-1">
+      <i class="bi bi-camera-video-fill text-success me-2"></i>લાઈવ હાજરી Scans & History (Statewide Scan Log)
+    </h5>
+    <small class="text-muted">Sanchalak ડેટા: તમામ Bal Mandals માં થયેલા લાઈવ ફેસ સ્કેન, ફોટો સ્નેપશોટ અને ટાઈમસ્ટેમ્પ</small>
+  </div>
+  <div>
+    <span class="badge badge-soft-success px-3 py-2 fw-bold fs-6">
+      કુલ સ્કેન રેકોર્ડ્સ: {{ scans|length }}
+    </span>
+  </div>
+</div>
+
+<!-- Filters Bar -->
+<div class="panel py-3 mb-4">
+  <form method="get" action="/super-admin/attendance" class="row g-2 align-items-end">
+    <div class="col-md-3">
+      <label class="form-label small fw-bold text-secondary mb-1">તારીખ (Date):</label>
+      <input type="date" name="scan_date" class="form-control form-control-sm" value="{{ selected_date }}">
+    </div>
+    <div class="col-md-3">
+      <label class="form-label small fw-bold text-secondary mb-1">Branch Filter:</label>
+      <select name="branch_id" class="form-select form-select-sm" onchange="this.form.submit()">
+        <option value="">તમામ Branches</option>
+        {% for b in branches %}
+        <option value="{{ b.id }}" {% if selected_branch == b.id %}selected{% endif %}>{{ b.name }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="col-md-3">
+      <label class="form-label small fw-bold text-secondary mb-1">Bal Mandal Filter:</label>
+      <select name="mandal_id" class="form-select form-select-sm" onchange="this.form.submit()">
+        <option value="">તમામ Bal Mandals</option>
+        {% for m in mandals %}
+        <option value="{{ m.id }}" {% if selected_mandal == m.id %}selected{% endif %}>{{ m.name }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="col-md-3 d-flex gap-2">
+      <button type="submit" class="btn btn-primary btn-sm flex-grow-1 fw-bold">
+        <i class="bi bi-funnel-fill me-1"></i>Filter Apply
+      </button>
+      {% if selected_date or selected_branch or selected_mandal %}
+      <a href="/super-admin/attendance" class="btn btn-outline-secondary btn-sm" title="Clear">
+        <i class="bi bi-x-circle"></i>
+      </a>
+      {% endif %}
+    </div>
+  </form>
+</div>
+
+<!-- Attendance Scans Log Table -->
+<div class="panel p-0 overflow-hidden">
+  <div class="table-responsive">
+    <table class="table mock table-hover align-middle mb-0">
+      <thead>
+        <tr>
+          <th>લાઈવ સ્કેન ફોટો</th>
+          <th>બાળકનું નામ</th>
+          <th>Branch</th>
+          <th>Bal Mandal</th>
+          <th>તારીખ</th>
+          <th>સ્કેન સમય</th>
+          <th>Week Cycle</th>
+          <th>Status</th>
+          <th class="text-end">Action</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for a in scans %}
+        <tr>
+          <td>
+            <div class="d-flex align-items-center gap-2">
+              {% if a.scan_photo %}
+              <img src="/static/uploads/{{ a.scan_photo }}" class="rounded-3 shadow-sm" style="width:48px;height:48px;object-fit:cover;border:2px solid #10b981;" alt="Live Scan">
+              {% elif a.child and a.child.face_photo %}
+              <img src="/static/uploads/{{ a.child.face_photo }}" class="rounded-3 shadow-sm" style="width:48px;height:48px;object-fit:cover;border:2px solid #3b82f6;" alt="Enrolled">
+              {% else %}
+              <div class="rounded-3 bg-light text-secondary d-flex align-items-center justify-content-center border" style="width:48px;height:48px;">
+                <i class="bi bi-camera text-muted fs-5"></i>
+              </div>
+              {% endif %}
+            </div>
+          </td>
+          <td>
+            {% if a.child %}
+            <b class="text-dark">{{ a.child.name }}</b>
+            <small class="text-muted d-block">{{ a.child.child_code }}</small>
+            {% else %}
+            <span class="text-muted">Unknown</span>
+            {% endif %}
+          </td>
+          <td>
+            {% if a.bal_mandal and a.bal_mandal.branch %}
+            <a href="/super-admin/branches/{{ a.bal_mandal.branch.id }}/summary" class="fw-semibold text-primary text-decoration-none">
+              <i class="bi bi-building me-1"></i>{{ a.bal_mandal.branch.name }}
+            </a>
+            <small class="text-muted d-block">{{ a.bal_mandal.branch.city }}</small>
+            {% else %}
+            <span class="text-muted">—</span>
+            {% endif %}
+          </td>
+          <td>
+            {% if a.bal_mandal %}
+            <span class="badge bg-light text-dark border">
+              <i class="bi bi-diagram-3 text-success me-1"></i>{{ a.bal_mandal.name }}
+            </span>
+            {% else %}
+            <span class="text-muted">—</span>
+            {% endif %}
+          </td>
+          <td>
+            <b>{{ a.attendance_date.strftime('%d-%m-%Y') }}</b>
+          </td>
+          <td>
+            <span class="text-secondary">{{ a.scanned_at.strftime('%I:%M %p') if a.scanned_at else '—' }}</span>
+          </td>
+          <td>
+            <span class="badge badge-soft-info">Week {{ a.week_number }}</span>
+          </td>
+          <td>
+            <span class="badge badge-soft-success">
+              <i class="bi bi-check-circle-fill me-1"></i>Verified Present
+            </span>
+          </td>
+          <td class="text-end">
+            <form method="post" action="/super-admin/attendance/{{ a.id }}/delete" onsubmit="return confirm('શું તમે આ હાજરી સ્કેન રેકોર્ડ રદ કરવા માંગો છો?');" style="display:inline;">
+              <button type="submit" class="btn btn-outline-danger btn-sm py-1 px-2" title="Delete Scan">
+                <i class="bi bi-trash"></i>
+              </button>
+            </form>
+          </td>
+        </tr>
+        {% else %}
+        <tr>
+          <td colspan="9" class="text-center text-muted py-5">
+            કોઈ હાજરી સ્કેન રેકોર્ડ મળ્યો નથી.
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,465 @@
+{% extends "partials/shell.html" %}
+{% block title %}Face Scan હાજરી Kiosk — Branch Admin{% endblock %}
+{% block sidenav %}{% include "branch_admin/_nav.html" %}{% endblock %}
+{% block content %}
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+  <div>
+    <h5 class="fw-bold mb-0">
+      <i class="bi bi-camera-video-fill text-success me-2"></i>Face Scan હાજરી Kiosk (Branch Admin Mode)
+    </h5>
+    <small class="text-muted">
+      {{ branch.name }} શાખા · {{ week.date.strftime('%d %B %Y') }} · <span class="badge badge-soft-info">{{ week.week_label }}</span>
+    </small>
+  </div>
+  <div class="d-flex align-items-center gap-2 flex-wrap">
+    <!-- Mandal Switcher Dropdown -->
+    <div class="d-flex align-items-center gap-1 bg-light py-1 px-3 border rounded-pill shadow-sm">
+      <span class="text-secondary small fw-bold"><i class="bi bi-diagram-3-fill text-primary me-1"></i>મંડળ:</span>
+      <select id="mandalSelector" class="form-select form-select-sm border-0 bg-transparent fw-bold text-dark py-0 ps-1 pe-4" style="width:auto;cursor:pointer;font-size:12px;" onchange="window.location.href='/branch-admin/face-scan' + (this.value ? '?mandal_id=' + this.value : '')">
+        <option value="" {% if not selected_mandal %}selected{% endif %}>તમામ બાળ મંડળ (All Mandals)</option>
+        {% for m in mandals %}
+        <option value="{{ m.id }}" {% if selected_mandal and selected_mandal.id == m.id %}selected{% endif %}>
+          {{ m.name }} ({{ m.weekday }})
+        </option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <!-- Scan Speed Selector -->
+    <div class="d-flex align-items-center gap-1 bg-light py-1 px-3 border rounded-pill shadow-sm" style="font-size:12px;">
+      <span class="text-secondary fw-bold"><i class="bi bi-lightning-charge-fill text-warning me-1"></i>સ્પીડ:</span>
+      <select id="kioskDelaySelect" class="form-select form-select-sm border-0 bg-transparent fw-bold text-success py-0 ps-1 pe-4" style="width:auto;cursor:pointer;font-size:12px;">
+        <option value="0" selected>⚡ 0s (Instant / તુરંત)</option>
+        <option value="2">⏱️ 2s</option>
+        <option value="5">⏱️ 5s</option>
+      </select>
+    </div>
+
+    <div class="form-check form-switch bg-light py-1 px-3 border rounded-pill d-flex align-items-center gap-2 m-0 shadow-sm">
+      <input class="form-check-input ms-0 mt-0" type="checkbox" id="autoScanToggle" checked style="cursor:pointer;">
+      <label class="form-check-label small fw-bold text-success mb-0" for="autoScanToggle" style="cursor:pointer;" id="autoScanLabel">
+        <i class="bi bi-magic me-1"></i>Auto-Scan
+      </label>
+    </div>
+
+    <span class="badge badge-soft-success py-2 px-3" id="cameraStatus">
+      <i class="bi bi-circle-fill me-1" style="font-size:8px;"></i>કેમેરા ચાલુ
+    </span>
+  </div>
+</div>
+
+<div class="row g-3">
+  <!-- Left Side: Camera & Live Scanner Viewport -->
+  <div class="col-lg-7">
+    <div class="panel">
+      <!-- Camera Box with Detection Rings and Instant Toast -->
+      <div class="camera-box position-relative" id="cameraContainer" style="aspect-ratio: 4/3; min-height: 280px; background:#0f172a; border-radius:14px; overflow:hidden;">
+        <video id="video" autoplay playsinline muted style="width:100%;height:100%;object-fit:cover;"></video>
+        <canvas id="canvas" style="display:none;"></canvas>
+        <canvas id="motionCanvas" style="display:none;"></canvas>
+
+        <!-- Scanning Ring Target -->
+        <div class="face-ring" id="faceRing"></div>
+
+        <!-- Flash Effect Overlay -->
+        <div id="flashOverlay" style="position:absolute;inset:0;background:#ffffff;opacity:0;pointer-events:none;transition:opacity 0.25s ease;z-index:10;"></div>
+
+        <!-- Live Camera Tag -->
+        <div style="position:absolute;top:12px;left:12px;color:#fff;background:rgba(0,0,0,0.6);padding:3px 12px;border-radius:20px;font-size:11.5px;backdrop-filter:blur(4px);z-index:5;">
+          <span class="spinner-grow spinner-grow-sm text-danger me-1" style="width:8px;height:8px;" role="status"></span>
+          <b>LIVE CAMERA</b> {% if selected_mandal %}· <span class="text-warning">{{ selected_mandal.name }}</span>{% endif %}
+        </div>
+
+        <!-- Auto Countdown Tag -->
+        <div id="autoScanProgressContainer" style="position:absolute;top:12px;right:12px;display:none;z-index:5;">
+          <div class="badge bg-success py-1 px-3 shadow" style="font-size:12px;">
+            <i class="bi bi-lightning-charge-fill me-1"></i>Scanning: <span id="countdownSec">1s</span>
+          </div>
+        </div>
+
+        <!-- Center Guide Label -->
+        <div class="cam-label" id="camOverlayLabel" style="z-index:5;">
+          <i class="bi bi-person-bounding-box me-1"></i>બાળક કેમેરા સામે જુએ એટલે ઓટોમેટિક હાજરી પુરાશે
+        </div>
+
+        <!-- 0-Second Instant Success Toast Overlay -->
+        <div id="instantSuccessToast" class="position-absolute" style="top:12px; left:12px; right:12px; background:rgba(16,185,129,0.95); backdrop-filter:blur(8px); color:#fff; border-radius:12px; padding:8px 12px; display:none; align-items:center; justify-content:space-between; z-index:25; box-shadow:0 8px 24px rgba(0,0,0,0.35); transition:all 0.25s ease;">
+          <div class="d-flex align-items-center gap-2">
+            <img id="instantToastPhoto" src="" style="width:38px;height:38px;border-radius:50%;object-fit:cover;border:2px solid #fff;" alt="">
+            <div>
+              <div class="fw-bold" style="font-size:13.5px;" id="instantToastName">બાળકનું નામ</div>
+              <small style="font-size:11px;" id="instantToastScore" class="text-white-50">✓ 100% Match · હાજરી નોંધાઈ</small>
+            </div>
+          </div>
+          <span class="badge bg-white text-success fw-bold px-2 py-1 shadow-sm" style="font-size:11px;">
+            <i class="bi bi-lightning-charge-fill me-1 text-warning"></i>0s તુરંત હાજરી
+          </span>
+        </div>
+
+        <!-- Timed Success Overlay (When 2s or 5s delay selected) -->
+        <div id="kioskSuccessOverlay" class="position-absolute" style="inset:0; background:rgba(15,23,42,0.92); backdrop-filter:blur(8px); display:none; flex-direction:column; justify-content:center; align-items:center; z-index:20; padding:20px; text-align:center;">
+          <div class="rounded-circle d-flex align-items-center justify-content-center bg-success text-white mb-2 shadow" style="width:52px;height:52px;">
+            <i class="bi bi-check-lg fs-2"></i>
+          </div>
+          <h5 class="fw-bold text-white mb-1" id="kioskSuccessName">બાળક</h5>
+          <span class="badge badge-soft-success mb-2 px-3 py-1 fs-6" id="kioskSuccessScore">
+            <i class="bi bi-shield-check me-1"></i>95% Match Verified
+          </span>
+          <div class="d-flex align-items-center gap-3 my-2">
+            <div>
+              <small class="text-white-50 d-block mb-1" style="font-size:11px;">લાઈવ સ્કેન</small>
+              <img id="kioskLivePhoto" src="" class="rounded-3 shadow" style="width:64px;height:64px;object-fit:cover;border:2px solid #10b981;" alt="Live">
+            </div>
+            <i class="bi bi-arrow-left-right text-muted fs-5"></i>
+            <div>
+              <small class="text-white-50 d-block mb-1" style="font-size:11px;">રજિસ્ટર્ડ પ્રોફાઇલ</small>
+              <img id="kioskEnrolledPhoto" src="" class="rounded-3 shadow" style="width:64px;height:64px;object-fit:cover;border:2px solid #3b82f6;" alt="Enrolled">
+            </div>
+          </div>
+          <div style="width:200px; height:4px; background:rgba(255,255,255,0.2); border-radius:2px; overflow:hidden;" class="mt-2">
+            <div id="kioskCountdownBar" style="height:100%; width:100%; background:#10b981; transition:width 0.1s linear;"></div>
+          </div>
+          <small class="text-white-50 mt-1" style="font-size:11px;">આગામી બાળક માટે કેમેરા તૈયાર થઈ રહ્યો છે...</small>
+        </div>
+      </div>
+
+      <!-- Kiosk Actions Bar -->
+      <div class="d-flex justify-content-between align-items-center mt-3 gap-2 flex-wrap">
+        <button type="button" class="btn btn-success fw-bold flex-grow-1 shadow-sm" id="manualSnapBtn">
+          <i class="bi bi-camera-fill me-1"></i>મેન્યુઅલ કેપ્ચર (Manual Snap)
+        </button>
+        <button type="button" class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#manualAttModal">
+          <i class="bi bi-pencil-square me-1"></i>યાદીમાંથી હાજરી પૂરો
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Right Side: Today's Present Attendance List -->
+  <div class="col-lg-5">
+    <div class="panel h-100 d-flex flex-column justify-content-between">
+      <div>
+        <div class="d-flex justify-content-between align-items-center mb-3">
+          <h6 class="mb-0 fw-bold">
+            <i class="bi bi-check2-circle text-success me-1"></i>આજની હાજરી યાદી
+          </h6>
+          <span class="badge badge-soft-success px-3 py-2 fw-bold" id="todayCountBadge">
+            કુલ હાજર: {{ today_list|length }}
+          </span>
+        </div>
+
+        <div style="max-height: 400px; overflow-y: auto;" class="pe-1" id="scannedChildrenList">
+          {% for a in today_list %}
+          <div class="d-flex align-items-center gap-2 p-2 border-bottom">
+            {% if a.scan_photo %}
+            <img src="/static/uploads/{{ a.scan_photo }}" class="rounded-circle shadow-sm" style="width: 38px; height: 38px; object-fit: cover; border: 2px solid #10b981;" alt="">
+            {% elif a.child and a.child.face_photo %}
+            <img src="/static/uploads/{{ a.child.face_photo }}" class="rounded-circle shadow-sm" style="width: 38px; height: 38px; object-fit: cover; border: 2px solid #3b82f6;" alt="">
+            {% else %}
+            <div style="width: 38px; height: 38px; border-radius: 50%; background: #cbd5e1; display: flex; align-items: center; justify-content: center; font-weight: 700; color: #475569;">
+              {{ a.child.name[0] if a.child else '?' }}
+            </div>
+            {% endif %}
+            <div class="flex-grow-1 overflow-hidden">
+              <div class="fw-bold text-dark text-truncate" style="font-size: 13.5px;">{{ a.child.name if a.child else 'બાળક' }}</div>
+              <small class="text-muted d-block" style="font-size:11px;">
+                {{ format_dt(a.scanned_at) }} · {{ a.bal_mandal.name if a.bal_mandal else '' }}
+              </small>
+            </div>
+            <span class="badge bg-success-subtle text-success border border-success-subtle fw-bold" style="font-size:11px;">
+              <i class="bi bi-check-circle-fill me-1"></i>હાજર
+            </span>
+          </div>
+          {% else %}
+          <div class="text-center py-5 text-muted small" id="noScansMsg">
+            <i class="bi bi-camera fs-2 d-block mb-2 text-secondary"></i>
+            આજે હજુ સુધી કોઈ બાળકની હાજરી પુરાઈ નથી.
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+
+      <div class="pt-3 border-top mt-3 d-flex gap-2">
+        <a href="/branch-admin/attendance" class="btn btn-outline-secondary btn-sm flex-grow-1">
+          <i class="bi bi-clock-history me-1"></i>સંપૂર્ણ સ્કેન હિસ્ટ્રી
+        </a>
+        <a href="/branch-admin/children/add" class="btn btn-outline-warning btn-sm">
+          <i class="bi bi-person-plus me-1"></i>નવું બાળક
+        </a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Manual Attendance Selection -->
+<div class="modal fade" id="manualAttModal" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h6 class="modal-title fw-bold">યાદીમાંથી હાજરી પૂરો</h6>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <form method="post" action="/branch-admin/manual-attendance">
+        <div class="modal-body">
+          <label class="form-label small fw-bold text-secondary mb-1">બાકી રહેલા બાળકોમાંથી પસંદ કરો:</label>
+          <select name="child_id" class="form-select" required>
+            <option value="">-- બાળક પસંદ કરો --</option>
+            {% for c in pending %}
+            <option value="{{ c.id }}">{{ c.name }} ({{ c.child_code }}) - {{ c.bal_mandal.name if c.bal_mandal else '' }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-success btn-sm fw-bold">હાજરી પૂરો</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script>
+let videoStream = null;
+let isProcessing = false;
+let autoScanTimer = null;
+let motionInterval = null;
+let consecutivePresenceTicks = 0;
+const REQUIRED_HOLD_TICKS = 1;
+
+const video = document.getElementById('video');
+const canvas = document.getElementById('canvas');
+const motionCanvas = document.getElementById('motionCanvas');
+const motionCtx = motionCanvas.getContext('2d', { willReadFrequently: true });
+const faceRing = document.getElementById('faceRing');
+const flashOverlay = document.getElementById('flashOverlay');
+const autoScanProgress = document.getElementById('autoScanProgressContainer');
+const camOverlayLabel = document.getElementById('camOverlayLabel');
+const autoScanToggle = document.getElementById('autoScanToggle');
+const kioskDelaySelect = document.getElementById('kioskDelaySelect');
+const instantSuccessToast = document.getElementById('instantSuccessToast');
+const instantToastPhoto = document.getElementById('instantToastPhoto');
+const instantToastName = document.getElementById('instantToastName');
+const instantToastScore = document.getElementById('instantToastScore');
+const kioskSuccessOverlay = document.getElementById('kioskSuccessOverlay');
+const kioskSuccessName = document.getElementById('kioskSuccessName');
+const kioskSuccessScore = document.getElementById('kioskSuccessScore');
+const kioskLivePhoto = document.getElementById('kioskLivePhoto');
+const kioskEnrolledPhoto = document.getElementById('kioskEnrolledPhoto');
+const kioskCountdownBar = document.getElementById('kioskCountdownBar');
+const scannedChildrenList = document.getElementById('scannedChildrenList');
+const todayCountBadge = document.getElementById('todayCountBadge');
+const noScansMsg = document.getElementById('noScansMsg');
+
+const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+function playChime(success = true) {
+  try {
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+    if (success) {
+      osc.frequency.setValueAtTime(587.33, audioCtx.currentTime); // D5
+      osc.frequency.exponentialRampToValueAtTime(880, audioCtx.currentTime + 0.15); // A5
+      gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.35);
+      osc.start();
+      osc.stop(audioCtx.currentTime + 0.35);
+    } else {
+      osc.type = 'sawtooth';
+      osc.frequency.setValueAtTime(220, audioCtx.currentTime);
+      gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.25);
+      osc.start();
+      osc.stop(audioCtx.currentTime + 0.25);
+    }
+  } catch (e) {
+    console.log('Audio disabled or blocked', e);
+  }
+}
+
+async function startCamera() {
+  try {
+    videoStream = await navigator.mediaDevices.getUserMedia({
+      video: { width: { ideal: 640 }, height: { ideal: 480 }, facingMode: 'user' }
+    });
+    video.srcObject = videoStream;
+    video.onloadedmetadata = () => {
+      motionCanvas.width = 160;
+      motionCanvas.height = 120;
+      startFacePresenceMonitor();
+    };
+  } catch (err) {
+    console.error('Camera access failed:', err);
+    document.getElementById('cameraStatus').className = 'badge badge-soft-danger py-2 px-3';
+    document.getElementById('cameraStatus').innerHTML = '<i class="bi bi-x-circle-fill me-1"></i>Camera Blocked';
+  }
+}
+
+function startFacePresenceMonitor() {
+  if (motionInterval) clearInterval(motionInterval);
+  motionInterval = setInterval(() => {
+    if (isProcessing || !autoScanToggle.checked || !video.videoWidth) return;
+    motionCtx.drawImage(video, 0, 0, 160, 120);
+    const frame = motionCtx.getImageData(40, 20, 80, 80);
+    const data = frame.data;
+    let totalLuma = 0;
+    for (let i = 0; i < data.length; i += 16) {
+      totalLuma += 0.299 * data[i] + 0.587 * data[i+1] + 0.114 * data[i+2];
+    }
+    const avgLuma = totalLuma / (data.length / 16);
+    if (avgLuma > 20 && avgLuma < 240) {
+      consecutivePresenceTicks++;
+      if (consecutivePresenceTicks >= REQUIRED_HOLD_TICKS) {
+        consecutivePresenceTicks = 0;
+        captureAndVerify();
+      }
+    } else {
+      consecutivePresenceTicks = 0;
+    }
+  }, 280);
+}
+
+async function captureAndVerify() {
+  if (isProcessing) return;
+  isProcessing = true;
+
+  flashOverlay.style.opacity = '0.7';
+  setTimeout(() => { flashOverlay.style.opacity = '0'; }, 150);
+  faceRing.style.borderColor = '#eab308';
+  faceRing.classList.add('scanning');
+  camOverlayLabel.innerHTML = '<i class="bi bi-hourglass-split me-1"></i>ચેક થઈ રહ્યું છે... (Verifying)';
+
+  canvas.width = video.videoWidth || 640;
+  canvas.height = video.videoHeight || 480;
+  const ctx = canvas.getContext('2d');
+  ctx.drawImage(video, 0, 0);
+  const photoData = canvas.toDataURL('image/jpeg', 0.9);
+
+  const selectedMandalId = document.getElementById('mandalSelector').value;
+  const formData = new FormData();
+  formData.append('photo_data', photoData);
+  formData.append('child_id', 'auto');
+  if (selectedMandalId) formData.append('mandal_id', selectedMandalId);
+
+  try {
+    const res = await fetch('/branch-admin/face-scan?ajax=1', {
+      method: 'POST',
+      body: formData,
+      headers: { 'X-Requested-With': 'XMLHttpRequest' }
+    });
+    const data = await res.json();
+
+    if (data.success && data.is_match) {
+      playChime(true);
+      faceRing.style.borderColor = '#10b981';
+      faceRing.classList.remove('scanning');
+
+      const selectedDelay = parseInt(kioskDelaySelect.value || '0', 10);
+      if (selectedDelay === 0) {
+        showInstantToast(data);
+        addScannedChildRow(data);
+        setTimeout(() => {
+          isProcessing = false;
+          faceRing.style.borderColor = '#10b981';
+          camOverlayLabel.innerHTML = '<i class="bi bi-person-bounding-box me-1"></i>બાળક કેમેરા સામે જુએ એટલે ઓટોમેટિક સ્કેન થશે';
+        }, 300);
+      } else {
+        showKioskSuccessOverlay(data, selectedDelay);
+        addScannedChildRow(data);
+      }
+    } else {
+      playChime(false);
+      faceRing.style.borderColor = '#ef4444';
+      faceRing.classList.remove('scanning');
+      camOverlayLabel.innerHTML = '<i class="bi bi-x-circle me-1 text-danger"></i>ચહેરો મેળ ખાતો નથી! ફરી પ્રયાસ કરો.';
+      setTimeout(() => {
+        isProcessing = false;
+        faceRing.style.borderColor = '#10b981';
+        camOverlayLabel.innerHTML = '<i class="bi bi-person-bounding-box me-1"></i>બાળક કેમેરા સામે જુએ એટલે ઓટોમેટિક સ્કેન થશે';
+      }, 1000);
+    }
+  } catch (err) {
+    console.error('Scan error:', err);
+    isProcessing = false;
+    faceRing.style.borderColor = '#10b981';
+    faceRing.classList.remove('scanning');
+    camOverlayLabel.innerHTML = '<i class="bi bi-exclamation-triangle me-1"></i>નેટવર્ક ભૂલ. ફરી પ્રયાસ કરો.';
+  }
+}
+
+let toastHideTimeout = null;
+function showInstantToast(data) {
+  instantToastName.textContent = data.child.name;
+  instantToastScore.textContent = '✓ ' + Math.round(data.confidence) + '% Match · ' + (data.child.mandal_name || 'હાજરી નોંધાઈ');
+  if (data.child.face_photo) {
+    instantToastPhoto.src = '/static/uploads/' + data.child.face_photo;
+    instantToastPhoto.style.display = 'block';
+  } else if (data.live_photo) {
+    instantToastPhoto.src = '/static/uploads/' + data.live_photo;
+    instantToastPhoto.style.display = 'block';
+  } else {
+    instantToastPhoto.style.display = 'none';
+  }
+  instantSuccessToast.style.display = 'flex';
+  if (toastHideTimeout) clearTimeout(toastHideTimeout);
+  toastHideTimeout = setTimeout(() => {
+    instantSuccessToast.style.display = 'none';
+  }, 2500);
+}
+
+function showKioskSuccessOverlay(data, delaySeconds) {
+  kioskSuccessName.textContent = data.child.name + (data.child.mandal_name ? ' (' + data.child.mandal_name + ')' : '');
+  kioskSuccessScore.innerHTML = '<i class="bi bi-shield-check me-1"></i>' + Math.round(data.confidence) + '% Match Verified';
+  kioskLivePhoto.src = data.live_photo ? '/static/uploads/' + data.live_photo : '';
+  kioskEnrolledPhoto.src = data.child.face_photo ? '/static/uploads/' + data.child.face_photo : '';
+  kioskSuccessOverlay.style.display = 'flex';
+
+  const startTime = Date.now();
+  const duration = delaySeconds * 1000;
+  const progressInterval = setInterval(() => {
+    const elapsed = Date.now() - startTime;
+    const remainingRatio = Math.max(0, 1 - (elapsed / duration));
+    kioskCountdownBar.style.width = (remainingRatio * 100) + '%';
+    if (elapsed >= duration) {
+      clearInterval(progressInterval);
+      kioskSuccessOverlay.style.display = 'none';
+      isProcessing = false;
+      faceRing.style.borderColor = '#10b981';
+      camOverlayLabel.innerHTML = '<i class="bi bi-person-bounding-box me-1"></i>બાળક કેમેરા સામે જુએ એટલે ઓટોમેટિક સ્કેન થશે';
+    }
+  }, 50);
+}
+
+function addScannedChildRow(data) {
+  if (noScansMsg) noScansMsg.style.display = 'none';
+  const row = document.createElement('div');
+  row.className = 'd-flex align-items-center gap-2 p-2 border-bottom';
+  row.style.background = '#f0fdf4';
+  const photoSrc = data.live_photo ? '/static/uploads/' + data.live_photo : (data.child.face_photo ? '/static/uploads/' + data.child.face_photo : '');
+  row.innerHTML = `
+    <img src="${photoSrc}" class="rounded-circle shadow-sm" style="width:38px;height:38px;object-fit:cover;border:2px solid #10b981;" alt="">
+    <div class="flex-grow-1 overflow-hidden">
+      <div class="fw-bold text-dark text-truncate" style="font-size:13.5px;">${data.child.name}</div>
+      <small class="text-muted d-block" style="font-size:11px;">
+        ${data.scanned_at_str} · ${data.child.mandal_name || ''}
+      </small>
+    </div>
+    <span class="badge bg-success text-white fw-bold" style="font-size:11px;">
+      <i class="bi bi-check-circle-fill me-1"></i>હાજર
+    </span>
+  `;
+  scannedChildrenList.prepend(row);
+  if (data.today_total) {
+    todayCountBadge.textContent = 'કુલ હાજર: ' + data.today_total;
+  }
+}
+
+document.getElementById('manualSnapBtn').addEventListener('click', captureAndVerify);
+window.addEventListener('DOMContentLoaded', startCamera);
+window.addEventListener('beforeunload', () => {
+  if (videoStream) videoStream.getTracks().forEach(t => t.stop());
+  if (motionInterval) clearInterval(motionInterval);
+});
+</script>
+{% endblock %}

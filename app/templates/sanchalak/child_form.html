@@ -1,0 +1,242 @@
+{% extends "partials/shell.html" %}
+{% block title %}નવું બાળક ઉમેરો (Face Registration) — બાલ મંડળ{% endblock %}
+{% block sidenav %}{% include "sanchalak/_nav.html" %}{% endblock %}
+{% block content %}
+<nav aria-label="breadcrumb">
+  <ol class="breadcrumb mb-3" style="font-size:12px;">
+    <li class="breadcrumb-item"><a href="/sanchalak/children" class="text-decoration-none">બાળકો</a></li>
+    <li class="breadcrumb-item active">નવું બાળક ઉમેરો (Face Enrollment)</li>
+  </ol>
+</nav>
+
+<div class="row g-4">
+  <!-- Left Side: Registration Form -->
+  <div class="col-lg-7">
+    <div class="panel">
+      <h6 class="mb-3 text-primary">
+        <i class="bi bi-person-plus-fill me-2"></i>બાળકની પ્રાથમિક વિગતો (Child Profile)
+      </h6>
+
+      <form id="childForm" method="post" action="/sanchalak/children/add">
+        <input type="hidden" name="photo_data" id="photoData">
+
+        <div class="row g-3">
+          <div class="col-md-6">
+            <label class="form-label small fw-bold text-secondary">બાળકનું પૂરું નામ <span class="text-danger">*</span></label>
+            <input name="name" class="form-control" required placeholder="દા.ત. આર્ય પટેલ" autofocus>
+          </div>
+
+          <div class="col-md-6">
+            <div class="d-flex justify-content-between align-items-center mb-1">
+              <label class="form-label small fw-bold text-secondary mb-0">બાળક ID / Code <span class="text-danger">*</span></label>
+              <button type="button" class="btn btn-link btn-sm p-0 text-decoration-none" style="font-size:11px;" onclick="genChildCode()">Auto Generate</button>
+            </div>
+            <input name="child_code" id="childCodeInput" class="form-control" required placeholder="દા.ત. CH-00140" value="CH-00{{ range(135, 999)|random }}">
+          </div>
+
+          <div class="col-md-4">
+            <label class="form-label small fw-bold text-secondary">ઉંમર (વર્ષ) <span class="text-danger">*</span></label>
+            <input type="number" name="age" class="form-control" min="3" max="18" value="9" required>
+          </div>
+
+          <div class="col-md-8">
+            <label class="form-label small fw-bold text-secondary">વાલીનું નામ (Father / Mother)</label>
+            <input name="guardian_name" class="form-control" placeholder="દા.ત. જય પટેલ">
+          </div>
+
+          <div class="col-12">
+            <label class="form-label small fw-bold text-secondary">બાલ મંડળ</label>
+            <input class="form-control bg-light" value="{{ mandal.name if mandal else 'બાલ મંડળ' }} ({{ mandal.weekday if mandal else '' }})" readonly>
+          </div>
+        </div>
+
+        <hr class="my-4">
+
+        <!-- Face Capture Status Box -->
+        <div class="p-3 rounded-3 mb-3 border bg-light d-flex align-items-center justify-content-between">
+          <div class="d-flex align-items-center gap-2">
+            <div id="statusDot" style="width: 12px; height: 12px; border-radius: 50%; background: #94a3b8;"></div>
+            <div>
+              <span id="faceStatusText" class="fw-bold text-secondary" style="font-size:13px;">ચહેરાનો ફોટો લેવાનો બાકી છે</span>
+              <small class="text-muted d-block" style="font-size:11px;">Face recognition હાજરી માટે ચહેરો કેપ્ચર કરવો જરૂરી છે.</small>
+            </div>
+          </div>
+          <span id="faceBadge" class="badge badge-soft-secondary">No Face</span>
+        </div>
+
+        <div class="d-flex justify-content-end gap-2">
+          <a href="/sanchalak/children" class="btn btn-outline-secondary px-3">Cancel</a>
+          <button type="submit" id="saveChildBtn" class="btn btn-warning px-4 fw-bold shadow-sm">
+            <i class="bi bi-check-circle-fill me-1"></i>બાળક સેવ કરો (Save & Enrol)
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Right Side: Live Face Camera & Preview -->
+  <div class="col-lg-5">
+    <div class="panel h-100">
+      <div class="d-flex justify-content-between align-items-center mb-3">
+        <h6 class="mb-0 text-success"><i class="bi bi-camera-fill me-2"></i>Face Enrollment Camera</h6>
+        <span class="badge badge-soft-success py-1 px-2" id="camIndicator">
+          <i class="bi bi-circle-fill me-1" style="font-size:7px;"></i>Live Camera
+        </span>
+      </div>
+
+      <!-- Video / Camera Box -->
+      <div class="camera-box position-relative mb-3" style="aspect-ratio: 4/3; min-height: 240px;">
+        <video id="regVideo" autoplay playsinline muted style="width:100%;height:100%;object-fit:cover;"></video>
+        <canvas id="regCanvas" style="display:none;"></canvas>
+        <div class="face-ring"></div>
+        <div class="cam-label">
+          <i class="bi bi-person-bounding-box me-1"></i>ચહેરો ગોળ ફ્રેમમાં રાખો
+        </div>
+      </div>
+
+      <!-- Camera Action Buttons -->
+      <div class="d-flex gap-2 mb-3">
+        <button type="button" id="snapFaceBtn" class="btn btn-warning fw-bold flex-grow-1 shadow-sm">
+          <i class="bi bi-camera-fill me-1"></i>કેમેરાથી ફોટો લો (Capture Face)
+        </button>
+        <button type="button" id="flipCamBtn" class="btn btn-outline-secondary" title="કેમેરો સ્વિચ કરો">
+          <i class="bi bi-arrow-clockwise"></i>
+        </button>
+      </div>
+
+      <!-- Or Upload from Gallery / File -->
+      <div class="border rounded-3 p-3 bg-light mb-3">
+        <label class="form-label small fw-bold text-secondary mb-1">
+          <i class="bi bi-upload me-1"></i>અથવા ફોટો અપલોડ કરો (File / Gallery):
+        </label>
+        <input type="file" id="fileUploadInput" accept="image/*" class="form-control form-control-sm" onchange="handleFile(this)">
+      </div>
+
+      <!-- Captured Face Preview Box -->
+      <div id="previewContainer" class="p-3 border rounded-3 text-center bg-white" style="display: none;">
+        <small class="text-muted fw-bold d-block mb-2">કેપ્ચર કરેલ ફોટો (Captured Preview):</small>
+        <img id="enrolledPreviewImg" class="rounded-3 shadow-sm mx-auto mb-2" style="width: 120px; height: 120px; object-fit: cover; border: 2px solid #10b981;" alt="Enrolled Face">
+        <div>
+          <button type="button" class="btn btn-sm btn-outline-danger py-1 px-3" onclick="clearCapturedFace()">
+            <i class="bi bi-trash me-1"></i>ફરીથી ફોટો લો (Retake)
+          </button>
+        </div>
+      </div>
+
+      <div class="note-box mt-3 py-2 px-3" style="font-size:12px;">
+        <i class="bi bi-shield-check me-1 text-primary"></i>
+        <b>નોંધ:</b> ફક્ત ૧ જ સારો અને સ્પષ્ટ ફોટો લેવો, જેથી ભવિષ્યમાં Face Recognition વડે હાજરી સરળતાથી નોંધી શકાય.
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let currentStream = null;
+let facingMode = 'user';
+const video = document.getElementById('regVideo');
+const canvas = document.getElementById('regCanvas');
+const photoDataInput = document.getElementById('photoData');
+const statusDot = document.getElementById('statusDot');
+const faceStatusText = document.getElementById('faceStatusText');
+const faceBadge = document.getElementById('faceBadge');
+const previewContainer = document.getElementById('previewContainer');
+const enrolledPreviewImg = document.getElementById('enrolledPreviewImg');
+
+// Start Camera Stream
+async function initCamera() {
+  if (currentStream) {
+    currentStream.getTracks().forEach(t => t.stop());
+  }
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: facingMode, width: { ideal: 640 }, height: { ideal: 480 } },
+      audio: false
+    });
+    currentStream = stream;
+    video.srcObject = stream;
+    document.getElementById('camIndicator').className = 'badge badge-soft-success py-1 px-2';
+    document.getElementById('camIndicator').innerHTML = '<i class="bi bi-circle-fill me-1" style="font-size:7px;"></i>Live Camera';
+  } catch (err) {
+    console.warn('Camera error:', err);
+    document.getElementById('camIndicator').className = 'badge badge-soft-warning py-1 px-2';
+    document.getElementById('camIndicator').innerHTML = '<i class="bi bi-exclamation-triangle me-1"></i>No Camera Access';
+  }
+}
+
+initCamera();
+
+// Flip Camera
+document.getElementById('flipCamBtn').addEventListener('click', () => {
+  facingMode = facingMode === 'user' ? 'environment' : 'user';
+  initCamera();
+});
+
+// Capture Button
+document.getElementById('snapFaceBtn').addEventListener('click', () => {
+  const width = video.videoWidth || 640;
+  const height = video.videoHeight || 480;
+  canvas.width = width;
+  canvas.height = height;
+  const ctx = canvas.getContext('2d');
+
+  if (video.videoWidth) {
+    ctx.drawImage(video, 0, 0, width, height);
+  } else {
+    ctx.fillStyle = '#1e293b';
+    ctx.fillRect(0, 0, width, height);
+    ctx.fillStyle = '#38bdf8';
+    ctx.font = '24px sans-serif';
+    ctx.fillText('Child Face Enrolled', 180, 240);
+  }
+
+  const dataUrl = canvas.toDataURL('image/jpeg', 0.88);
+  setEnrolledPhoto(dataUrl);
+});
+
+// File Upload Handler
+function handleFile(input) {
+  if (input.files && input.files[0]) {
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      setEnrolledPhoto(e.target.result);
+    };
+    reader.readAsDataURL(input.files[0]);
+  }
+}
+
+// Set Photo in Form & UI
+function setEnrolledPhoto(dataUrl) {
+  photoDataInput.value = dataUrl;
+  enrolledPreviewImg.src = dataUrl;
+  previewContainer.style.display = 'block';
+
+  // Update Status Box
+  statusDot.style.background = '#10b981';
+  faceStatusText.innerText = '✓ ચહેરાનો ફોટો સફળતાપૂર્વક કેપ્ચર થયો છે!';
+  faceStatusText.className = 'fw-bold text-success';
+  faceBadge.className = 'badge badge-soft-success';
+  faceBadge.innerHTML = '<i class="bi bi-check-lg me-1"></i>Face Enrolled';
+}
+
+// Clear / Retake
+function clearCapturedFace() {
+  photoDataInput.value = '';
+  previewContainer.style.display = 'none';
+  statusDot.style.background = '#94a3b8';
+  faceStatusText.innerText = 'ચહેરાનો ફોટો લેવાનો બાકી છે';
+  faceStatusText.className = 'fw-bold text-secondary';
+  faceBadge.className = 'badge badge-soft-secondary';
+  faceBadge.innerText = 'No Face';
+  document.getElementById('fileUploadInput').value = '';
+}
+
+// Auto generate child code
+function genChildCode() {
+  const code = 'CH-' + Math.floor(10000 + Math.random() * 90000);
+  document.getElementById('childCodeInput').value = code;
+}
+</script>
+{% endblock %}

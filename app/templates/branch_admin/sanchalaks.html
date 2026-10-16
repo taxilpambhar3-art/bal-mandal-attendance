@@ -1,0 +1,165 @@
+{% extends "partials/shell.html" %}
+{% block title %}સંચાલકો (Sanchalaks) — Branch Admin{% endblock %}
+{% block sidenav %}{% include "branch_admin/_nav.html" %}{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+  <div>
+    <h5 class="fw-bold mb-1">
+      <i class="bi bi-person-badge-fill text-primary me-2"></i>સંચાલકો (Sanchalaks Directory)
+    </h5>
+    <small class="text-muted">{{ branch.name }} શાખા હેઠળના તમામ બાલ મંડળ સંચાલકોની યાદી અને તેમની કામગીરી</small>
+  </div>
+  <div class="d-flex gap-2">
+    <a href="/branch-admin/bal-mandals/add" class="btn btn-success btn-sm fw-bold">
+      <i class="bi bi-plus-circle me-1"></i>નવું મંડળ / સંચાલક ઉમેરો
+    </a>
+  </div>
+</div>
+
+<!-- Sanchalak KPI Cards -->
+<div class="row g-3 mb-4">
+  <div class="col-6 col-lg-3">
+    <div class="stat-card">
+      <div class="ico bg-primary-subtle text-primary"><i class="bi bi-people-fill"></i></div>
+      <h3>{{ rows|length }}</h3>
+      <p>કુલ સંચાલકો (Coordinators)</p>
+    </div>
+  </div>
+  <div class="col-6 col-lg-3">
+    <div class="stat-card">
+      <div class="ico bg-success-subtle text-success"><i class="bi bi-diagram-3-fill"></i></div>
+      <h3>{{ mandals|length }}</h3>
+      <p>ફાળવેલા બાળ મંડળો</p>
+    </div>
+  </div>
+  <div class="col-6 col-lg-3">
+    <div class="stat-card">
+      <div class="ico bg-warning-subtle text-warning"><i class="bi bi-person-hearts"></i></div>
+      <h3>{{ rows | map(attribute='children_count') | sum }}</h3>
+      <p>કુલ નોંધાયેલા બાળકો</p>
+    </div>
+  </div>
+  <div class="col-6 col-lg-3">
+    <div class="stat-card">
+      <div class="ico bg-info-subtle text-info"><i class="bi bi-camera-video-fill"></i></div>
+      <h3>{{ rows | map(attribute='present_count') | sum }}</h3>
+      <p>આ અઠવાડિયે હાજરી ({{ week.week_label }})</p>
+    </div>
+  </div>
+</div>
+
+<!-- Filters Bar -->
+<div class="panel py-3 mb-4">
+  <form method="get" action="/branch-admin/sanchalaks" class="row g-2 align-items-end">
+    <div class="col-md-5">
+      <label class="form-label small fw-bold text-secondary mb-1">સંચાલક નામ અથવા મોબાઈલથી શોધો:</label>
+      <div class="input-group input-group-sm">
+        <span class="input-group-text"><i class="bi bi-search"></i></span>
+        <input type="text" name="q" class="form-control" placeholder="નામ / મોબાઈલ / યુઝરનેમ..." value="{{ search_query }}">
+      </div>
+    </div>
+    <div class="col-md-4">
+      <label class="form-label small fw-bold text-secondary mb-1">Bal Mandal Filter:</label>
+      <select name="mandal_id" class="form-select form-select-sm" onchange="this.form.submit()">
+        <option value="">તમામ Bal Mandals (All Mandals)</option>
+        {% for m in mandals %}
+        <option value="{{ m.id }}" {% if selected_mandal == m.id %}selected{% endif %}>{{ m.name }} ({{ m.weekday }})</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="col-md-3 d-flex gap-2">
+      <button type="submit" class="btn btn-primary btn-sm flex-grow-1 fw-bold">
+        <i class="bi bi-funnel-fill me-1"></i>Search
+      </button>
+      {% if search_query or selected_mandal %}
+      <a href="/branch-admin/sanchalaks" class="btn btn-outline-secondary btn-sm" title="Clear Filters">
+        <i class="bi bi-x-circle"></i>
+      </a>
+      {% endif %}
+    </div>
+  </form>
+</div>
+
+<!-- Sanchalak Cards Grid -->
+<div class="row g-3 mb-4">
+  {% for r in rows %}
+  {% set s = r.sanchalak %}
+  {% set m = r.mandal %}
+  <div class="col-md-6 col-lg-4">
+    <div class="panel h-100 p-3 d-flex flex-column justify-content-between position-relative shadow-sm border">
+      <div>
+        <div class="d-flex align-items-center gap-3 mb-3">
+          <div class="rounded-circle d-flex align-items-center justify-content-center text-white fw-bold shadow-sm" style="width:48px;height:48px;background:linear-gradient(135deg, #10b981, #059669);font-size:18px;">
+            {{ s.full_name[0] if s and s.full_name else 'સં' }}
+          </div>
+          <div class="flex-grow-1 overflow-hidden">
+            <h6 class="fw-bold mb-0 text-dark text-truncate">{{ s.full_name if s else 'અજ્ઞાત સંચાલક' }}</h6>
+            <small class="text-muted d-block" style="font-size:11.5px;">
+              <i class="bi bi-person-fill me-1"></i>@{{ s.username if s else '—' }}
+            </small>
+            {% if s and s.mobile %}
+            <small class="text-secondary d-block" style="font-size:11.5px;">
+              <i class="bi bi-telephone-fill text-success me-1"></i>{{ s.mobile }}
+            </small>
+            {% endif %}
+          </div>
+          <span class="badge badge-soft-success py-1 px-2" style="font-size:11px;">Active</span>
+        </div>
+
+        <div class="p-2 px-3 bg-light rounded-3 mb-3 border">
+          <div class="d-flex justify-content-between align-items-center mb-1">
+            <span class="text-muted small">ફાળવેલ બાલ મંડળ:</span>
+            <span class="fw-bold text-primary small">{{ m.name if m else '—' }}</span>
+          </div>
+          <div class="d-flex justify-content-between align-items-center mb-1">
+            <span class="text-muted small">દિવસ & સમય:</span>
+            <span class="badge badge-soft-info">{{ m.weekday if m else '—' }} {% if m and m.meeting_time %}· {{ m.meeting_time.strftime('%I:%M %p') }}{% endif %}</span>
+          </div>
+          <div class="d-flex justify-content-between align-items-center mb-1">
+            <span class="text-muted small">નોંધાયેલા બાળકો:</span>
+            <span class="fw-bold text-dark">{{ r.children_count }} બાળકો</span>
+          </div>
+          <div class="d-flex justify-content-between align-items-center">
+            <span class="text-muted small">હાજરી દર:</span>
+            <span class="badge bg-success fw-bold">{{ r.present_count }} / {{ r.children_count }} ({{ r.rate }}%)</span>
+          </div>
+        </div>
+
+        {% if r.last_scan %}
+        <div class="d-flex align-items-center gap-2 mb-2 p-1 px-2 bg-white rounded border" style="font-size:11.5px;">
+          <i class="bi bi-broadcast text-danger"></i>
+          <span class="text-muted">છેલ્લું સ્કેન:</span>
+          <span class="fw-semibold text-dark">{{ format_dt(r.last_scan.scanned_at) }}</span>
+        </div>
+        {% endif %}
+      </div>
+
+      <!-- Quick Action Buttons for Branch Admin -->
+      <div class="d-flex flex-wrap gap-2 pt-2 border-top mt-2">
+        {% if m %}
+        <a href="/branch-admin/children?mandal_id={{ m.id }}" class="btn btn-outline-secondary btn-sm flex-grow-1" title="આ મંડળના બાળકો">
+          <i class="bi bi-people me-1"></i>બાળકો (Children)
+        </a>
+        <a href="/branch-admin/bal-mandals/{{ m.id }}/edit" class="btn btn-outline-primary btn-sm" title="સંચાલક / મંડળ એડિટ કરો">
+          <i class="bi bi-pencil me-1"></i>Edit
+        </a>
+        <form method="post" action="/branch-admin/sanchalaks/{{ s.id }}/delete" onsubmit="return confirm('શું તમે ખરેખર સંચાલક \'{{ s.full_name }}\' ને ડિલીટ કરવા માંગો છો?');" style="display:inline;">
+          <button type="submit" class="btn btn-outline-danger btn-sm" title="સંચાલક ડિલીટ કરો">
+            <i class="bi bi-trash"></i>
+          </button>
+        </form>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+  {% else %}
+  <div class="col-12">
+    <div class="panel text-center py-5">
+      <i class="bi bi-person-x fs-1 text-muted d-block mb-2"></i>
+      <h6 class="text-muted">આ શાખામાં હજુ કોઈ સંચાલક નોંધાયેલા નથી.</h6>
+      <a href="/branch-admin/bal-mandals/add" class="btn btn-primary btn-sm mt-2">નવું મંડળ & સંચાલક ઉમેરો</a>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+{% endblock %}

@@ -1,0 +1,108 @@
+{% extends "partials/shell.html" %}
+{% block title %}Branches{% endblock %}
+{% block sidenav %}{% include "super_admin/_nav.html" %}{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h6 class="fw-bold mb-0">Branches</h6>
+  <div class="d-flex gap-2">
+    <a href="/super-admin/credentials" class="btn btn-outline-warning btn-sm text-dark bg-white border fw-semibold">
+      <i class="bi bi-key-fill text-warning me-1"></i>Login ID & Passwords
+    </a>
+    <a href="/super-admin/branches/add" class="btn btn-primary btn-sm"><i class="bi bi-plus-lg me-1"></i>નવી Branch</a>
+  </div>
+</div>
+<div class="panel p-0 overflow-hidden">
+  <div class="table-responsive">
+    <table class="table mock mb-0">
+      <thead>
+        <tr>
+          <th>Code</th><th>Branch</th><th>શહેર</th><th>Admin</th>
+          <th>Mandals</th><th>બાળકો</th><th>Status</th><th></th>
+        </tr>
+      </thead>
+      <tbody>
+      {% for r in rows %}
+        <tr>
+          <td>
+            <span class="badge bg-primary-subtle text-primary border border-primary-subtle">{{ r.branch.code }}</span>
+          </td>
+          <td style="min-width: 240px;">
+            <a href="/super-admin/branches/{{ r.branch.id }}/summary" class="fw-bold text-dark text-decoration-none hover-primary">
+              {{ r.branch.name }}
+            </a>
+            <!-- Particular Branch Summary directly below the branch name -->
+            <div class="mt-1 small text-muted" style="font-size:11px;">
+              <span class="me-2"><i class="bi bi-geo-alt-fill text-danger me-1"></i>{{ r.branch.city }}</span>
+              <span class="badge badge-soft-success">{{ r.rate }}% Attendance</span>
+              {% if r.mandals_detail %}
+              <div class="d-flex flex-wrap gap-1 mt-1">
+                {% for m in r.mandals_detail %}
+                <span class="badge bg-light text-dark border" style="font-size:9.5px;">
+                  <i class="bi bi-diagram-3 text-primary me-1"></i>{{ m.name }} ({{ m.children_count }})
+                </span>
+                {% endfor %}
+              </div>
+              {% endif %}
+            </div>
+          </td>
+          <td>{{ r.branch.city }}</td>
+          <td>
+            {% if r.admin %}
+            <div>
+              <b>{{ r.admin.full_name }}</b>
+              {% if r.admin.role == 'branch_admin' %}
+              <span class="badge badge-soft-primary ms-1" style="font-size:10px;"><i class="bi bi-building me-1"></i>Branch Admin</span>
+              {% elif r.admin.role == 'sanchalak' %}
+              <span class="badge badge-soft-success ms-1" style="font-size:10px;"><i class="bi bi-person-badge me-1"></i>Sanchalak</span>
+              {% elif r.admin.role == 'super_admin' %}
+              <span class="badge badge-soft-danger ms-1" style="font-size:10px;"><i class="bi bi-shield-check me-1"></i>Super Admin</span>
+              {% else %}
+              <span class="badge bg-light text-dark ms-1" style="font-size:10px;">{{ r.admin.role }}</span>
+              {% endif %}
+            </div>
+            <!-- Branch User ID & Password display -->
+            <div class="mt-1 d-flex flex-wrap gap-1 align-items-center" style="font-size:11px;">
+              <span class="badge bg-light text-dark border">
+                <i class="bi bi-person-badge-fill text-primary me-1"></i>User ID: <b>{{ r.admin.username }}</b>
+              </span>
+              <span class="badge bg-light text-secondary border" title="Login Password">
+                <i class="bi bi-key-fill text-warning me-1"></i>Pass: <code>branch123</code>
+              </span>
+            </div>
+            {% if r.admin.mobile %}
+            <small class="text-muted d-block mt-1"><i class="bi bi-telephone me-1"></i>{{ r.admin.mobile }}</small>
+            {% endif %}
+            {% else %}
+            <span class="badge bg-warning-subtle text-warning">Not Assigned</span>
+            {% endif %}
+          </td>
+          <td><span class="badge badge-soft-primary fs-6">{{ r.branch.bal_mandals|length }}</span></td>
+          <td><span class="fw-bold">{{ r.children }}</span></td>
+          <td>
+            {% if r.branch.is_active %}<span class="badge badge-soft-success">Active</span>
+            {% else %}<span class="badge badge-soft-secondary">Inactive</span>{% endif %}
+          </td>
+          <td>
+            <div class="d-flex gap-1">
+              <a class="btn btn-outline-primary btn-sm py-1 px-2" href="/super-admin/branches/{{ r.branch.id }}/summary" title="View Branch Summary">
+                <i class="bi bi-card-checklist me-1"></i>Summary
+              </a>
+              <a class="btn btn-outline-secondary btn-sm py-1 px-2" href="/super-admin/branches/{{ r.branch.id }}/edit" title="Edit Branch">
+                <i class="bi bi-pencil"></i>
+              </a>
+              <form method="post" action="/super-admin/branches/{{ r.branch.id }}/delete" onsubmit="return confirm('શું તમે ખરેખર \'{{ r.branch.name }}\' શાખા ડિલીટ કરવા માંગો છો? આ શાખાના તમામ મંડળો, બાળકો અને હાજરી ડેટા પણ ડિલીટ થઈ જશે.');" style="display:inline;">
+                <button type="submit" class="btn btn-outline-danger btn-sm py-1 px-2" title="Delete Branch">
+                  <i class="bi bi-trash"></i>
+                </button>
+              </form>
+            </div>
+          </td>
+        </tr>
+      {% else %}
+        <tr><td colspan="8" class="text-muted p-3">કોઈ Branch નથી</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

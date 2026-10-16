@@ -1,0 +1,349 @@
+{% extends "partials/shell.html" %}
+{% block title %}Super Admin Consolidated Reports — બાલ મંડળ{% endblock %}
+{% block sidenav %}{% include "super_admin/_nav.html" %}{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+  <div>
+    <h5 class="fw-bold mb-1"><i class="bi bi-bar-chart-line-fill text-primary me-2"></i>Consolidated Attendance Reports</h5>
+    <small class="text-muted">{{ month_label }} · તમામ Branches અને Bal Mandals નો સર્વાંગી વિશ્લેષણ રિપોર્ટ</small>
+  </div>
+  <div class="d-flex gap-2">
+    <button type="button" class="btn btn-sm btn-outline-success shadow-sm" onclick="exportSuperCSV()">
+      <i class="bi bi-file-earmark-spreadsheet me-1"></i>Excel Export
+    </button>
+    <button type="button" class="btn btn-sm btn-outline-danger shadow-sm" onclick="window.print()">
+      <i class="bi bi-file-earmark-pdf me-1"></i>PDF Print
+    </button>
+  </div>
+</div>
+
+<!-- Filters -->
+<form class="panel mb-4 py-3" method="get" action="/super-admin/reports">
+  <div class="row g-2 align-items-end">
+    <div class="col-md-2">
+      <label class="form-label small mb-1 fw-bold text-secondary">Year (વર્ષ)</label>
+      <input type="number" name="year" class="form-control form-control-sm" value="{{ year }}">
+    </div>
+    <div class="col-md-2">
+      <label class="form-label small mb-1 fw-bold text-secondary">Month (મહિનો)</label>
+      <select name="month" class="form-select form-select-sm">
+        {% for m in range(1, 13) %}
+        <option value="{{ m }}" {% if m == month %}selected{% endif %}>{{ gujarati_month(m) }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="col-md-2">
+      <label class="form-label small mb-1 fw-bold text-secondary">Week Number</label>
+      <select name="week" class="form-select form-select-sm">
+        <option value="">બધા Weeks (All)</option>
+        {% for w in range(1, 6) %}
+        <option value="{{ w }}" {% if week_filter == w %}selected{% endif %}>Week {{ w }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="col-md-2">
+      <label class="form-label small mb-1 fw-bold text-secondary">Branch Filter:</label>
+      <select name="branch_id" class="form-select form-select-sm" onchange="this.form.submit()">
+        <option value="">તમામ Branches</option>
+        {% for b in branches %}
+        <option value="{{ b.id }}" {% if selected_branch == b.id %}selected{% endif %}>{{ b.name }} ({{ b.city }})</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="col-md-3">
+      <label class="form-label small mb-1 fw-bold text-secondary">Bal Mandal Filter:</label>
+      <select name="mandal_id" class="form-select form-select-sm">
+        <option value="">તમામ Bal Mandals</option>
+        {% for m in mandals %}
+        <option value="{{ m.id }}" {% if selected_mandal == m.id %}selected{% endif %}>{{ m.name }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="col-md-1 d-flex gap-1">
+      <button class="btn btn-primary btn-sm flex-grow-1 fw-bold shadow-sm" title="Apply Filter">
+        <i class="bi bi-funnel-fill"></i>
+      </button>
+      {% if selected_branch or selected_mandal or week_filter %}
+      <a href="/super-admin/reports" class="btn btn-outline-secondary btn-sm" title="Clear Filters">
+        <i class="bi bi-x-circle"></i>
+      </a>
+      {% endif %}
+    </div>
+  </div>
+</form>
+
+<!-- KPI Cards -->
+<div class="row g-3 mb-4">
+  <div class="col-6 col-lg-3">
+    <div class="stat-card">
+      <div class="ico bg-primary-subtle text-primary"><i class="bi bi-people-fill"></i></div>
+      <h3>{{ total_children }}</h3>
+      <p>કુલ બાળકો (Total Enrolled)</p>
+    </div>
+  </div>
+  <div class="col-6 col-lg-3">
+    <div class="stat-card">
+      <div class="ico bg-success-subtle text-success"><i class="bi bi-check-circle-fill"></i></div>
+      <h3>{{ present }}</h3>
+      <p>કુલ હાજરી (Present Scans)</p>
+    </div>
+  </div>
+  <div class="col-6 col-lg-3">
+    <div class="stat-card">
+      <div class="ico bg-danger-subtle text-danger"><i class="bi bi-x-circle-fill"></i></div>
+      <h3>{{ absent }}</h3>
+      <p>ગેરહાજર સંખ્યા</p>
+    </div>
+  </div>
+  <div class="col-6 col-lg-3">
+    <div class="stat-card">
+      <div class="ico bg-info-subtle text-info"><i class="bi bi-graph-up"></i></div>
+      <h3>{{ rate }}%</h3>
+      <p>સરેરાશ હાજરી દર</p>
+    </div>
+  </div>
+</div>
+
+<!-- Interactive Chart Graphs -->
+<div class="row g-3 mb-4">
+  <!-- Consolidated Weekly Trends Chart -->
+  <div class="col-lg-7">
+    <div class="panel h-100">
+      <div class="d-flex justify-content-between align-items-center mb-3">
+        <h6 class="mb-0"><i class="bi bi-bar-chart-fill text-primary me-2"></i>સમગ્ર રાજ્ય હાજરી ટ્રેન્ડ (Consolidated Weekly Trend)</h6>
+        <span class="badge badge-soft-info">Week 1–5 Reset Cycle</span>
+      </div>
+      <div class="chart-container">
+        <canvas id="superWeeklyChart"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <!-- Branch / Mandal Performance Chart -->
+  <div class="col-lg-5">
+    <div class="panel h-100">
+      <div class="d-flex justify-content-between align-items-center mb-3">
+        <h6 class="mb-0"><i class="bi bi-diagram-3-fill text-success me-2"></i>Mandal-wise હાજરી ટકાવારી (%)</h6>
+        <span class="badge badge-soft-success">{{ drill|length }} Mandals</span>
+      </div>
+      <div class="chart-container">
+        <canvas id="superDrillChart"></canvas>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Week-wise Breakdown Table -->
+<div class="panel p-0 overflow-hidden mb-4">
+  <div class="p-3 pb-2 d-flex justify-content-between align-items-center border-bottom">
+    <h6 class="mb-0"><i class="bi bi-calendar3-range text-secondary me-2"></i>{{ month_label }} — Week-wise Consolidated હાજરી</h6>
+  </div>
+  <div class="table-responsive">
+    <table class="table mock table-hover mb-0 align-middle">
+      <thead>
+        <tr>
+          <th>અઠવાડિયું</th>
+          <th>હાજર બાળકો</th>
+          <th>ગેરહાજર બાળકો</th>
+          <th>હાજરી દર (%)</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody>
+      {% for r in week_rows %}
+        <tr>
+          <td><b class="text-primary">Week {{ r.week }}</b></td>
+          <td class="fw-bold text-success">{{ r.present }}</td>
+          <td class="fw-bold text-danger">{{ r.absent }}</td>
+          <td>
+            <div class="d-flex align-items-center gap-2">
+              <div class="progress flex-grow-1" style="height: 8px;">
+                <div class="progress-bar {% if r.rate >= 85 %}bg-success{% elif r.rate >= 70 %}bg-warning{% else %}bg-danger{% endif %}"
+                     role="progressbar" style="width: {{ r.rate }}%;"></div>
+              </div>
+              <span class="fw-bold" style="font-size:12px;">{{ r.rate }}%</span>
+            </div>
+          </td>
+          <td>
+            {% if r.rate >= 85 %}
+            <span class="badge badge-soft-success">Excellent</span>
+            {% elif r.rate >= 70 %}
+            <span class="badge badge-soft-warning">Average</span>
+            {% else %}
+            <span class="badge badge-soft-secondary">Pending</span>
+            {% endif %}
+          </td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Drill-down Table -->
+<div class="panel p-0 overflow-hidden">
+  <div class="p-3 pb-2 border-bottom d-flex justify-content-between align-items-center">
+    <h6 class="mb-0"><i class="bi bi-funnel text-secondary me-2"></i>Branch → Bal Mandal → સંચાલક (Detailed Drill-down)</h6>
+    <small class="text-muted">ક્લિક કરીને વિગત જુઓ</small>
+  </div>
+  <div class="table-responsive">
+    <table class="table mock table-hover mb-0 align-middle" id="superReportsTable">
+      <thead>
+        <tr>
+          <th>Branch</th>
+          <th>Bal Mandal</th>
+          <th>સંચાલક</th>
+          <th>કુલ બાળકો</th>
+          <th>હાજર</th>
+          <th>હાજરી %</th>
+          <th>Performance</th>
+        </tr>
+      </thead>
+      <tbody>
+      {% for d in drill %}
+        <tr>
+          <td>
+            <a href="/super-admin/branches/{{ d.branch_id }}/summary" class="fw-bold text-dark text-decoration-none hover-primary">
+              {{ d.branch }}
+            </a>
+            <small class="text-muted d-block" style="font-size:11px;">
+              <i class="bi bi-geo-alt-fill text-danger me-1"></i>{{ d.branch_city }} ·
+              <a href="/super-admin/branches/{{ d.branch_id }}/summary" class="text-primary text-decoration-none fw-semibold">Summary <i class="bi bi-box-arrow-up-right" style="font-size:9px;"></i></a>
+            </small>
+          </td>
+          <td class="text-primary fw-semibold">{{ d.mandal }}</td>
+          <td>{{ d.sanchalak }}</td>
+          <td>{{ d.children }}</td>
+          <td class="fw-bold text-success">{{ d.present }}</td>
+          <td>
+            <div class="d-flex align-items-center gap-2">
+              <div class="progress flex-grow-1" style="height: 8px;">
+                <div class="progress-bar bg-primary" style="width: {{ d.rate }}%;"></div>
+              </div>
+              <span class="fw-bold" style="font-size:12px;">{{ d.rate }}%</span>
+            </div>
+          </td>
+          <td>
+            {% if d.rate >= 90 %}
+            <span class="badge badge-soft-success">High Performing</span>
+            {% elif d.rate >= 75 %}
+            <span class="badge badge-soft-warning">Moderate</span>
+            {% else %}
+            <span class="badge badge-soft-secondary">Standard</span>
+            {% endif %}
+          </td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+const weekRows = {{ week_rows | tojson }};
+const drillRows = {{ drill | tojson }};
+
+// 1. Consolidated Weekly Mixed Chart
+const ctxSuperWeekly = document.getElementById('superWeeklyChart').getContext('2d');
+new Chart(ctxSuperWeekly, {
+  type: 'bar',
+  data: {
+    labels: weekRows.map(w => 'Week ' + w.week),
+    datasets: [
+      {
+        type: 'line',
+        label: 'હાજરી % (Attendance Rate)',
+        data: weekRows.map(w => w.rate),
+        borderColor: '#3b82f6',
+        backgroundColor: 'rgba(59, 130, 246, 0.15)',
+        borderWidth: 3,
+        tension: 0.35,
+        fill: true,
+        yAxisID: 'yRate'
+      },
+      {
+        type: 'bar',
+        label: 'કુલ હાજર બાળકો (Count)',
+        data: weekRows.map(w => w.present),
+        backgroundColor: 'rgba(30, 58, 138, 0.8)',
+        borderRadius: 8,
+        barPercentage: 0.55,
+        yAxisID: 'yCount'
+      }
+    ]
+  },
+  options: {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: { position: 'top' }
+    },
+    scales: {
+      x: { grid: { display: false } },
+      yCount: {
+        type: 'linear',
+        position: 'left',
+        title: { display: true, text: 'હાજર સંખ્યા' },
+        min: 0,
+        grid: { color: '#f1f5f9' }
+      },
+      yRate: {
+        type: 'linear',
+        position: 'right',
+        title: { display: true, text: 'ટકાવારી (%)' },
+        min: 0,
+        max: 100,
+        grid: { display: false }
+      }
+    }
+  }
+});
+
+// 2. Mandal Performance Horizontal Bar Chart
+const ctxDrill = document.getElementById('superDrillChart').getContext('2d');
+new Chart(ctxDrill, {
+  type: 'bar',
+  data: {
+    labels: drillRows.map(d => d.mandal),
+    datasets: [{
+      label: 'હાજરી %',
+      data: drillRows.map(d => d.rate),
+      backgroundColor: 'rgba(16, 185, 129, 0.8)',
+      borderRadius: 6
+    }]
+  },
+  options: {
+    indexAxis: 'y',
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: { legend: { display: false } },
+    scales: {
+      x: { min: 0, max: 100, title: { display: true, text: '%' } },
+      y: { grid: { display: false } }
+    }
+  }
+});
+
+function exportSuperCSV() {
+  let csv = [];
+  const rows = document.querySelectorAll('#superReportsTable tr');
+  for (let i = 0; i < rows.length; i++) {
+    let row = [], cols = rows[i].querySelectorAll('td, th');
+    for (let j = 0; j < cols.length; j++) {
+      row.push('"' + cols[j].innerText.trim().replace(/"/g, '""') + '"');
+    }
+    csv.push(row.join(','));
+  }
+  const csvFile = new Blob([csv.join('\n')], { type: 'text/csv' });
+  const downloadLink = document.createElement('a');
+  downloadLink.download = 'consolidated_attendance_{{ month_label }}.csv';
+  downloadLink.href = window.URL.createObjectURL(csvFile);
+  downloadLink.style.display = 'none';
+  document.body.appendChild(downloadLink);
+  downloadLink.click();
+  document.body.removeChild(downloadLink);
+}
+</script>
+{% endblock %}

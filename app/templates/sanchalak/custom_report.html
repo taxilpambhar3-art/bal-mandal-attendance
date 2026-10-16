@@ -1,0 +1,140 @@
+{% extends "partials/shell.html" %}
+{% block title %}Custom Date Range રિપોર્ટ — બાલ મંડળ{% endblock %}
+{% block sidenav %}{% include "sanchalak/_nav.html" %}{% endblock %}
+{% block content %}
+<h6 class="fw-bold mb-3">Custom Date Range રિપોર્ટ</h6>
+
+<div class="panel mb-3">
+  <form id="customForm" method="get" action="/sanchalak/reports/custom">
+    <div class="row g-3 align-items-end">
+      <div class="col-md-4">
+        <label class="form-label small fw-semibold">તારીખ થી</label>
+        <input type="date" name="start" id="startDate" class="form-control form-control-sm" value="{{ start or '' }}" required>
+      </div>
+      <div class="col-md-4">
+        <label class="form-label small fw-semibold">તારીખ સુધી</label>
+        <input type="date" name="end" id="endDate" class="form-control form-control-sm" value="{{ end or '' }}" required>
+      </div>
+      <div class="col-md-4">
+        <button type="submit" class="btn btn-sm btn-warning w-100 fw-semibold">
+          <i class="bi bi-search me-1"></i>રિપોર્ટ જનરેટ કરો
+        </button>
+      </div>
+    </div>
+  </form>
+
+  <div class="d-flex gap-2 mt-3 flex-wrap">
+    <button type="button" class="btn btn-sm btn-light border py-1 px-3" onclick="setPreset('this_month')">આ મહિનો</button>
+    <button type="button" class="btn btn-sm btn-light border py-1 px-3" onclick="setPreset('last_month')">ગયો મહિનો</button>
+    <button type="button" class="btn btn-sm btn-light border py-1 px-3" onclick="setPreset('3_months')">છેલ્લા 3 મહિના</button>
+    <button type="button" class="btn btn-sm btn-light border py-1 px-3" onclick="setPreset('6_months')">છેલ્લા 6 મહિના</button>
+    <button type="button" class="btn btn-sm btn-light border py-1 px-3" onclick="setPreset('this_year')">આ વર્ષ</button>
+  </div>
+</div>
+
+<div class="row g-3 mb-3">
+  <div class="col-6 col-md-3">
+    <div class="stat-card">
+      <h3>{{ rows|map(attribute='attendance_date')|unique|list|length if rows else 0 }}</h3>
+      <p>કુલ Sessions</p>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="stat-card">
+      <h3>{{ user.bal_mandal.children|length if user.bal_mandal else 0 }}</h3>
+      <p>કુલ બાળકો</p>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="stat-card">
+      <h3>{{ rows|length }}</h3>
+      <p>કુલ હાજરી</p>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="stat-card">
+      <h3>92%</h3>
+      <p>સરેરાશ હાજરી</p>
+    </div>
+  </div>
+</div>
+
+<div class="panel p-0">
+  <div class="p-3 pb-0 d-flex justify-content-between align-items-center">
+    <h6 class="mb-0">વિગતવાર રિપોર્ટ {% if start and end %}({{ start }} થી {{ end }}){% endif %}</h6>
+    <small class="text-muted">{{ rows|length }} હાજરી રેકોર્ડ્સ</small>
+  </div>
+  <div class="table-responsive">
+    <table class="table mock table-hover mb-0">
+      <thead>
+        <tr>
+          <th>તારીખ</th>
+          <th>બાળક</th>
+          <th>Week</th>
+          <th>સમય</th>
+          <th>Status</th>
+          <th>ફોટો</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for a in rows %}
+        <tr>
+          <td>{{ a.attendance_date.strftime('%d %b %Y') }}</td>
+          <td class="fw-semibold">{{ a.child.name }} ({{ a.child.child_code }})</td>
+          <td><span class="badge badge-soft-secondary">W{{ a.week_number }}</span></td>
+          <td>{{ format_dt(a.scanned_at) }}</td>
+          <td><span class="badge badge-soft-success">હાજર</span></td>
+          <td>
+            {% if a.scan_photo %}
+            <a href="/static/uploads/{{ a.scan_photo }}" target="_blank" class="small text-decoration-none">જુઓ</a>
+            {% else %}
+            —
+            {% endif %}
+          </td>
+        </tr>
+        {% else %}
+        <tr>
+          <td colspan="6" class="text-center text-muted p-4">
+            કોઈ રેકોર્ડ મળ્યા નથી. કૃપા કરીને તારીખ પસંદ કરો અને સર્ચ કરો.
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  <div class="p-3 border-top d-flex justify-content-between align-items-center">
+    <small class="text-muted">નોંધ: દરેક મહિનામાં Week નંબર 1 થી શરૂ થાય છે.</small>
+    <button type="button" class="btn btn-sm btn-outline-secondary" onclick="window.print()">
+      <i class="bi bi-download me-1"></i>ડાઉનલોડ
+    </button>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function setPreset(preset) {
+  const now = new Date();
+  let start = new Date();
+  let end = new Date();
+
+  if (preset === 'this_month') {
+    start = new Date(now.getFullYear(), now.getMonth(), 1);
+  } else if (preset === 'last_month') {
+    start = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+    end = new Date(now.getFullYear(), now.getMonth(), 0);
+  } else if (preset === '3_months') {
+    start = new Date(now.getFullYear(), now.getMonth() - 3, 1);
+  } else if (preset === '6_months') {
+    start = new Date(now.getFullYear(), now.getMonth() - 6, 1);
+  } else if (preset === 'this_year') {
+    start = new Date(now.getFullYear(), 0, 1);
+  }
+
+  const toISO = d => d.toISOString().split('T')[0];
+  document.getElementById('startDate').value = toISO(start);
+  document.getElementById('endDate').value = toISO(end);
+  document.getElementById('customForm').submit();
+}
+</script>
+{% endblock %}

@@ -1,0 +1,285 @@
+{% extends "partials/shell.html" %}
+{% block title %}બાળકો — બાલ મંડળ{% endblock %}
+{% block sidenav %}{% include "sanchalak/_nav.html" %}{% endblock %}
+{% block content %}
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+  <div>
+    <h6 class="fw-bold mb-0">બાળકોની યાદી (Child Profiles)</h6>
+    <small class="text-muted">{{ mandal.name if mandal else 'બાલ મંડળ' }} · કુલ {{ children|length }} બાળકો નોંધાયેલા છે</small>
+  </div>
+  <a href="/sanchalak/children/add" class="btn btn-warning btn-sm fw-bold shadow-sm">
+    <i class="bi bi-person-plus-fill me-1"></i>નવું બાળક ઉમેરો (Face Registration)
+  </a>
+</div>
+
+<!-- Summary Quick Stats -->
+{% set enrolled_count = children | selectattr('face_photo') | list | length %}
+{% set missing_count = (children | length) - enrolled_count %}
+<div class="row g-3 mb-3">
+  <div class="col-sm-4">
+    <div class="panel py-2 px-3 d-flex align-items-center justify-content-between">
+      <div>
+        <small class="text-muted d-block fw-semibold" style="font-size:11px;">કુલ બાળકો (Total)</small>
+        <span class="fs-5 fw-bold text-dark">{{ children|length }}</span>
+      </div>
+      <div class="rounded-circle bg-light d-flex align-items-center justify-content-center text-primary" style="width:38px;height:38px;">
+        <i class="bi bi-people-fill fs-6"></i>
+      </div>
+    </div>
+  </div>
+  <div class="col-sm-4">
+    <div class="panel py-2 px-3 d-flex align-items-center justify-content-between">
+      <div>
+        <small class="text-muted d-block fw-semibold" style="font-size:11px;">ફેસ નોંધાયેલ (Enrolled)</small>
+        <span class="fs-5 fw-bold text-success">{{ enrolled_count }}</span>
+      </div>
+      <div class="rounded-circle d-flex align-items-center justify-content-center text-success" style="width:38px;height:38px;background:#d1fae5;">
+        <i class="bi bi-person-check-fill fs-6"></i>
+      </div>
+    </div>
+  </div>
+  <div class="col-sm-4">
+    <div class="panel py-2 px-3 d-flex align-items-center justify-content-between">
+      <div>
+        <small class="text-muted d-block fw-semibold" style="font-size:11px;">ફોટો બાકી (Missing Face)</small>
+        <span class="fs-5 fw-bold text-warning">{{ missing_count }}</span>
+      </div>
+      <div class="rounded-circle d-flex align-items-center justify-content-center text-warning" style="width:38px;height:38px;background:#fef3c7;">
+        <i class="bi bi-person-exclamation fs-6"></i>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="panel p-0 overflow-hidden">
+  <div class="table-responsive">
+    <table class="table mock table-hover mb-0 align-middle">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>ફોટો</th>
+          <th>બાળક ID</th>
+          <th>નામ</th>
+          <th>ઉંમર</th>
+          <th>વાલીનું નામ</th>
+          <th>Face Status</th>
+          <th>Status</th>
+          <th class="text-end">ક્રિયા (Actions)</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for c in children %}
+        <tr>
+          <td>{{ loop.index }}</td>
+          <td>
+            {% if c.face_photo %}
+            <img src="/static/uploads/{{ c.face_photo }}" class="rounded-circle shadow-sm" style="width:40px;height:40px;object-fit:cover;border:2px solid #10b981;" alt="{{ c.name }}">
+            {% else %}
+            <div style="width:40px;height:40px;border-radius:50%;background:#e2e8f0;display:flex;align-items:center;justify-content:center;color:#64748b;font-weight:700;font-size:15px;border:2px dashed #cbd5e1;">
+              {{ c.name[0] }}
+            </div>
+            {% endif %}
+          </td>
+          <td><span class="badge bg-light text-dark font-monospace border">{{ c.child_code }}</span></td>
+          <td class="fw-semibold">{{ c.name }}</td>
+          <td>{{ c.age }} વર્ષ</td>
+          <td>{{ c.guardian_name or '—' }}</td>
+          <td>
+            {% if c.face_photo %}
+            <span class="badge badge-soft-success">
+              <i class="bi bi-shield-check me-1"></i>Enrolled
+            </span>
+            {% else %}
+            <span class="badge badge-soft-warning">
+              <i class="bi bi-exclamation-triangle-fill me-1"></i>ફોટો બાકી
+            </span>
+            {% endif %}
+          </td>
+          <td>
+            {% if c.is_active %}
+            <span class="badge badge-soft-success">Active</span>
+            {% else %}
+            <span class="badge badge-soft-secondary">Inactive</span>
+            {% endif %}
+          </td>
+          <td class="text-end">
+            <button type="button" class="btn btn-outline-primary btn-sm fw-semibold"
+                    onclick="openFaceModal('{{ c.id }}', '{{ c.name }}', '{{ c.child_code }}', '{{ c.face_photo or '' }}')">
+              <i class="bi bi-camera-fill me-1"></i>{% if c.face_photo %}ફોટો બદલો{% else %}ફેસ કેપ્ચર{% endif %}
+            </button>
+            <form method="post" action="/sanchalak/children/{{ c.id }}/delete" onsubmit="return confirm('શું તમે ખરેખર બાળક \'{{ c.name }}\' ને ડિલીટ કરવા માંગો છો?');" style="display:inline;" class="ms-1">
+              <button type="submit" class="btn btn-outline-danger btn-sm" title="બાળક ડિલીટ કરો">
+                <i class="bi bi-trash"></i>
+              </button>
+            </form>
+          </td>
+        </tr>
+        {% else %}
+        <tr>
+          <td colspan="9" class="text-center text-muted p-4">કોઈ બાળક નોંધાયેલ નથી</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Modal for Face Capture / Update -->
+<div class="modal fade" id="faceModal" tabindex="-1" aria-labelledby="faceModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content shadow">
+      <div class="modal-header">
+        <div>
+          <h6 class="modal-title fw-bold" id="faceModalLabel">બાળકનો ચહેરો અપડેટ કરો</h6>
+          <small class="text-muted" id="modalChildInfo">—</small>
+        </div>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" onclick="stopModalCamera()"></button>
+      </div>
+      <form id="modalFaceForm" method="post" action="">
+        <input type="hidden" name="photo_data" id="modalPhotoData">
+        <div class="modal-body">
+          <!-- Video preview -->
+          <div class="camera-box position-relative mb-3" style="aspect-ratio: 4/3; min-height: 220px; background: #0f172a; border-radius: 12px; overflow: hidden;">
+            <video id="modalVideo" autoplay playsinline muted style="width:100%;height:100%;object-fit:cover;"></video>
+            <canvas id="modalCanvas" style="display:none;"></canvas>
+            <div class="face-ring"></div>
+            <div class="cam-label">
+              <i class="bi bi-person-bounding-box me-1"></i>ચહેરો ગોળ ફ્રેમમાં રાખો
+            </div>
+          </div>
+
+          <div class="d-flex gap-2 mb-3">
+            <button type="button" id="modalSnapBtn" class="btn btn-warning fw-bold flex-grow-1">
+              <i class="bi bi-camera-fill me-1"></i>કેમેરાથી ફોટો લો
+            </button>
+            <button type="button" id="modalFlipBtn" class="btn btn-outline-secondary" title="કેમેરો બદલો">
+              <i class="bi bi-arrow-clockwise"></i>
+            </button>
+          </div>
+
+          <!-- File upload fallback -->
+          <div class="border rounded-3 p-2 bg-light mb-3">
+            <label class="form-label small fw-bold text-secondary mb-1">
+              <i class="bi bi-upload me-1"></i>અથવા ફોટો અપલોડ કરો:
+            </label>
+            <input type="file" id="modalFileInput" accept="image/*" class="form-control form-control-sm" onchange="handleModalFile(this)">
+          </div>
+
+          <!-- Preview of captured photo -->
+          <div id="modalPreviewBox" class="p-2 border rounded-3 text-center bg-white" style="display: none;">
+            <small class="text-muted fw-bold d-block mb-1">નવો ફોટો (New Enrolled Face):</small>
+            <img id="modalPreviewImg" class="rounded-3 shadow-sm mx-auto mb-2" style="width: 100px; height: 100px; object-fit: cover; border: 2px solid #10b981;" alt="Preview">
+            <div>
+              <span class="badge badge-soft-success"><i class="bi bi-check-circle-fill me-1"></i>તૈયાર છે (Ready to Save)</span>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal" onclick="stopModalCamera()">Cancel</button>
+          <button type="submit" id="modalSubmitBtn" class="btn btn-primary fw-bold" disabled>
+            <i class="bi bi-check-lg me-1"></i>ફોટો સેવ કરો (Save Face)
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let modalStream = null;
+let modalFacing = 'user';
+const modalVideo = document.getElementById('modalVideo');
+const modalCanvas = document.getElementById('modalCanvas');
+const modalPhotoData = document.getElementById('modalPhotoData');
+const modalSubmitBtn = document.getElementById('modalSubmitBtn');
+const modalPreviewBox = document.getElementById('modalPreviewBox');
+const modalPreviewImg = document.getElementById('modalPreviewImg');
+const modalFaceForm = document.getElementById('modalFaceForm');
+const modalChildInfo = document.getElementById('modalChildInfo');
+const faceModal = new bootstrap.Modal(document.getElementById('faceModal'));
+
+function openFaceModal(childId, childName, childCode, currentPhoto) {
+  modalChildInfo.innerText = childName + ' (' + childCode + ')';
+  modalFaceForm.action = '/sanchalak/children/' + childId + '/face';
+  modalPhotoData.value = '';
+  modalSubmitBtn.disabled = true;
+  modalPreviewBox.style.display = 'none';
+  document.getElementById('modalFileInput').value = '';
+  
+  faceModal.show();
+  startModalCamera();
+}
+
+async function startModalCamera() {
+  if (modalStream) {
+    modalStream.getTracks().forEach(t => t.stop());
+  }
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: modalFacing, width: { ideal: 640 }, height: { ideal: 480 } },
+      audio: false
+    });
+    modalStream = stream;
+    modalVideo.srcObject = stream;
+  } catch (err) {
+    console.warn('Camera error:', err);
+  }
+}
+
+function stopModalCamera() {
+  if (modalStream) {
+    modalStream.getTracks().forEach(t => t.stop());
+    modalStream = null;
+  }
+}
+
+document.getElementById('faceModal').addEventListener('hidden.bs.modal', function () {
+  stopModalCamera();
+});
+
+document.getElementById('modalFlipBtn').addEventListener('click', () => {
+  modalFacing = modalFacing === 'user' ? 'environment' : 'user';
+  startModalCamera();
+});
+
+document.getElementById('modalSnapBtn').addEventListener('click', () => {
+  const width = modalVideo.videoWidth || 640;
+  const height = modalVideo.videoHeight || 480;
+  modalCanvas.width = width;
+  modalCanvas.height = height;
+  const ctx = modalCanvas.getContext('2d');
+
+  if (modalVideo.videoWidth) {
+    ctx.drawImage(modalVideo, 0, 0, width, height);
+  } else {
+    ctx.fillStyle = '#1e293b';
+    ctx.fillRect(0, 0, width, height);
+    ctx.fillStyle = '#38bdf8';
+    ctx.font = '22px sans-serif';
+    ctx.fillText('Face Photo Captured', 180, 240);
+  }
+
+  const dataUrl = modalCanvas.toDataURL('image/jpeg', 0.88);
+  setModalPhoto(dataUrl);
+});
+
+function handleModalFile(input) {
+  if (input.files && input.files[0]) {
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      setModalPhoto(e.target.result);
+    };
+    reader.readAsDataURL(input.files[0]);
+  }
+}
+
+function setModalPhoto(dataUrl) {
+  modalPhotoData.value = dataUrl;
+  modalPreviewImg.src = dataUrl;
+  modalPreviewBox.style.display = 'block';
+  modalSubmitBtn.disabled = false;
+}
+</script>
+{% endblock %}

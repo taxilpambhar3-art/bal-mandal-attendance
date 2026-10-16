@@ -1,0 +1,42 @@
+# Python Virtual Environment
+.venv/
+venv/
+env/
+ENV/
+
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Operating System Files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Environment variables & secrets
+.env
+.env.*
+!.env.example
+
+# Local SQLite Database & Uploads
+data/*.db
+data/*.sqlite3
+attendance.db
+app/static/uploads/*
+!app/static/uploads/.gitkeep
+
+# IDE & Editor configs
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+
+# Temporary & logs
+*.log
+scratch/
+tmp/

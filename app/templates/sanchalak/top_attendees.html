@@ -1,0 +1,128 @@
+{% extends "partials/shell.html" %}
+{% block title %}Top Attendees — બાલ મંડળ{% endblock %}
+{% block sidenav %}{% include "sanchalak/_nav.html" %}{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <div>
+    <h6 class="fw-bold mb-0">બાળક પ્રમાણે હાજરી રિપોર્ટ / Top Attendees</h6>
+    <small class="text-muted">{{ mandal.name if mandal else 'બાલ મંડળ' }} · {{ month_label }}</small>
+  </div>
+  <form method="get" action="/sanchalak/top-attendees" class="d-inline-flex gap-2">
+    <select name="month" class="form-select form-select-sm" style="width:180px;" onchange="this.form.submit()">
+      {% for m in range(1, 13) %}
+      <option value="{{ m }}" {% if m == month %}selected{% endif %}>{{ gujarati_month(m) }} {{ year }}</option>
+      {% endfor %}
+    </select>
+  </form>
+</div>
+
+<!-- Top 3 Podium -->
+{% if ranking %}
+<div class="row g-3 mb-3">
+  {% if ranking|length >= 1 %}
+  <div class="col-md-4">
+    <div class="panel text-center">
+      <div class="mx-auto mb-2 d-flex align-items-center justify-content-center"
+           style="width:56px;height:56px;border-radius:50%;background:#fef3c7;color:#92400e;font-size:24px;">
+        <i class="bi bi-trophy-fill"></i>
+      </div>
+      <div class="fw-bold" style="font-size:14px;">{{ ranking[0].child.name }}</div>
+      <small class="text-muted d-block">{{ ranking[0].count }} હાજર</small>
+      <span class="badge badge-soft-success mt-2">Rank #1</span>
+    </div>
+  </div>
+  {% endif %}
+
+  {% if ranking|length >= 2 %}
+  <div class="col-md-4">
+    <div class="panel text-center">
+      <div class="mx-auto mb-2 d-flex align-items-center justify-content-center"
+           style="width:56px;height:56px;border-radius:50%;background:#e2e8f0;color:#475569;font-size:24px;">
+        <i class="bi bi-award-fill"></i>
+      </div>
+      <div class="fw-bold" style="font-size:14px;">{{ ranking[1].child.name }}</div>
+      <small class="text-muted d-block">{{ ranking[1].count }} હાજર</small>
+      <span class="badge badge-soft-success mt-2">Rank #2</span>
+    </div>
+  </div>
+  {% endif %}
+
+  {% if ranking|length >= 3 %}
+  <div class="col-md-4">
+    <div class="panel text-center">
+      <div class="mx-auto mb-2 d-flex align-items-center justify-content-center"
+           style="width:56px;height:56px;border-radius:50%;background:#fde8d0;color:#9a3412;font-size:24px;">
+        <i class="bi bi-star-fill"></i>
+      </div>
+      <div class="fw-bold" style="font-size:14px;">{{ ranking[2].child.name }}</div>
+      <small class="text-muted d-block">{{ ranking[2].count }} હાજર</small>
+      <span class="badge badge-soft-success mt-2">Rank #3</span>
+    </div>
+  </div>
+  {% endif %}
+</div>
+{% endif %}
+
+<!-- Full Attendees Table -->
+<div class="panel p-0">
+  <div class="p-3 pb-0 d-flex justify-content-between align-items-center flex-wrap gap-2">
+    <h6 class="mb-0">બધા બાળકોની હાજરી</h6>
+    <div class="input-group input-group-sm" style="width:220px;">
+      <span class="input-group-text bg-light"><i class="bi bi-search"></i></span>
+      <input id="searchInput" class="form-control" placeholder="બાળક શોધો..." onkeyup="filterTable()">
+    </div>
+  </div>
+  <div class="table-responsive">
+    <table class="table mock table-hover mb-0" id="attendeesTable">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>બાળકનું નામ</th>
+          <th>વાલીનું નામ</th>
+          <th>હાજરી સંખ્યા</th>
+          <th>Rank</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for r in ranking %}
+        <tr>
+          <td>{{ loop.index }}</td>
+          <td class="fw-semibold">{{ r.child.name }} ({{ r.child.child_code }})</td>
+          <td>{{ r.child.guardian_name or '—' }}</td>
+          <td><span class="badge badge-soft-primary px-3 py-1">{{ r.count }} હાજર</span></td>
+          <td>
+            {% if loop.index == 1 %}
+            <i class="bi bi-trophy-fill text-warning fs-5" title="Rank 1"></i>
+            {% elif loop.index == 2 %}
+            <span class="badge badge-soft-secondary">2</span>
+            {% elif loop.index == 3 %}
+            <span class="badge badge-soft-warning">3</span>
+            {% else %}
+            <span class="text-muted">{{ loop.index }}</span>
+            {% endif %}
+          </td>
+        </tr>
+        {% else %}
+        <tr>
+          <td colspan="5" class="text-center text-muted p-4">કોઈ ડેટા નથી</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function filterTable() {
+  const input = document.getElementById('searchInput');
+  const filter = input.value.toLowerCase();
+  const rows = document.querySelectorAll('#attendeesTable tbody tr');
+  rows.forEach(row => {
+    const text = row.innerText.toLowerCase();
+    row.style.display = text.includes(filter) ? '' : 'none';
+  });
+}
+</script>
+{% endblock %}
