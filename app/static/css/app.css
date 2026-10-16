@@ -378,13 +378,188 @@ table.mock tbody tr:hover {
   transform: translateY(-1px);
 }
 
-@media (max-width: 768px) {
-  .sidenav {
-    min-height: auto;
-    border-right: 0;
-    border-bottom: 1px solid #e2e8f0;
+/* Mobile Offcanvas Drawer */
+.mobile-offcanvas {
+  width: 290px !important;
+  max-width: 82vw;
+  box-shadow: 4px 0 24px rgba(15, 23, 42, 0.2);
+}
+.mobile-nav-links a {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  color: #334155;
+  text-decoration: none;
+  font-size: 14.5px;
+  font-weight: 500;
+  border-radius: 12px;
+  margin-bottom: 4px;
+  transition: all 0.18s ease;
+}
+.mobile-nav-links a i {
+  font-size: 18px;
+  opacity: 0.85;
+}
+.mobile-nav-links a:hover, .mobile-nav-links a:active {
+  background: #f1f5f9;
+  color: #0f172a;
+}
+.mobile-nav-links a.active {
+  background: #eff6ff;
+  color: #1d4ed8;
+  font-weight: 700;
+}
+.mobile-nav-links a.active i {
+  color: #1d4ed8;
+  opacity: 1;
+}
+
+/* Mobile Bottom Navigation Bar */
+.mobile-bottom-bar {
+  display: flex;
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: rgba(255, 255, 255, 0.96);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-top: 1px solid #e2e8f0;
+  box-shadow: 0 -4px 20px rgba(15, 23, 42, 0.06);
+  z-index: 1040;
+  height: calc(58px + env(safe-area-inset-bottom, 0px));
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+  justify-content: space-around;
+  align-items: center;
+}
+
+.bottom-nav-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: #64748b;
+  text-decoration: none;
+  font-size: 10.5px;
+  font-weight: 600;
+  flex: 1;
+  height: 100%;
+  transition: all 0.15s ease;
+  user-select: none;
+  padding-top: 4px;
+  background: transparent;
+}
+
+.bottom-nav-item i {
+  font-size: 20px;
+  margin-bottom: 2px;
+  line-height: 1;
+}
+
+.bottom-nav-item:hover, .bottom-nav-item:active {
+  color: #1d4ed8;
+}
+
+.bottom-nav-item.active {
+  color: #1d4ed8;
+  font-weight: 700;
+}
+
+/* Central Highlighted Button (Face Scan) */
+.bottom-nav-highlight {
+  position: relative;
+}
+.bottom-nav-highlight .scan-fab {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #f59e0b, #d97706);
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: -18px;
+  box-shadow: 0 4px 14px rgba(217, 119, 6, 0.4);
+  border: 3px solid #ffffff;
+  transition: transform 0.15s ease;
+}
+.bottom-nav-highlight:active .scan-fab {
+  transform: scale(0.92);
+}
+.bottom-nav-highlight .scan-fab i {
+  font-size: 20px;
+  margin: 0;
+  color: #fff !important;
+}
+.bottom-nav-highlight span {
+  font-size: 10px;
+  font-weight: 700;
+  color: #b45309;
+  margin-top: 2px;
+}
+.bottom-nav-highlight.active .scan-fab {
+  background: linear-gradient(135deg, #10b981, #059669);
+  box-shadow: 0 4px 14px rgba(16, 185, 129, 0.4);
+}
+.bottom-nav-highlight.active span {
+  color: #059669;
+}
+
+/* Mobile Responsiveness Rules */
+@media (max-width: 767.98px) {
+  .appnav {
+    padding: 10px 14px;
+    gap: 8px;
+  }
+  .appnav .brand {
+    font-size: 14.5px;
+  }
+  .appnav .right {
+    gap: 8px;
+    margin-left: auto;
   }
   .content-wrap {
-    padding: 14px !important;
+    padding: 12px 12px 84px 12px !important;
+  }
+  /* Prevent iOS Safari from auto-zooming inputs */
+  input, select, textarea, .form-control, .form-select {
+    font-size: 16px !important;
+  }
+  .stat-card {
+    padding: 14px 12px;
+    border-radius: 12px;
+  }
+  .stat-card .ico {
+    width: 38px;
+    height: 38px;
+    font-size: 17px;
+    border-radius: 10px;
+    margin-bottom: 8px;
+  }
+  .stat-card h3 {
+    font-size: 21px;
+  }
+  .stat-card p {
+    font-size: 11.5px;
+  }
+  .panel {
+    padding: 14px;
+    border-radius: 12px;
+    margin-bottom: 12px;
+  }
+  .panel h6 {
+    font-size: 13.5px;
+    margin-bottom: 10px;
+  }
+  /* Responsive Tables */
+  .table-responsive {
+    -webkit-overflow-scrolling: touch;
+    margin-bottom: 0;
+  }
+  table.mock th, table.mock td {
+    padding: 10px 10px;
+    font-size: 12px;
   }
 }
+

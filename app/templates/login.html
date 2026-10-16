@@ -1,101 +1,249 @@
 {% extends "base.html" %}
 {% block title %}Login — Bal Mandal Attendance System{% endblock %}
+{% block head %}
+<style>
+  .login-page-wrapper {
+    min-height: 100vh;
+    min-height: 100dvh;
+    background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 16px 12px;
+  }
+  @media (min-width: 576px) {
+    .login-page-wrapper {
+      padding: 32px 16px;
+    }
+  }
+  .login-card {
+    width: 100%;
+    max-width: 440px;
+    border-radius: 20px;
+    background: rgba(255, 255, 255, 0.98);
+    backdrop-filter: blur(12px);
+    box-shadow: 0 10px 35px rgba(0, 0, 0, 0.25);
+    border: 0;
+    overflow: hidden;
+  }
+  .login-card-body {
+    padding: 24px 20px;
+  }
+  @media (min-width: 576px) {
+    .login-card-body {
+      padding: 36px 32px;
+    }
+  }
+  /* Ensure iOS Safari does NOT auto-zoom inputs */
+  .login-input {
+    font-size: 16px !important;
+    height: 48px;
+  }
+  .login-input-group .input-group-text {
+    height: 48px;
+    background: #f8fafc;
+    border-color: #cbd5e1;
+  }
+  .login-btn {
+    height: 48px;
+    font-size: 15px;
+    font-weight: 700;
+    border-radius: 12px;
+  }
+  .demo-role-item {
+    transition: all 0.15s ease-in-out;
+    border: 1px solid #e2e8f0;
+    background: #ffffff;
+    border-radius: 12px;
+    padding: 10px 12px;
+    cursor: pointer;
+    text-align: left;
+    width: 100%;
+  }
+  .demo-role-item:hover, .demo-role-item:active {
+    background: #f1f5f9;
+    border-color: #cbd5e1;
+    transform: translateY(-1px);
+  }
+  .role-icon-box {
+    width: 38px;
+    height: 38px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 17px;
+    flex-shrink: 0;
+  }
+  .toast-fill {
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #0f172a;
+    color: #fff;
+    padding: 8px 16px;
+    border-radius: 20px;
+    font-size: 13px;
+    z-index: 1050;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.25s ease;
+  }
+  .toast-fill.show {
+    opacity: 1;
+  }
+</style>
+{% endblock %}
+
 {% block body %}
-<div class="d-flex align-items-center justify-content-center min-vh-100 py-5" style="background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);">
-  <div class="container" style="max-width: 440px;">
-    <div class="card border-0 shadow-lg" style="border-radius: 20px; backdrop-filter: blur(10px); background: rgba(255, 255, 255, 0.98);">
-      <div class="card-body p-4 p-md-5">
-        
-        <!-- Header -->
-        <div class="text-center mb-4">
-          <div class="d-inline-flex align-items-center justify-content-center mb-3 shadow-sm"
-               style="width: 72px; height: 72px; border-radius: 20px; background: #eff6ff;">
-            <i class="bi bi-person-bounding-box" style="font-size: 36px; color: #1d4ed8;"></i>
-          </div>
-          <h4 class="fw-bold mb-1 text-dark" style="letter-spacing: -0.3px;">Bal Mandal Attendance System</h4>
-          <p class="text-muted mb-0" style="font-size: 13px;">Face Scanner Web Attendance Portal</p>
+<div class="login-page-wrapper">
+  <div class="login-card">
+    <div class="login-card-body">
+      
+      <!-- Brand Header -->
+      <div class="text-center mb-3 mb-sm-4">
+        <div class="d-inline-flex align-items-center justify-content-center mb-2 shadow-sm"
+             style="width: 60px; height: 60px; border-radius: 16px; background: #eff6ff;">
+          <i class="bi bi-person-bounding-box" style="font-size: 30px; color: #1d4ed8;"></i>
         </div>
-
-        {% if error %}
-        <div class="alert alert-danger py-2 px-3 d-flex align-items-center gap-2 mb-3" style="font-size: 13px; border-radius: 10px;">
-          <i class="bi bi-exclamation-triangle-fill flex-shrink-0"></i>
-          <div>{{ error }}</div>
-        </div>
-        {% endif %}
-
-        <!-- Form -->
-        <form method="post" action="/login">
-          <div class="mb-3">
-            <label class="form-label small fw-bold text-secondary">Username</label>
-            <div class="input-group">
-              <span class="input-group-text bg-light border-end-0"><i class="bi bi-person text-secondary"></i></span>
-              <input name="username" id="usernameInput" class="form-control border-start-0 ps-1" required placeholder="Enter your username" autocomplete="username" autofocus>
-            </div>
-          </div>
-
-          <div class="mb-3">
-            <label class="form-label small fw-bold text-secondary">Password</label>
-            <div class="input-group">
-              <span class="input-group-text bg-light border-end-0"><i class="bi bi-lock text-secondary"></i></span>
-              <input name="password" id="passwordInput" type="password" class="form-control border-start-0 border-end-0 ps-1" required placeholder="••••••••" autocomplete="current-password">
-              <button class="input-group-text bg-light border-start-0 text-secondary" type="button" onclick="togglePassword()">
-                <i class="bi bi-eye" id="eyeIcon"></i>
-              </button>
-            </div>
-          </div>
-
-          <div class="d-flex justify-content-between align-items-center mb-4">
-            <div class="form-check">
-              <input class="form-check-input" type="checkbox" id="rm" checked>
-              <label class="form-check-label small text-muted" for="rm">Remember me</label>
-            </div>
-            <a href="#" class="small text-decoration-none fw-semibold text-primary">Forgot Password?</a>
-          </div>
-
-          <button type="submit" class="btn btn-primary w-100 py-2 fw-bold shadow-sm" style="border-radius: 12px; font-size: 15px;">
-            <i class="bi bi-box-arrow-in-right me-1"></i> Sign In
-          </button>
-        </form>
-
-        <div class="note-box mt-4 py-2 px-3" style="font-size: 12.5px;">
-          <i class="bi bi-shield-check me-1 text-primary"></i>
-          Upon login, you will be <b>auto-redirected</b> to your dashboard based on your assigned role (Super Admin / Branch Admin / Sanchalak).
-        </div>
-
-        <!-- Quick 1-Click Demo Logins -->
-        <div class="mt-4 pt-3 border-top">
-          <small class="text-muted fw-bold d-block mb-2 text-center">Quick Demo Login (1-Click Fill):</small>
-          <div class="d-flex flex-column gap-1" style="font-size: 12px;">
-            <button type="button" class="btn btn-sm btn-light border text-start d-flex justify-content-between align-items-center py-2 px-3" onclick="fillLogin('superadmin', 'password')">
-              <span><i class="bi bi-shield-shaded text-primary me-2"></i><b>Super Admin</b></span>
-              <code class="text-muted">superadmin</code>
-            </button>
-            <button type="button" class="btn btn-sm btn-light border text-start d-flex justify-content-between align-items-center py-2 px-3" onclick="fillLogin('maninagar_admin', 'password')">
-              <span><i class="bi bi-building text-success me-2"></i><b>Branch Admin</b></span>
-              <code class="text-muted">maninagar_admin</code>
-            </button>
-            <button type="button" class="btn btn-sm btn-light border text-start d-flex justify-content-between align-items-center py-2 px-3" onclick="fillLogin('hetal_shani', 'password')">
-              <span><i class="bi bi-person-badge text-warning me-2"></i><b>Sanchalak (Face Scan)</b></span>
-              <code class="text-muted">hetal_shani</code>
-            </button>
-          </div>
-        </div>
-
+        <h4 class="fw-bold mb-1 text-dark" style="letter-spacing: -0.3px; font-size: clamp(1.2rem, 4vw, 1.45rem);">
+          Bal Mandal Attendance
+        </h4>
+        <p class="text-muted mb-0" style="font-size: 12.5px;">
+          Face Scanner Web Attendance Portal
+        </p>
       </div>
+
+      {% if error %}
+      <div class="alert alert-danger py-2 px-3 d-flex align-items-center gap-2 mb-3" style="font-size: 13px; border-radius: 10px;">
+        <i class="bi bi-exclamation-triangle-fill flex-shrink-0"></i>
+        <div>{{ error }}</div>
+      </div>
+      {% endif %}
+
+      <!-- Sign In Form -->
+      <form method="post" action="/login" id="loginForm">
+        <div class="mb-3">
+          <label class="form-label small fw-bold text-secondary mb-1">Username</label>
+          <div class="input-group login-input-group">
+            <span class="input-group-text border-end-0 text-secondary"><i class="bi bi-person"></i></span>
+            <input name="username" id="usernameInput" class="form-control login-input border-start-0 ps-1" required placeholder="Enter username" autocomplete="username" inputmode="text" autofocus>
+          </div>
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label small fw-bold text-secondary mb-1">Password</label>
+          <div class="input-group login-input-group">
+            <span class="input-group-text border-end-0 text-secondary"><i class="bi bi-lock"></i></span>
+            <input name="password" id="passwordInput" type="password" class="form-control login-input border-start-0 border-end-0 ps-1" required placeholder="••••••••" autocomplete="current-password">
+            <button class="input-group-text border-start-0 text-secondary px-3" type="button" onclick="togglePassword()" aria-label="Toggle password visibility">
+              <i class="bi bi-eye" id="eyeIcon"></i>
+            </button>
+          </div>
+        </div>
+
+        <div class="d-flex justify-content-between align-items-center mb-3">
+          <div class="form-check mb-0">
+            <input class="form-check-input" type="checkbox" id="rm" checked>
+            <label class="form-check-label small text-muted user-select-none" for="rm">Remember me</label>
+          </div>
+          <span class="small text-muted" style="font-size: 12px;">Auto-Role Redirect</span>
+        </div>
+
+        <button type="submit" id="submitBtn" class="btn btn-primary w-100 login-btn shadow-sm">
+          <i class="bi bi-box-arrow-in-right me-1"></i> Sign In
+        </button>
+      </form>
+
+      <!-- Quick 1-Tap Demo Logins -->
+      <div class="mt-3 pt-3 border-top">
+        <div class="d-flex align-items-center justify-content-between mb-2">
+          <span class="small fw-bold text-secondary">
+            <i class="bi bi-lightning-charge-fill text-warning me-1"></i>Quick Demo Login:
+          </span>
+          <span class="badge bg-light text-muted border" style="font-size: 11px;">Tap to fill</span>
+        </div>
+
+        <div class="d-flex flex-column gap-2">
+          <!-- Super Admin -->
+          <div class="demo-role-item d-flex align-items-center justify-content-between" onclick="fillLogin('superadmin', 'password', 'Super Admin')">
+            <div class="d-flex align-items-center gap-2 text-truncate">
+              <div class="role-icon-box bg-primary-subtle text-primary">
+                <i class="bi bi-shield-shaded"></i>
+              </div>
+              <div class="text-truncate">
+                <div class="fw-bold text-dark lh-1" style="font-size: 13px;">Super Admin</div>
+                <small class="text-muted" style="font-size: 11px;">All Branches & Reports</small>
+              </div>
+            </div>
+            <span class="badge bg-light text-secondary border font-monospace ms-2" style="font-size: 11px;">superadmin</span>
+          </div>
+
+          <!-- Branch Admin -->
+          <div class="demo-role-item d-flex align-items-center justify-content-between" onclick="fillLogin('maninagar_admin', 'password', 'Branch Admin')">
+            <div class="d-flex align-items-center gap-2 text-truncate">
+              <div class="role-icon-box bg-success-subtle text-success">
+                <i class="bi bi-building"></i>
+              </div>
+              <div class="text-truncate">
+                <div class="fw-bold text-dark lh-1" style="font-size: 13px;">Branch Admin</div>
+                <small class="text-muted" style="font-size: 11px;">Maninagar Branch</small>
+              </div>
+            </div>
+            <span class="badge bg-light text-secondary border font-monospace ms-2" style="font-size: 11px;">maninagar_admin</span>
+          </div>
+
+          <!-- Sanchalak -->
+          <div class="demo-role-item d-flex align-items-center justify-content-between" onclick="fillLogin('hetal_shani', 'password', 'Sanchalak')">
+            <div class="d-flex align-items-center gap-2 text-truncate">
+              <div class="role-icon-box bg-warning-subtle text-warning">
+                <i class="bi bi-person-badge"></i>
+              </div>
+              <div class="text-truncate">
+                <div class="fw-bold text-dark lh-1" style="font-size: 13px;">Sanchalak</div>
+                <small class="text-muted" style="font-size: 11px;">Face Scanner & Attendance</small>
+              </div>
+            </div>
+            <span class="badge bg-light text-secondary border font-monospace ms-2" style="font-size: 11px;">hetal_shani</span>
+          </div>
+        </div>
+      </div>
+
     </div>
-    <p class="text-center text-white-50 mt-3 mb-0" style="font-size: 12px;">
-      © 2026 Bal Mandal Attendance System · Secure Portal
-    </p>
+  </div>
+
+  <div id="toastFill" class="toast-fill">
+    <i class="bi bi-check2-circle text-success me-1"></i> Filled credentials for <span id="toastRoleName"></span>
   </div>
 </div>
 {% endblock %}
 
 {% block scripts %}
 <script>
-function fillLogin(user, pass) {
-  document.getElementById('usernameInput').value = user;
-  document.getElementById('passwordInput').value = pass;
+function fillLogin(user, pass, roleLabel) {
+  const u = document.getElementById('usernameInput');
+  const p = document.getElementById('passwordInput');
+  u.value = user;
+  p.value = pass;
+  
+  // Show quick toast feedback
+  const toast = document.getElementById('toastFill');
+  document.getElementById('toastRoleName').textContent = roleLabel;
+  toast.classList.add('show');
+  setTimeout(() => toast.classList.remove('show'), 1800);
+
+  // Briefly pulse submit button so the user knows they can tap it
+  const btn = document.getElementById('submitBtn');
+  btn.classList.add('btn-success');
+  btn.classList.remove('btn-primary');
+  setTimeout(() => {
+    btn.classList.remove('btn-success');
+    btn.classList.add('btn-primary');
+  }, 400);
 }
+
 function togglePassword() {
   const p = document.getElementById('passwordInput');
   const eye = document.getElementById('eyeIcon');
