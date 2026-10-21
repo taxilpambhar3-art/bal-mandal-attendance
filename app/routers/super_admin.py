@@ -1,4 +1,6 @@
 from __future__ import annotations
+import base64
+import uuid
 from datetime import date
 
 from fastapi import APIRouter, Depends, Form, Request
@@ -12,12 +14,26 @@ from ..database import get_db, UPLOAD_DIR
 from ..deps import role_required, safe_int
 from ..models import Attendance, BalMandal, Branch, Child, User
 from ..weeks import current_week_info, gujarati_month
-from ..child_utils import STANDARDS, promote_standard
+from ..child_utils import STANDARDS, promote_standard, parse_dob_strict, validate_child_form_data
 
 router = APIRouter(prefix="/super-admin", tags=["super-admin"])
 templates: Jinja2Templates | None = None
 
 CITIES = ["Ahmedabad", "Surat", "Vadodara", "Rajkot", "Bhavnagar"]
+
+
+def _save_data_url(data_url: str, prefix: str = "scan") -> str | None:
+    if not data_url or "," not in data_url:
+        return None
+    try:
+        header, b64 = data_url.split(",", 1)
+        ext = "jpg" if "jpeg" in header or "jpg" in header else "png"
+        name = f"{prefix}_{uuid.uuid4().hex[:12]}.{ext}"
+        path = UPLOAD_DIR / name
+        path.write_bytes(base64.b64decode(b64))
+        return name
+    except Exception:
+        return None
 
 
 def _ctx(request: Request, user: User, **extra):
@@ -855,6 +871,7 @@ def children_list(
     db: Session = Depends(get_db),
     branch_id: str | None = None,
     mandal_id: str | None = None,
+    status: str | None = None,
     q: str | None = None,
 ):
     b_id = safe_int(branch_id)
@@ -864,8 +881,11 @@ def children_list(
         .join(BalMandal)
         .join(Branch)
         .options(joinedload(Child.bal_mandal).joinedload(BalMandal.branch))
-        .filter(Child.is_active.is_(True))
     )
+    if status == "active":
+        query = query.filter(Child.is_active.is_(True))
+    elif status == "archived":
+        query = query.filter(Child.is_active.is_(False))
     if b_id:
         query = query.filter(BalMandal.branch_id == b_id)
     if m_id:
@@ -873,7 +893,7 @@ def children_list(
     if q and q.strip():
         term = f"%{q.strip()}%"
         query = query.filter((Child.name.ilike(term)) | (Child.child_code.ilike(term)))
-    children = query.order_by(Child.name).all()
+    children = query.order_by(Child.is_active.desc(), Child.name).all()
 
     branches = db.query(Branch).order_by(Branch.name).all()
     mandals = (
@@ -914,6 +934,7 @@ def children_list(
             mandals=mandals,
             selected_branch=b_id,
             selected_mandal=m_id,
+            selected_status=status or "",
             search_query=q or "",
         ),
     )
@@ -1067,8 +1088,128 @@ def user_delete(
     return RedirectResponse("/super-admin/users", status_code=303)
 
 
+@router.get("/children/{child_id}/edit")
+def child_edit_form(
+    child_id: int,
+    request: Request,
+    user: User = Depends(role_required("super_admin")),
+    db: Session = Depends(get_db),
+):
+    child = db.get(Child, child_id)
+    if not child:
+        return RedirectResponse("/super-admin/children", status_code=303)
+    mandals = db.query(BalMandal).options(joinedload(BalMandal.branch)).filter(BalMandal.is_active.is_(True)).order_by(BalMandal.name).all()
+    return templates.TemplateResponse(
+        "super_admin/child_form.html",
+        _ctx(request, user, active="children", child=child, mandals=mandals, selected_mandal_id=child.bal_mandal_id, standards=STANDARDS),
+    )
+
+
+@router.post("/children/{child_id}/edit")
+def child_edit_submit(
+    child_id: int,
+    request: Request,
+    user: User = Depends(role_required("super_admin")),
+    db: Session = Depends(get_db),
+    first_name: str = Form(""),
+    father_name: str = Form(""),
+    surname: str = Form(""),
+    dob_str: str = Form(""),
+    child_code: str = Form(...),
+    bal_mandal_id: str = Form(...),
+    mobile_number: str = Form(...),
+    gender: str = Form("Male"),
+    standard: str = Form(""),
+    address: str = Form(""),
+    uses_bus: bool = Form(False),
+    bus_route: str = Form(""),
+    photo_data: str = Form(""),
+):
+    child = db.get(Child, child_id)
+    if not child:
+        return RedirectResponse("/super-admin/children", status_code=303)
+    m_id = safe_int(bal_mandal_id)
+    mandals = db.query(BalMandal).options(joinedload(BalMandal.branch)).filter(BalMandal.is_active.is_(True)).order_by(BalMandal.name).all()
+
+    form_data = {
+        "first_name": first_name,
+        "father_name": father_name,
+        "surname": surname,
+        "dob_str": dob_str,
+        "gender": gender,
+        "standard": standard,
+        "address": address,
+        "mobile_number": mobile_number,
+        "uses_bus": uses_bus,
+        "bus_route": bus_route,
+        "child_code": child_code,
+        "bal_mandal_id": m_id,
+    }
+
+    is_valid, err = validate_child_form_data(
+        first_name=first_name,
+        father_name=father_name,
+        surname=surname,
+        dob_str=dob_str,
+        gender=gender,
+        standard=standard,
+        mobile_number=mobile_number,
+        child_code=child_code,
+        bal_mandal_id=m_id,
+        uses_bus=uses_bus,
+        bus_route=bus_route,
+    )
+    if not is_valid:
+        return templates.TemplateResponse(
+            "super_admin/child_form.html",
+            _ctx(request, user, active="children", child=child, mandals=mandals, selected_mandal_id=m_id, standards=STANDARDS, form_data=form_data, error_msg=err),
+        )
+
+    # Check child_code uniqueness against other records
+    existing = db.query(Child).filter(Child.child_code == child_code.strip(), Child.id != child.id).first()
+    if existing:
+        return templates.TemplateResponse(
+            "super_admin/child_form.html",
+            _ctx(request, user, active="children", child=child, mandals=mandals, selected_mandal_id=m_id, standards=STANDARDS, form_data=form_data, error_msg=f"Child ID '{child_code}' is already assigned to another child."),
+        )
+
+    fn = first_name.strip()
+    fath = father_name.strip()
+    sn = surname.strip()
+    dob_dt, dob_clean, calculated_age = parse_dob_strict(dob_str)
+
+    child.first_name = fn
+    child.father_name = fath
+    child.surname = sn
+    child.name = f"{fn} {fath} {sn}".strip()
+    child.dob = dob_dt
+    child.dob_str = dob_clean or dob_str.strip()
+    child.age = calculated_age
+    child.gender = gender.strip() or "Male"
+    child.standard = standard.strip()
+    child.address = address.strip()
+    child.guardian_name = fath or None
+    child.mobile_number = mobile_number.strip()
+    child.uses_bus = bool(uses_bus)
+    child.bus_route = bus_route.strip() if uses_bus else ""
+    child.child_code = child_code.strip()
+    if m_id:
+        child.bal_mandal_id = m_id
+
+    # If new photo captured during edit, update photo
+    if photo_data and "," in photo_data:
+        new_photo = _save_data_url(photo_data, prefix=f"enroll_c{child.id}")
+        if new_photo:
+            child.face_photo = new_photo
+
+    db.commit()
+    # HISTORY IS PRESERVED: attendance table is untouched!
+    return RedirectResponse("/super-admin/children?updated=1", status_code=303)
+
+
 @router.post("/children/{child_id}/delete")
-def child_delete(
+@router.post("/children/{child_id}/deactivate")
+def child_deactivate(
     child_id: int,
     request: Request,
     user: User = Depends(role_required("super_admin")),
@@ -1076,17 +1217,25 @@ def child_delete(
 ):
     child = db.get(Child, child_id)
     if child:
-        if child.face_photo:
-            p = UPLOAD_DIR / child.face_photo
-            if p.exists() and p.is_file():
-                try:
-                    p.unlink()
-                except Exception:
-                    pass
-        db.query(Attendance).filter(Attendance.child_id == child.id).delete()
-        db.delete(child)
+        # REQUIREMENT: History must not be deleted!
+        # Soft-deactivate child. NEVER delete Attendance records.
+        child.is_active = False
         db.commit()
-    return RedirectResponse("/super-admin/children", status_code=303)
+    return RedirectResponse("/super-admin/children?archived=1", status_code=303)
+
+
+@router.post("/children/{child_id}/reactivate")
+def child_reactivate(
+    child_id: int,
+    request: Request,
+    user: User = Depends(role_required("super_admin")),
+    db: Session = Depends(get_db),
+):
+    child = db.get(Child, child_id)
+    if child:
+        child.is_active = True
+        db.commit()
+    return RedirectResponse("/super-admin/children?reactivated=1", status_code=303)
 
 
 @router.post("/attendance/{att_id}/delete")

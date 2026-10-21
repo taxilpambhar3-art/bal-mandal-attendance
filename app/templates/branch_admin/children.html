@@ -14,6 +14,28 @@
   </a>
 </div>
 
+{% if request.query_params.get('updated') %}
+<div class="alert alert-success py-2 px-3 mb-3 d-flex align-items-center gap-2 rounded-3 shadow-sm" style="font-size:13.5px;">
+  <i class="bi bi-check-circle-fill text-success fs-5 flex-shrink-0"></i>
+  <div><b>Child Updated:</b> Child details have been successfully updated. All historical attendance records remain 100% preserved.</div>
+</div>
+{% elif request.query_params.get('enrolled') %}
+<div class="alert alert-success py-2 px-3 mb-3 d-flex align-items-center gap-2 rounded-3 shadow-sm" style="font-size:13.5px;">
+  <i class="bi bi-check-circle-fill text-success fs-5 flex-shrink-0"></i>
+  <div><b>Child Enrolled:</b> New child profile successfully registered and ready for attendance.</div>
+</div>
+{% elif request.query_params.get('archived') %}
+<div class="alert alert-warning py-2 px-3 mb-3 d-flex align-items-center gap-2 rounded-3 shadow-sm" style="font-size:13.5px;">
+  <i class="bi bi-archive-fill text-warning fs-5 flex-shrink-0"></i>
+  <div><b>Child Archived:</b> Child has been deactivated. <b>Attendance history is permanently preserved</b> and remains intact in all reports.</div>
+</div>
+{% elif request.query_params.get('reactivated') %}
+<div class="alert alert-success py-2 px-3 mb-3 d-flex align-items-center gap-2 rounded-3 shadow-sm" style="font-size:13.5px;">
+  <i class="bi bi-arrow-counterclockwise text-success fs-5 flex-shrink-0"></i>
+  <div><b>Child Reactivated:</b> Child profile has been restored to active status with all past attendance history intact.</div>
+</div>
+{% endif %}
+
 <!-- Filters Bar -->
 <div class="panel py-3 mb-4">
   <form method="get" action="/branch-admin/children" class="row g-2 align-items-end">
@@ -83,7 +105,12 @@
           </td>
           <td><span class="badge bg-light text-dark font-monospace border">{{ c.child_code }}</span></td>
           <td>
-            <div class="fw-bold text-dark">{{ c.name }}</div>
+            <div class="fw-bold text-dark d-flex align-items-center gap-1 flex-wrap">
+              <span>{{ c.name }}</span>
+              {% if not c.is_active %}
+              <span class="badge bg-secondary-subtle text-secondary border" style="font-size:10px;">Archived</span>
+              {% endif %}
+            </div>
             <span class="badge bg-light text-secondary border" style="font-size:10.5px;">{{ c.gender or 'Male' }}</span>
           </td>
           <td>
@@ -125,8 +152,11 @@
           </td>
           <td class="text-end">
             <div class="btn-group btn-group-sm">
+              <a href="/branch-admin/children/{{ c.id }}/edit" class="btn btn-outline-warning" title="Edit Child Details">
+                <i class="bi bi-pencil-square me-1"></i>Edit
+              </a>
               <button type="button" class="btn btn-outline-primary" title="Update Face Photo" onclick="openFaceModal('{{ c.id }}', '{{ c.name }}', '{{ c.face_photo or '' }}')">
-                <i class="bi bi-camera me-1"></i>Update Face
+                <i class="bi bi-camera me-1"></i>Face
               </button>
               <form method="post" action="/branch-admin/manual-attendance" class="d-inline ms-1">
                 <input type="hidden" name="child_id" value="{{ c.id }}">
@@ -134,11 +164,19 @@
                   <i class="bi bi-check2"></i>
                 </button>
               </form>
-              <form method="post" action="/branch-admin/children/{{ c.id }}/delete" class="d-inline ms-1" onsubmit="return confirm('Are you sure you want to delete child \'{{ c.name }}\'?');">
-                <button type="submit" class="btn btn-outline-danger" title="Delete Child">
-                  <i class="bi bi-trash"></i>
+              {% if c.is_active %}
+              <form method="post" action="/branch-admin/children/{{ c.id }}/deactivate" class="d-inline ms-1" onsubmit="return confirm('Archive child \'{{ c.name }}\'?\n\nAll historical attendance and scan records will remain permanently preserved.');">
+                <button type="submit" class="btn btn-outline-secondary" title="Archive Child (Preserve History)">
+                  <i class="bi bi-archive"></i>
                 </button>
               </form>
+              {% else %}
+              <form method="post" action="/branch-admin/children/{{ c.id }}/reactivate" class="d-inline ms-1">
+                <button type="submit" class="btn btn-outline-success" title="Reactivate Child">
+                  <i class="bi bi-arrow-counterclockwise"></i>
+                </button>
+              </form>
+              {% endif %}
             </div>
           </td>
         </tr>

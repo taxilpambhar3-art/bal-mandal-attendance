@@ -15,7 +15,7 @@ from ..deps import role_required, safe_int
 from ..face_matcher import compare_face_photos
 from ..models import Attendance, Child, User
 from ..weeks import current_week_info, gujarati_month, week_number_for
-from ..child_utils import STANDARDS, parse_dob_strict, promote_standard
+from ..child_utils import STANDARDS, parse_dob_strict, promote_standard, validate_child_form_data
 
 router = APIRouter(prefix="/sanchalak", tags=["sanchalak"])
 templates: Jinja2Templates | None = None
@@ -517,7 +517,7 @@ def children_list(
     children = (
         db.query(Child)
         .filter(Child.bal_mandal_id == user.bal_mandal_id)
-        .order_by(Child.name)
+        .order_by(Child.is_active.desc(), Child.name)
         .all()
     )
     return templates.TemplateResponse(
@@ -556,6 +556,49 @@ def child_add(
     bus_route: str = Form(""),
     photo_data: str = Form(""),
 ):
+    form_data = {
+        "first_name": first_name,
+        "father_name": father_name,
+        "surname": surname,
+        "dob_str": dob_str,
+        "gender": gender,
+        "standard": standard,
+        "address": address,
+        "mobile_number": mobile_number,
+        "uses_bus": uses_bus,
+        "bus_route": bus_route,
+        "child_code": child_code,
+        "bal_mandal_id": user.bal_mandal_id,
+    }
+
+    # 1. Server-side validation
+    is_valid, err = validate_child_form_data(
+        first_name=first_name,
+        father_name=father_name,
+        surname=surname,
+        dob_str=dob_str,
+        gender=gender,
+        standard=standard,
+        mobile_number=mobile_number,
+        child_code=child_code,
+        bal_mandal_id=user.bal_mandal_id,
+        uses_bus=uses_bus,
+        bus_route=bus_route,
+    )
+    if not is_valid:
+        return templates.TemplateResponse(
+            "sanchalak/child_form.html",
+            _ctx(request, user, active="children", child=None, form_data=form_data, standards=STANDARDS, error_msg=err),
+        )
+
+    # 2. Check unique child code
+    existing = db.query(Child).filter(Child.child_code == child_code.strip()).first()
+    if existing:
+        return templates.TemplateResponse(
+            "sanchalak/child_form.html",
+            _ctx(request, user, active="children", child=None, form_data=form_data, standards=STANDARDS, error_msg=f"Child ID '{child_code}' is already registered. Please generate a unique ID."),
+        )
+
     fn = first_name.strip()
     fath = father_name.strip()
     sn = surname.strip()
@@ -584,7 +627,106 @@ def child_add(
     )
     db.add(child)
     db.commit()
-    return RedirectResponse("/sanchalak/children", status_code=303)
+    return RedirectResponse("/sanchalak/children?enrolled=1", status_code=303)
+
+
+@router.get("/children/{child_id}/edit")
+def child_edit_form(
+    child_id: int,
+    request: Request,
+    user: User = Depends(role_required("sanchalak")),
+    db: Session = Depends(get_db),
+):
+    child = db.get(Child, child_id)
+    if not child or child.bal_mandal_id != user.bal_mandal_id:
+        return RedirectResponse("/sanchalak/children", status_code=303)
+
+    return templates.TemplateResponse(
+        "sanchalak/child_form.html",
+        _ctx(request, user, active="children", child=child, standards=STANDARDS),
+    )
+
+
+@router.post("/children/{child_id}/edit")
+def child_edit_submit(
+    child_id: int,
+    request: Request,
+    user: User = Depends(role_required("sanchalak")),
+    db: Session = Depends(get_db),
+    first_name: str = Form(""),
+    father_name: str = Form(""),
+    surname: str = Form(""),
+    dob_str: str = Form(""),
+    child_code: str = Form(...),
+    mobile_number: str = Form(...),
+    gender: str = Form("Male"),
+    standard: str = Form(""),
+    address: str = Form(""),
+    uses_bus: bool = Form(False),
+    bus_route: str = Form(""),
+    photo_data: str = Form(""),
+):
+    child = db.get(Child, child_id)
+    if not child or child.bal_mandal_id != user.bal_mandal_id:
+        return RedirectResponse("/sanchalak/children", status_code=303)
+
+    is_valid, err = validate_child_form_data(
+        first_name=first_name,
+        father_name=father_name,
+        surname=surname,
+        dob_str=dob_str,
+        gender=gender,
+        standard=standard,
+        mobile_number=mobile_number,
+        child_code=child_code,
+        bal_mandal_id=user.bal_mandal_id,
+        uses_bus=uses_bus,
+        bus_route=bus_route,
+    )
+    if not is_valid:
+        return templates.TemplateResponse(
+            "sanchalak/child_form.html",
+            _ctx(request, user, active="children", child=child, standards=STANDARDS, error_msg=err),
+        )
+
+    # Check child_code uniqueness against other records
+    existing = db.query(Child).filter(Child.child_code == child_code.strip(), Child.id != child.id).first()
+    if existing:
+        return templates.TemplateResponse(
+            "sanchalak/child_form.html",
+            _ctx(request, user, active="children", child=child, standards=STANDARDS, error_msg=f"Child ID '{child_code}' is already assigned to another child."),
+        )
+
+    fn = first_name.strip()
+    fath = father_name.strip()
+    sn = surname.strip()
+    dob_dt, dob_clean, calculated_age = parse_dob_strict(dob_str)
+
+    child.first_name = fn
+    child.father_name = fath
+    child.surname = sn
+    child.name = f"{fn} {fath} {sn}".strip()
+    child.dob = dob_dt
+    child.dob_str = dob_clean or dob_str.strip()
+    child.age = calculated_age
+    child.gender = gender.strip() or "Male"
+    child.standard = standard.strip()
+    child.address = address.strip()
+    child.guardian_name = fath or None
+    child.mobile_number = mobile_number.strip()
+    child.uses_bus = bool(uses_bus)
+    child.bus_route = bus_route.strip() if uses_bus else ""
+    child.child_code = child_code.strip()
+
+    # If new photo captured during edit, update photo
+    if photo_data and "," in photo_data:
+        new_photo = _save_data_url(photo_data, prefix=f"enroll_c{child.id}")
+        if new_photo:
+            child.face_photo = new_photo
+
+    db.commit()
+    # HISTORY IS PRESERVED: attendance table is untouched!
+    return RedirectResponse("/sanchalak/children?updated=1", status_code=303)
 
 
 @router.post("/children/promote-standards")
@@ -814,7 +956,8 @@ def history(
 # --- DELETE ENDPOINTS FOR SANCHALAK ---
 
 @router.post("/children/{child_id}/delete")
-def child_delete(
+@router.post("/children/{child_id}/deactivate")
+def child_deactivate(
     child_id: int,
     request: Request,
     user: User = Depends(role_required("sanchalak")),
@@ -822,17 +965,25 @@ def child_delete(
 ):
     child = db.get(Child, child_id)
     if child and child.bal_mandal_id == user.bal_mandal_id:
-        if child.face_photo:
-            p = UPLOAD_DIR / child.face_photo
-            if p.exists() and p.is_file():
-                try:
-                    p.unlink()
-                except Exception:
-                    pass
-        db.query(Attendance).filter(Attendance.child_id == child.id).delete()
-        db.delete(child)
+        # REQUIREMENT: History must not be deleted!
+        # Soft-deactivate child. NEVER delete Attendance records.
+        child.is_active = False
         db.commit()
-    return RedirectResponse("/sanchalak/children", status_code=303)
+    return RedirectResponse("/sanchalak/children?archived=1", status_code=303)
+
+
+@router.post("/children/{child_id}/reactivate")
+def child_reactivate(
+    child_id: int,
+    request: Request,
+    user: User = Depends(role_required("sanchalak")),
+    db: Session = Depends(get_db),
+):
+    child = db.get(Child, child_id)
+    if child and child.bal_mandal_id == user.bal_mandal_id:
+        child.is_active = True
+        db.commit()
+    return RedirectResponse("/sanchalak/children?reactivated=1", status_code=303)
 
 
 @router.post("/attendance/{att_id}/delete")

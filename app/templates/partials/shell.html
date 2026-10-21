@@ -22,6 +22,13 @@
     {% if user.bal_mandal and user.role == 'sanchalak' %} · {{ user.bal_mandal.name }}{% endif %}
   </span>
 
+  <!-- Spotlight Search Trigger Button -->
+  <button type="button" class="btn btn-sm btn-light border-0 py-1 px-3 rounded-pill text-secondary d-flex align-items-center gap-2 shadow-sm ms-2" onclick="openSpotlightModal()" title="Spotlight Search (Cmd+K / Ctrl+K)">
+    <i class="bi bi-search text-primary"></i>
+    <span class="d-none d-md-inline small fw-semibold">Search...</span>
+    <kbd class="d-none d-lg-inline bg-white text-muted border px-1 rounded shadow-none" style="font-size:10px; font-family: inherit;">⌘K</kbd>
+  </button>
+
   <div class="right ms-auto">
     <span class="d-none d-md-inline-flex align-items-center me-2 text-white-50" role="button" title="Notifications">
       <i class="bi bi-bell text-white"></i>
@@ -153,4 +160,295 @@
     </button>
   {% endif %}
 </nav>
+
+<!-- ================= SPOTLIGHT SEARCH MODAL ================= -->
+<div class="modal fade" id="spotlightModal" tabindex="-1" aria-labelledby="spotlightModalLabel" aria-hidden="true" data-bs-backdrop="true">
+  <div class="modal-dialog modal-dialog-centered" style="max-width: 660px;">
+    <div class="modal-content shadow-lg border-0 rounded-4 overflow-hidden" style="background: #ffffff;">
+      <!-- Search Input Header -->
+      <div class="p-3 border-bottom d-flex align-items-center gap-2 bg-light-subtle">
+        <i class="bi bi-search fs-5 text-primary ms-1"></i>
+        <input type="text"
+               id="spotlightSearchInput"
+               class="form-control form-control-lg border-0 shadow-none bg-transparent ps-2 pe-1"
+               placeholder="Search children, mandals, phone, ID, or action..."
+               autocomplete="off"
+               spellcheck="false"
+               style="font-size: 16px;">
+        <div id="spotlightLoader" class="spinner-border spinner-border-sm text-primary me-2 d-none" role="status">
+          <span class="visually-hidden">Loading...</span>
+        </div>
+        <button type="button" id="spotlightClearBtn" class="btn btn-sm btn-link text-muted p-1 text-decoration-none d-none" onclick="clearSpotlightInput()">
+          <i class="bi bi-x-circle-fill fs-5"></i>
+        </button>
+        <button type="button" class="btn-close me-1" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+
+      <!-- Results List Container -->
+      <div id="spotlightResultsList" class="p-2 overflow-auto" style="max-height: 440px; min-height: 180px;">
+        <div class="text-center py-5 text-muted">
+          <div class="spinner-border spinner-border-sm text-primary mb-2" role="status"></div>
+          <div class="small">Initializing spotlight search...</div>
+        </div>
+      </div>
+
+      <!-- Footer with Navigation Hints -->
+      <div class="p-2 px-3 border-top bg-light d-flex justify-content-between align-items-center text-muted" style="font-size: 11.5px;">
+        <div class="d-flex align-items-center gap-2">
+          <span><kbd class="bg-white text-dark border px-1 rounded shadow-none" style="font-size:10px;">↑</kbd> <kbd class="bg-white text-dark border px-1 rounded shadow-none" style="font-size:10px;">↓</kbd> Navigate</span>
+          <span>·</span>
+          <span><kbd class="bg-white text-dark border px-1 rounded shadow-none" style="font-size:10px;">↵</kbd> Open</span>
+          <span>·</span>
+          <span><kbd class="bg-white text-dark border px-1 rounded shadow-none" style="font-size:10px;">ESC</kbd> Close</span>
+        </div>
+        <div class="fw-semibold text-primary">
+          <i class="bi bi-lightning-charge-fill me-1"></i>Spotlight Search
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+.spotlight-group-title {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: #64748b;
+  padding: 8px 12px 4px 12px;
+}
+.spotlight-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  margin-bottom: 2px;
+  border-radius: 8px;
+  text-decoration: none;
+  color: #1e293b;
+  transition: all 0.12s ease-in-out;
+  cursor: pointer;
+  border: 1px solid transparent;
+}
+.spotlight-item:hover,
+.spotlight-item.active {
+  background-color: #f1f5f9;
+  border-color: #cbd5e1;
+  color: #0f172a;
+}
+.spotlight-item.active {
+  background-color: #e0f2fe !important;
+  border-color: #7dd3fc !important;
+}
+.spotlight-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+.spotlight-icon-pill {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: #f1f5f9;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  font-size: 16px;
+}
+</style>
+
+<script>
+let spotlightDebounceTimer = null;
+let spotlightSelectedIndex = -1;
+
+function openSpotlightModal(presetQuery = '') {
+  const modalEl = document.getElementById('spotlightModal');
+  if (!modalEl) return;
+  const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+  modal.show();
+
+  const input = document.getElementById('spotlightSearchInput');
+  if (input) {
+    if (presetQuery) {
+      input.value = presetQuery;
+    }
+    setTimeout(() => {
+      input.focus();
+      if (presetQuery) input.select();
+    }, 150);
+  }
+  fetchSpotlightData(input ? input.value : '');
+}
+
+function clearSpotlightInput() {
+  const input = document.getElementById('spotlightSearchInput');
+  if (input) {
+    input.value = '';
+    input.focus();
+    fetchSpotlightData('');
+  }
+}
+
+async function fetchSpotlightData(query) {
+  const loader = document.getElementById('spotlightLoader');
+  const clearBtn = document.getElementById('spotlightClearBtn');
+  const resultsList = document.getElementById('spotlightResultsList');
+  if (!resultsList) return;
+
+  if (clearBtn) {
+    if (query && query.trim()) clearBtn.classList.remove('d-none');
+    else clearBtn.classList.add('d-none');
+  }
+  if (loader) loader.classList.remove('d-none');
+
+  try {
+    const res = await fetch(`/api/spotlight?q=${encodeURIComponent(query.trim())}`);
+    if (!res.ok) throw new Error('Search failed');
+    const data = await res.json();
+    renderSpotlightResults(data.categories, query.trim());
+  } catch (err) {
+    resultsList.innerHTML = `
+      <div class="text-center py-4 text-danger small">
+        <i class="bi bi-exclamation-triangle-fill fs-5 d-block mb-1"></i>
+        Search error: Unable to load records.
+      </div>`;
+  } finally {
+    if (loader) loader.classList.add('d-none');
+  }
+}
+
+function renderSpotlightResults(categories, query) {
+  const container = document.getElementById('spotlightResultsList');
+  if (!container) return;
+
+  spotlightSelectedIndex = -1;
+
+  if (!categories || categories.length === 0) {
+    container.innerHTML = `
+      <div class="text-center py-5 text-muted">
+        <i class="bi bi-search fs-2 d-block mb-2 text-secondary opacity-50"></i>
+        <div class="fw-semibold">No matching records found</div>
+        <small class="text-muted d-block mt-1">Try searching by child name, child code (CH-XXXX), guardian mobile, or annual grade.</small>
+      </div>`;
+    return;
+  }
+
+  let html = '';
+  let globalItemIndex = 0;
+
+  categories.forEach(cat => {
+    html += `
+      <div class="spotlight-group mb-2">
+        <div class="spotlight-group-title d-flex align-items-center gap-1">
+          <i class="bi ${cat.icon || 'bi-folder'} text-primary me-1"></i>
+          <span>${escapeHtml(cat.name)}</span>
+        </div>`;
+
+    cat.items.forEach(item => {
+      const idx = globalItemIndex++;
+      const isFirst = (idx === 0);
+
+      let visualEl = '';
+      if (item.photo) {
+        visualEl = `<img src="${item.photo}" class="spotlight-avatar border" alt="">`;
+      } else {
+        visualEl = `
+          <div class="spotlight-icon-pill text-primary">
+            <i class="bi ${item.icon || 'bi-circle-fill'}"></i>
+          </div>`;
+      }
+
+      html += `
+        <a href="${item.url}" class="spotlight-item ${isFirst ? 'active' : ''}" data-index="${idx}" data-url="${item.url}">
+          <div class="d-flex align-items-center gap-3 overflow-hidden me-2">
+            ${visualEl}
+            <div class="text-truncate">
+              <div class="fw-bold text-dark text-truncate" style="font-size: 13.5px;">${escapeHtml(item.title)}</div>
+              <div class="small text-muted text-truncate" style="font-size: 12px;">${escapeHtml(item.subtitle)}</div>
+              ${item.meta ? `<div class="text-secondary opacity-75 text-truncate" style="font-size: 11px;">${escapeHtml(item.meta)}</div>` : ''}
+            </div>
+          </div>
+          <div class="d-flex align-items-center gap-2 flex-shrink-0">
+            ${item.badge ? `<span class="badge ${item.badge_class || 'bg-light text-secondary border'}" style="font-size: 10.5px;">${escapeHtml(item.badge)}</span>` : ''}
+            <i class="bi bi-chevron-right text-muted small"></i>
+          </div>
+        </a>`;
+    });
+
+    html += `</div>`;
+  });
+
+  container.innerHTML = html;
+  if (globalItemIndex > 0) {
+    spotlightSelectedIndex = 0;
+  }
+}
+
+function escapeHtml(str) {
+  if (!str) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+// Keyboard navigation and Global Shortcuts
+document.addEventListener('DOMContentLoaded', () => {
+  const input = document.getElementById('spotlightSearchInput');
+  if (input) {
+    input.addEventListener('input', (e) => {
+      clearTimeout(spotlightDebounceTimer);
+      spotlightDebounceTimer = setTimeout(() => {
+        fetchSpotlightData(e.target.value);
+      }, 180);
+    });
+
+    input.addEventListener('keydown', (e) => {
+      const items = document.querySelectorAll('.spotlight-item');
+      if (!items || items.length === 0) return;
+
+      if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        spotlightSelectedIndex = (spotlightSelectedIndex + 1) % items.length;
+        updateActiveSpotlightItem(items);
+      } else if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        spotlightSelectedIndex = (spotlightSelectedIndex - 1 + items.length) % items.length;
+        updateActiveSpotlightItem(items);
+      } else if (e.key === 'Enter') {
+        e.preventDefault();
+        if (spotlightSelectedIndex >= 0 && items[spotlightSelectedIndex]) {
+          const targetUrl = items[spotlightSelectedIndex].dataset.url;
+          if (targetUrl) window.location.href = targetUrl;
+        }
+      }
+    });
+  }
+
+  // Global Shortcut: Cmd+K / Ctrl+K
+  document.addEventListener('keydown', (e) => {
+    if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
+      e.preventDefault();
+      openSpotlightModal();
+    }
+  });
+});
+
+function updateActiveSpotlightItem(items) {
+  items.forEach((item, idx) => {
+    if (idx === spotlightSelectedIndex) {
+      item.classList.add('active');
+      item.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+    } else {
+      item.classList.remove('active');
+    }
+  });
+}
+</script>
 {% endblock %}

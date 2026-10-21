@@ -14,7 +14,7 @@ from .auth import ROLE_HOME, ROLE_LABEL, ROLE_THEME
 from .database import Base, SessionLocal, engine
 from .deps import AuthRedirect
 from .models import Child
-from .routers import auth, branch_admin, sanchalak, super_admin
+from .routers import auth, branch_admin, sanchalak, spotlight, super_admin
 from .seed import seed_if_empty
 from .weeks import current_week_info, format_dt, gujarati_month, week_number_for
 
@@ -44,6 +44,7 @@ app.include_router(auth.router)
 app.include_router(super_admin.router)
 app.include_router(branch_admin.router)
 app.include_router(sanchalak.router)
+app.include_router(spotlight.router)
 
 
 @app.exception_handler(AuthRedirect)

@@ -52,6 +52,41 @@
       <a href="/branch-admin/attendance" class="btn btn-outline-secondary btn-sm fw-semibold">
         <i class="bi bi-clock-history me-1"></i>Live Scan Log
       </a>
+  </div>
+</div>
+
+<!-- Branch Admin Spotlight Search Banner -->
+<div class="panel p-3 mb-4 bg-white border shadow-sm rounded-3" style="border-left: 4px solid #10b981 !important;">
+  <div class="row align-items-center g-3">
+    <div class="col-lg-5 col-md-6">
+      <div class="d-flex align-items-center gap-2">
+        <div class="rounded-circle bg-success-subtle text-success d-flex align-items-center justify-content-center" style="width:42px;height:42px;">
+          <i class="bi bi-search fs-5"></i>
+        </div>
+        <div>
+          <div class="fw-bold text-dark d-flex align-items-center gap-2">
+            <span>Branch Spotlight Search</span>
+            <span class="badge bg-success-subtle text-success border border-success-subtle" style="font-size:10.5px;">Branch Admin</span>
+          </div>
+          <small class="text-muted" style="font-size:11.5px;">Search children, Bal Mandals, sanchalaks, mobile numbers, or branch actions</small>
+        </div>
+      </div>
+    </div>
+    <div class="col-lg-7 col-md-6">
+      <div class="input-group shadow-sm rounded-pill overflow-hidden border">
+        <span class="input-group-text bg-white border-0 ps-3 text-success"><i class="bi bi-search"></i></span>
+        <input type="text"
+               class="form-control border-0 bg-white"
+               placeholder="Search child by name, ID (CH-XXXX), mobile, grade, mandal... (Press ⌘K)"
+               onclick="openSpotlightModal()"
+               onfocus="openSpotlightModal()"
+               readonly
+               style="cursor: pointer; font-size: 13.5px;">
+        <button class="btn btn-success px-3 fw-bold d-flex align-items-center gap-1" type="button" onclick="openSpotlightModal()">
+          <span>Search</span>
+          <kbd class="bg-white text-success border-0 px-1 rounded ms-1 d-none d-sm-inline" style="font-size:10px;">⌘K</kbd>
+        </button>
+      </div>
     </div>
   </div>
 </div>

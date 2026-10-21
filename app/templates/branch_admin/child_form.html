@@ -1,38 +1,62 @@
 {% extends "partials/shell.html" %}
-{% block title %}Add New Child (Face Registration) — Branch Admin{% endblock %}
+{% block title %}{% if child %}Edit Child: {{ child.name }}{% else %}Add New Child (Face Registration){% endif %} — Branch Admin{% endblock %}
 {% block sidenav %}{% include "branch_admin/_nav.html" %}{% endblock %}
 {% block content %}
 <nav aria-label="breadcrumb">
   <ol class="breadcrumb mb-3" style="font-size:12px;">
     <li class="breadcrumb-item"><a href="/branch-admin/children" class="text-decoration-none">Children</a></li>
-    <li class="breadcrumb-item active">Add New Child (Face Enrollment)</li>
+    <li class="breadcrumb-item active">{% if child %}Edit Child Details ({{ child.name }}){% else %}Add New Child (Face Enrollment){% endif %}</li>
   </ol>
 </nav>
 
+{% if error_msg %}
+<div class="alert alert-danger py-2 px-3 mb-3 d-flex align-items-center gap-2 rounded-3 shadow-sm" style="font-size:13.5px;">
+  <i class="bi bi-exclamation-triangle-fill fs-5 text-danger flex-shrink-0"></i>
+  <div><b>Validation Error:</b> {{ error_msg }}</div>
+</div>
+{% endif %}
+
 <div class="row g-4">
-  <!-- Left Side: Registration Form -->
+  <!-- Left Side: Registration / Edit Form -->
   <div class="col-lg-7">
     <div class="panel">
-      <h6 class="mb-3 text-primary">
-        <i class="bi bi-person-plus-fill me-2"></i>Child Details (Child Enrollment)
-      </h6>
+      <div class="d-flex justify-content-between align-items-center mb-3">
+        <h6 class="mb-0 text-primary fw-bold">
+          <i class="bi bi-{% if child %}pencil-square{% else %}person-plus-fill{% endif %} me-2"></i>
+          {% if child %}Edit Child Details (ID: {{ child.child_code }}){% else %}Child Details (Child Enrollment){% endif %}
+        </h6>
+        {% if child %}
+        <span class="badge {% if child.is_active %}bg-success-subtle text-success border border-success-subtle{% else %}bg-secondary-subtle text-secondary border{% endif %}">
+          {{ 'Active' if child.is_active else 'Archived' }}
+        </span>
+        {% endif %}
+      </div>
 
-      <form id="childForm" method="post" action="/branch-admin/children/add">
+      <form id="childForm" method="post" action="{% if child %}/branch-admin/children/{{ child.id }}/edit{% else %}/branch-admin/children/add{% endif %}" onsubmit="return validateFormClient(event)" novalidate>
         <input type="hidden" name="photo_data" id="photoData">
 
         <!-- Row 1: First Name, Father's Name, Surname all in a single row -->
         <div class="row g-3 mb-3">
           <div class="col-md-4">
-            <label class="form-label small fw-bold text-secondary">First Name <span class="text-danger">*</span></label>
-            <input name="first_name" id="firstNameInput" class="form-control" required placeholder="e.g. Aryan" autofocus>
+            <label class="form-label small fw-bold text-secondary mb-1">
+              First Name <span class="text-danger">*</span>
+            </label>
+            <input name="first_name" id="firstNameInput" class="form-control" required minlength="2" maxlength="50" pattern="^[A-Za-z\s.'-]+$" title="First name must contain only letters and spaces (min 2 characters)" placeholder="e.g. Aryan" value="{{ child.first_name if child else (form_data.first_name if form_data else '') }}" autofocus>
+            <div class="invalid-feedback">Letters only (min 2 characters).</div>
           </div>
           <div class="col-md-4">
-            <label class="form-label small fw-bold text-secondary">Father's Name <span class="text-danger">*</span></label>
-            <input name="father_name" id="fatherNameInput" class="form-control" required placeholder="e.g. Jayeshbhai">
+            <label class="form-label small fw-bold text-secondary mb-1">
+              Father's Name <span class="text-danger">*</span>
+            </label>
+            <input name="father_name" id="fatherNameInput" class="form-control" required minlength="2" maxlength="50" pattern="^[A-Za-z\s.'-]+$" title="Father's name must contain only letters and spaces (min 2 characters)" placeholder="e.g. Jayeshbhai" value="{{ child.father_name if child else (form_data.father_name if form_data else '') }}">
+            <div class="invalid-feedback">Letters only (min 2 characters).</div>
           </div>
           <div class="col-md-4">
-            <label class="form-label small fw-bold text-secondary">Surname <span class="text-danger">*</span></label>
-            <input name="surname" id="surnameInput" class="form-control" required placeholder="e.g. Patel">
+            <label class="form-label small fw-bold text-secondary mb-1">
+              Surname <span class="text-danger">*</span>
+            </label>
+            <input name="surname" id="surnameInput" class="form-control" required minlength="2" maxlength="50" pattern="^[A-Za-z\s.'-]+$" title="Surname must contain only letters and spaces (min 2 characters)" placeholder="e.g. Patel" value="{{ child.surname if child else (form_data.surname if form_data else '') }}">
+            <div class="invalid-feedback">Letters only (min 2 characters).</div>
           </div>
         </div>
 
@@ -43,22 +67,23 @@
               <label class="form-label small fw-bold text-secondary mb-0">
                 <i class="bi bi-calendar-date text-primary me-1"></i>Date of Birth <span class="text-danger">*</span>
               </label>
-              <span id="calculatedAgeBadge" class="badge bg-success-subtle text-success border border-success-subtle" style="font-size:11px; display:none;">
-                <i class="bi bi-cake2 me-1"></i>Age: <span id="calcAgeValue"></span> yrs
+              <span id="calculatedAgeBadge" class="badge bg-success-subtle text-success border border-success-subtle" style="font-size:11px; display:{% if child and child.age is not none %}inline-block{% else %}none{% endif %};">
+                <i class="bi bi-cake2 me-1"></i>Age: <span id="calcAgeValue">{{ child.age if child and child.age is not none else '' }}</span> yrs
               </span>
             </div>
-            <div class="input-group">
+            <div class="input-group has-validation">
               <span class="input-group-text bg-light text-secondary"><i class="bi bi-calendar-event"></i></span>
-              <input type="text" name="dob_str" id="dobInput" class="form-control font-monospace" required placeholder="DD/MM/YYYY" maxlength="10" pattern="^(0[1-9]|[12][0-9]|3[01])/(0[1-9]|1[0-2])/\d{4}$" title="Enter strictly in DD/MM/YYYY format (e.g. 15/08/2015)" oninput="formatAndCalculateDOB(this)">
+              <input type="text" name="dob_str" id="dobInput" class="form-control font-monospace" required placeholder="DD/MM/YYYY" maxlength="10" pattern="^(0[1-9]|[12][0-9]|3[01])/(0[1-9]|1[0-2])/\d{4}$" title="Enter strictly in DD/MM/YYYY format (e.g. 15/08/2015)" value="{{ child.dob_str if child else (form_data.dob_str if form_data else '') }}" oninput="formatAndCalculateDOB(this)">
+              <div class="invalid-feedback">Format strictly: DD/MM/YYYY</div>
             </div>
             <small class="text-muted" style="font-size:11px;">Format: DD/MM/YYYY (Auto calculates age)</small>
           </div>
 
           <div class="col-md-4">
             <label class="form-label small fw-bold text-secondary mb-1">Gender <span class="text-danger">*</span></label>
-            <select name="gender" class="form-select" required>
-              <option value="Male" selected>👦 Male</option>
-              <option value="Female">👧 Female</option>
+            <select name="gender" id="genderInput" class="form-select" required>
+              <option value="Male" {% if (child and child.gender == 'Male') or (form_data and form_data.gender == 'Male') %}selected{% endif %}>👦 Male</option>
+              <option value="Female" {% if (child and child.gender == 'Female') or (form_data and form_data.gender == 'Female') %}selected{% endif %}>👧 Female</option>
             </select>
           </div>
 
@@ -66,48 +91,54 @@
             <label class="form-label small fw-bold text-secondary mb-1">
               <i class="bi bi-mortarboard-fill text-success me-1"></i>Annual Grade (Standard) <span class="text-danger">*</span>
             </label>
-            <select name="standard" class="form-select" required>
+            <select name="standard" id="standardInput" class="form-select" required>
               <option value="">-- Select Annual Grade --</option>
               {% for std in standards %}
-              <option value="{{ std }}" {% if std == '4th Standard' %}selected{% endif %}>{{ std }}</option>
+              <option value="{{ std }}" {% if (child and child.standard == std) or (form_data and form_data.standard == std) or (not child and not form_data and std == '4th Standard') %}selected{% endif %}>{{ std }}</option>
               {% endfor %}
             </select>
+            <div class="invalid-feedback">Please select an annual grade.</div>
           </div>
         </div>
 
         <!-- Row 3: Mobile Number, Bal Mandal, Child ID -->
         <div class="row g-3 mb-3">
           <div class="col-md-4">
-            <label class="form-label small fw-bold text-secondary">
+            <label class="form-label small fw-bold text-secondary mb-1">
               <i class="bi bi-telephone-fill text-primary me-1"></i>Mobile Number <span class="text-danger">*</span>
             </label>
-            <div class="input-group">
+            <div class="input-group has-validation">
               <span class="input-group-text bg-light text-secondary"><i class="bi bi-phone"></i></span>
-              <input type="tel" name="mobile_number" class="form-control" required placeholder="e.g. 9876543210" pattern="[0-9+\-\s()]{7,15}" title="Please enter a valid mobile number">
+              <input type="tel" name="mobile_number" id="mobileInput" class="form-control" required placeholder="e.g. 9876543210" pattern="^[0-9]{10,15}$" maxlength="15" title="Please enter a valid 10-digit mobile number" value="{{ child.mobile_number if child else (form_data.mobile_number if form_data else '') }}">
+              <div class="invalid-feedback">Enter a valid 10-digit mobile number.</div>
             </div>
             <small class="text-muted d-block mt-1" style="font-size:11px;">
-              <i class="bi bi-people-fill text-success me-1"></i>Shared household / sibling number allowed.
+              <i class="bi bi-people-fill text-success me-1"></i>Shared household / sibling numbers allowed.
             </small>
           </div>
 
           <div class="col-md-4">
-            <label class="form-label small fw-bold text-secondary">Select Bal Mandal <span class="text-danger">*</span></label>
-            <select name="bal_mandal_id" class="form-select" required>
+            <label class="form-label small fw-bold text-secondary mb-1">Select Bal Mandal <span class="text-danger">*</span></label>
+            <select name="bal_mandal_id" id="balMandalInput" class="form-select" required>
               <option value="">-- Select Mandal --</option>
               {% for m in mandals %}
-              <option value="{{ m.id }}" {% if selected_mandal_id == m.id %}selected{% endif %}>
+              <option value="{{ m.id }}" {% if (child and child.bal_mandal_id == m.id) or (selected_mandal_id == m.id) or (form_data and form_data.bal_mandal_id == m.id) %}selected{% endif %}>
                 {{ m.name }} ({{ m.weekday }})
               </option>
               {% endfor %}
             </select>
+            <div class="invalid-feedback">Please select a Bal Mandal.</div>
           </div>
 
           <div class="col-md-4">
             <div class="d-flex justify-content-between align-items-center mb-1">
               <label class="form-label small fw-bold text-secondary mb-0">Child ID / Code <span class="text-danger">*</span></label>
+              {% if not child %}
               <button type="button" class="btn btn-link btn-sm p-0 text-decoration-none" style="font-size:11px;" onclick="genChildCode()">Auto</button>
+              {% endif %}
             </div>
-            <input name="child_code" id="childCodeInput" class="form-control" required placeholder="e.g. CH-00140" value="CH-00{{ range(135, 999)|random }}">
+            <input name="child_code" id="childCodeInput" class="form-control" required placeholder="e.g. CH-00140" value="{{ child.child_code if child else (form_data.child_code if form_data else 'CH-00' ~ (range(135, 999)|random)) }}" minlength="3" maxlength="40">
+            <div class="invalid-feedback">Child ID is required.</div>
           </div>
         </div>
 
@@ -117,7 +148,7 @@
             <label class="form-label small fw-bold text-secondary mb-1">
               <i class="bi bi-geo-alt-fill text-danger me-1"></i>Residential Address
             </label>
-            <textarea name="address" rows="2" class="form-control" placeholder="House/Flat No, Society, Landmark, Area, City"></textarea>
+            <textarea name="address" rows="2" class="form-control" placeholder="House/Flat No, Society, Landmark, Area, City" maxlength="250">{{ child.address if child else (form_data.address if form_data else '') }}</textarea>
           </div>
         </div>
 
@@ -126,16 +157,16 @@
           <div class="col-12">
             <div class="p-3 border rounded-3 bg-light">
               <div class="form-check form-switch mb-2">
-                <input class="form-check-input" type="checkbox" role="switch" id="usesBusToggle" name="uses_bus" value="true" onchange="toggleBusDetails(this)">
+                <input class="form-check-input" type="checkbox" role="switch" id="usesBusToggle" name="uses_bus" value="true" onchange="toggleBusDetails(this)" {% if (child and child.uses_bus) or (form_data and form_data.uses_bus) %}checked{% endif %}>
                 <label class="form-check-label fw-bold text-dark user-select-none" for="usesBusToggle">
                   <i class="bi bi-bus-front-fill text-warning me-1"></i>Comes by Bus (Bus Transportation)
                 </label>
               </div>
-              <div id="busDetailsContainer" style="display:none;" class="mt-2 pt-2 border-top">
+              <div id="busDetailsContainer" style="display:{% if (child and child.uses_bus) or (form_data and form_data.uses_bus) %}block{% else %}none{% endif %};" class="mt-2 pt-2 border-top">
                 <div class="row g-2">
                   <div class="col-md-6">
                     <label class="form-label small fw-bold text-secondary mb-1">Bus Route / Stop Name</label>
-                    <input name="bus_route" class="form-control form-control-sm" placeholder="e.g. Route #3 - Maninagar Cross Road">
+                    <input name="bus_route" class="form-control form-control-sm" placeholder="e.g. Route #3 - Maninagar Cross Road" value="{{ child.bus_route if child else (form_data.bus_route if form_data else '') }}" maxlength="100">
                   </div>
                   <div class="col-md-6 d-flex align-items-center">
                     <small class="text-muted" style="font-size:11.5px;">
@@ -151,21 +182,28 @@
         <hr class="my-4">
 
         <!-- Face Capture Status Box -->
-        <div class="p-3 rounded-3 mb-3 border bg-light d-flex align-items-center justify-content-between">
+        <div class="p-3 rounded-3 mb-3 border bg-light d-flex align-items-center justify-content-between flex-wrap gap-2">
           <div class="d-flex align-items-center gap-2">
-            <div id="statusDot" style="width: 12px; height: 12px; border-radius: 50%; background: #94a3b8;"></div>
+            <div id="statusDot" style="width: 12px; height: 12px; border-radius: 50%; background: {% if child and child.face_photo %}#10b981{% else %}#94a3b8{% endif %};"></div>
             <div>
-              <span id="faceStatusText" class="fw-bold text-secondary" style="font-size:13px;">Face photo pending capture</span>
-              <small class="text-muted d-block" style="font-size:11px;">Face capture is required for facial recognition attendance.</small>
+              <span id="faceStatusText" class="fw-bold {% if child and child.face_photo %}text-success{% else %}text-secondary{% endif %}" style="font-size:13px;">
+                {% if child and child.face_photo %}Enrolled face photo active{% else %}Face photo pending capture{% endif %}
+              </span>
+              <small class="text-muted d-block" style="font-size:11px;">
+                {% if child and child.face_photo %}Existing photo will be preserved unless a new one is captured.{% else %}Face capture is required for facial recognition attendance.{% endif %}
+              </small>
             </div>
           </div>
-          <span id="faceBadge" class="badge badge-soft-secondary">No Face</span>
+          <span id="faceBadge" class="badge {% if child and child.face_photo %}badge-soft-success{% else %}badge-soft-secondary{% endif %}">
+            {% if child and child.face_photo %}Enrolled ✓{% else %}No Face{% endif %}
+          </span>
         </div>
 
         <div class="d-flex justify-content-end gap-2">
           <a href="/branch-admin/children" class="btn btn-outline-secondary px-3">Cancel</a>
           <button type="submit" id="saveChildBtn" class="btn btn-warning px-4 fw-bold shadow-sm">
-            <i class="bi bi-check-circle-fill me-1"></i>Save & Enroll Child
+            <i class="bi bi-{% if child %}save2-fill{% else %}check-circle-fill{% endif %} me-1"></i>
+            {% if child %}Update & Save Changes{% else %}Save & Enroll Child{% endif %}
           </button>
         </div>
       </form>
@@ -176,7 +214,7 @@
   <div class="col-lg-5">
     <div class="panel h-100">
       <div class="d-flex justify-content-between align-items-center mb-3">
-        <h6 class="mb-0 text-success"><i class="bi bi-camera-fill me-2"></i>Face Enrollment Camera</h6>
+        <h6 class="mb-0 text-success"><i class="bi bi-camera-fill me-2"></i>Face Camera & Preview</h6>
         <span class="badge badge-soft-success py-1 px-2" id="camIndicator">
           <i class="bi bi-circle-fill me-1" style="font-size:7px;"></i>Live Camera
         </span>
@@ -184,27 +222,27 @@
 
       <!-- Video / Camera Box -->
       <div class="camera-box position-relative mb-3" style="aspect-ratio: 4/3; min-height: 240px; background:#0f172a; border-radius:12px; overflow:hidden;">
-        <video id="regVideo" autoplay playsinline webkit-playsinline muted style="width:100%;height:100%;object-fit:cover;"></video>
+        <video id="regVideo" autoplay playsinline webkit-playsinline muted style="width:100%;height:100%;object-fit:cover; display:{% if child and child.face_photo %}none{% else %}block{% endif %};"></video>
         <canvas id="regCanvas" style="display:none;"></canvas>
-        <img id="enrolledPreview" src="" style="width:100%;height:100%;object-fit:cover;display:none;" alt="Captured Face">
-        <div class="face-ring" id="regRing"></div>
-        <div class="cam-label" id="regLabel">
+        <img id="enrolledPreview" src="{% if child and child.face_photo %}/static/uploads/{{ child.face_photo }}{% endif %}" style="width:100%;height:100%;object-fit:cover; display:{% if child and child.face_photo %}block{% else %}none{% endif %};" alt="Enrolled Face">
+        <div class="face-ring" id="regRing" style="display:{% if child and child.face_photo %}none{% else %}block{% endif %};"></div>
+        <div class="cam-label" id="regLabel" style="display:{% if child and child.face_photo %}none{% else %}block{% endif %};">
           <i class="bi bi-person-bounding-box me-1"></i>Position face within circle
         </div>
       </div>
 
       <!-- Camera Action Buttons -->
       <div class="d-flex gap-2 mb-3">
-        <button type="button" id="snapFaceBtn" class="btn btn-warning fw-bold flex-grow-1 shadow-sm">
+        <button type="button" id="snapFaceBtn" class="btn btn-warning fw-bold flex-grow-1 shadow-sm" style="display:{% if child and child.face_photo %}none{% else %}inline-block{% endif %};">
           <i class="bi bi-camera-fill me-1"></i>Capture Face Photo
         </button>
-        <button type="button" id="retakeFaceBtn" class="btn btn-outline-secondary fw-bold" style="display:none;">
-          <i class="bi bi-arrow-counterclockwise me-1"></i>Retake Photo
+        <button type="button" id="retakeFaceBtn" class="btn btn-outline-secondary fw-bold flex-grow-1 shadow-sm" style="display:{% if child and child.face_photo %}inline-block{% else %}none{% endif %};">
+          <i class="bi bi-arrow-counterclockwise me-1"></i>{% if child and child.face_photo %}Change Face Photo{% else %}Retake Photo{% endif %}
         </button>
       </div>
 
       <div class="alert alert-info py-2 px-3 small mb-0">
-        <i class="bi bi-info-circle-fill me-1"></i>Ensure good lighting on the child's face and look straight into the camera.
+        <i class="bi bi-info-circle-fill me-1"></i>Ensure good lighting on the child's face and look straight into the camera. Attendance history is never deleted upon updates.
       </div>
     </div>
   </div>
@@ -232,13 +270,19 @@ async function startRegCam() {
     regVideo.srcObject = regStream;
   } catch (err) {
     console.error('Camera access failed:', err);
-    document.getElementById('camIndicator').className = 'badge badge-soft-danger py-1 px-2';
-    document.getElementById('camIndicator').innerHTML = '<i class="bi bi-exclamation-circle-fill me-1"></i>Camera Error';
+    const ind = document.getElementById('camIndicator');
+    if (ind) {
+      ind.className = 'badge badge-soft-danger py-1 px-2';
+      ind.innerHTML = '<i class="bi bi-exclamation-circle-fill me-1"></i>Camera Inactive';
+    }
   }
 }
 
 snapFaceBtn.addEventListener('click', () => {
-  if (!regVideo.videoWidth) return;
+  if (!regVideo.videoWidth) {
+    alert('Camera stream not ready yet. Please wait a moment or ensure camera permissions are allowed.');
+    return;
+  }
   regCanvas.width = regVideo.videoWidth;
   regCanvas.height = regVideo.videoHeight;
   const ctx = regCanvas.getContext('2d');
@@ -273,11 +317,15 @@ retakeFaceBtn.addEventListener('click', () => {
   snapFaceBtn.style.display = 'inline-block';
   retakeFaceBtn.style.display = 'none';
 
-  statusDot.style.background = '#94a3b8';
-  faceStatusText.textContent = 'Face photo pending capture';
-  faceStatusText.className = 'fw-bold text-secondary';
-  faceBadge.className = 'badge badge-soft-secondary';
-  faceBadge.textContent = 'No Face';
+  if (!regStream) {
+    startRegCam();
+  }
+
+  statusDot.style.background = '#f59e0b';
+  faceStatusText.textContent = 'Ready to capture new face';
+  faceStatusText.className = 'fw-bold text-warning';
+  faceBadge.className = 'badge badge-soft-warning';
+  faceBadge.textContent = 'Pending Photo';
 });
 
 function genChildCode() {
@@ -309,9 +357,11 @@ function formatAndCalculateDOB(input) {
       if (mDiff < 0 || (mDiff === 0 && today.getDate() < birthDate.getDate())) {
         age--;
       }
-      valSpan.textContent = age;
-      badge.style.display = 'inline-block';
-      return;
+      if (age >= 0 && age <= 100) {
+        valSpan.textContent = age;
+        badge.style.display = 'inline-block';
+        return;
+      }
     }
   }
   badge.style.display = 'none';
@@ -322,7 +372,104 @@ function toggleBusDetails(toggle) {
   container.style.display = toggle.checked ? 'block' : 'none';
 }
 
-window.addEventListener('DOMContentLoaded', startRegCam);
+// Client-side validation function
+function validateFormClient(e) {
+  const form = document.getElementById('childForm');
+  const fn = document.getElementById('firstNameInput').value.trim();
+  const fath = document.getElementById('fatherNameInput').value.trim();
+  const sn = document.getElementById('surnameInput').value.trim();
+  const dob = document.getElementById('dobInput').value.trim();
+  const mob = document.getElementById('mobileInput').value.replace(/\D/g, '');
+  const std = document.getElementById('standardInput').value;
+  const mandal = document.getElementById('balMandalInput').value;
+
+  const namePattern = /^[A-Za-z\s.'-]+$/;
+  if (!namePattern.test(fn) || fn.length < 2) {
+    alert('Please enter a valid First Name (letters only, minimum 2 characters).');
+    document.getElementById('firstNameInput').focus();
+    e.preventDefault();
+    return false;
+  }
+  if (!namePattern.test(fath) || fath.length < 2) {
+    alert('Please enter a valid Father\'s Name (letters only, minimum 2 characters).');
+    document.getElementById('fatherNameInput').focus();
+    e.preventDefault();
+    return false;
+  }
+  if (!namePattern.test(sn) || sn.length < 2) {
+    alert('Please enter a valid Surname (letters only, minimum 2 characters).');
+    document.getElementById('surnameInput').focus();
+    e.preventDefault();
+    return false;
+  }
+
+  // DOB validation
+  const dobPattern = /^(0[1-9]|[12][0-9]|3[01])\/(0[1-9]|1[0-2])\/\d{4}$/;
+  if (!dobPattern.test(dob)) {
+    alert('Please enter Date of Birth strictly in DD/MM/YYYY format (e.g. 15/08/2015).');
+    document.getElementById('dobInput').focus();
+    e.preventDefault();
+    return false;
+  }
+  const parts = dob.split('/');
+  const d = parseInt(parts[0], 10);
+  const m = parseInt(parts[1], 10);
+  const y = parseInt(parts[2], 10);
+  const dt = new Date(y, m - 1, d);
+  const today = new Date();
+  if (isNaN(dt.getTime()) || dt > today || dt.getDate() !== d || dt.getMonth() !== m - 1) {
+    alert('Invalid Date of Birth. Please enter an authentic calendar date not in the future.');
+    document.getElementById('dobInput').focus();
+    e.preventDefault();
+    return false;
+  }
+  let calcAge = today.getFullYear() - dt.getFullYear();
+  if (today.getMonth() < dt.getMonth() || (today.getMonth() === dt.getMonth() && today.getDate() < dt.getDate())) {
+    calcAge--;
+  }
+  if (calcAge < 3 || calcAge > 25) {
+    alert('Calculated age (' + calcAge + ' years) is outside permissible range. Child age must be between 3 and 25 years.');
+    document.getElementById('dobInput').focus();
+    e.preventDefault();
+    return false;
+  }
+
+  // Mobile validation
+  if (mob.length < 10 || mob.length > 15) {
+    alert('Please enter a valid Mobile Number (at least 10 digits).');
+    document.getElementById('mobileInput').focus();
+    e.preventDefault();
+    return false;
+  }
+
+  if (!std) {
+    alert('Please select an Annual Grade / Standard.');
+    document.getElementById('standardInput').focus();
+    e.preventDefault();
+    return false;
+  }
+
+  if (!mandal) {
+    alert('Please select a Bal Mandal.');
+    document.getElementById('balMandalInput').focus();
+    e.preventDefault();
+    return false;
+  }
+
+  return true;
+}
+
+window.addEventListener('DOMContentLoaded', () => {
+  // If no face photo already present, start camera automatically
+  {% if not child or not child.face_photo %}
+  startRegCam();
+  {% endif %}
+  const dobVal = document.getElementById('dobInput');
+  if (dobVal && dobVal.value) {
+    formatAndCalculateDOB(dobVal);
+  }
+});
+
 window.addEventListener('beforeunload', () => {
   if (regStream) regStream.getTracks().forEach(t => t.stop());
 });
