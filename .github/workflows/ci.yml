@@ -33,3 +33,16 @@ jobs:
         assert res.status_code == 200, f'Expected 200, got {res.status_code}'
         print('Health check passed:', res.json())
         "
+
+    - name: Trigger Render Auto-Deploy
+      if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+      env:
+        RENDER_DEPLOY_HOOK: ${{ secrets.RENDER_DEPLOY_HOOK }}
+      run: |
+        if [ -n "$RENDER_DEPLOY_HOOK" ]; then
+          echo "Triggering Render deployment..."
+          curl -fsS -X POST "$RENDER_DEPLOY_HOOK"
+          echo "Render deployment triggered successfully."
+        else
+          echo "No RENDER_DEPLOY_HOOK secret configured, skipping deploy trigger."
+        fi
