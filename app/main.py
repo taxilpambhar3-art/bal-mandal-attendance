@@ -9,9 +9,11 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from starlette.middleware.sessions import SessionMiddleware
 
+from datetime import date
 from .auth import ROLE_HOME, ROLE_LABEL, ROLE_THEME
 from .database import Base, SessionLocal, engine
 from .deps import AuthRedirect
+from .models import Child
 from .routers import auth, branch_admin, sanchalak, super_admin
 from .seed import seed_if_empty
 from .weeks import current_week_info, format_dt, gujarati_month, week_number_for
@@ -87,6 +89,42 @@ def on_startup():
     db = SessionLocal()
     try:
         seed_if_empty(db)
+        # Backfill legacy children if needed
+        legacy = db.query(Child).filter((Child.first_name == "") | (Child.first_name.is_(None))).all()
+        for c in legacy:
+            if c.name:
+                parts = c.name.strip().split()
+                if len(parts) == 1:
+                    c.first_name = parts[0]
+                elif len(parts) == 2:
+                    c.first_name = parts[0]
+                    c.surname = parts[1]
+                    c.father_name = c.guardian_name or ""
+                elif len(parts) >= 3:
+                    c.first_name = parts[0]
+                    c.father_name = parts[1]
+                    c.surname = " ".join(parts[2:])
+            if not c.mobile_number:
+                c.mobile_number = "9876543210"
+            if not c.dob_str and c.age:
+                birth_year = date.today().year - c.age
+                c.dob_str = f"15/06/{birth_year}"
+                c.dob = date(birth_year, 6, 15)
+            if not c.standard and c.age:
+                age_std_map = {
+                    4: "Jr KG", 5: "Sr KG", 6: "1st Standard", 7: "2nd Standard",
+                    8: "3rd Standard", 9: "4th Standard", 10: "5th Standard",
+                    11: "6th Standard", 12: "7th Standard", 13: "8th Standard",
+                    14: "9th Standard", 15: "10th Standard", 16: "11th Standard",
+                    17: "12th Standard"
+                }
+                c.standard = age_std_map.get(c.age, "4th Standard")
+            if not c.gender:
+                c.gender = "Male"
+        if legacy:
+            db.commit()
+    except Exception as e:
+        print("Backfill warning:", e)
     finally:
         db.close()
 
