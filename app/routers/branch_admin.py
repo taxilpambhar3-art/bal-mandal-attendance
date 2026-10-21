@@ -461,6 +461,7 @@ def child_add_submit(
     name: str = Form(...),
     child_code: str = Form(...),
     bal_mandal_id: str = Form(...),
+    mobile_number: str = Form(...),
     age: str | None = Form(None),
     guardian_name: str = Form(""),
     photo_data: str = Form(""),
@@ -476,6 +477,7 @@ def child_add_submit(
         child_code=child_code.strip(),
         age=safe_int(age),
         guardian_name=guardian_name.strip() or None,
+        mobile_number=mobile_number.strip(),
         bal_mandal_id=mandal.id,
         face_photo=photo,
     )
@@ -714,6 +716,7 @@ def face_scan_submit(
             "child_code": child.child_code,
             "age": child.age,
             "guardian_name": child.guardian_name,
+            "mobile_number": child.mobile_number or "",
             "face_photo": child.face_photo,
             "mandal_name": child.bal_mandal.name if child.bal_mandal else "",
         },

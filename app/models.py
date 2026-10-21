@@ -78,6 +78,7 @@ class Child(Base):
     name: Mapped[str] = mapped_column(String(120))
     age: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
     guardian_name: Mapped[Optional[str]] = mapped_column(String(120), nullable=True)
+    mobile_number: Mapped[Optional[str]] = mapped_column(String(20), nullable=True, default="")
     bal_mandal_id: Mapped[int] = mapped_column(ForeignKey("bal_mandals.id"))
     face_photo: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)

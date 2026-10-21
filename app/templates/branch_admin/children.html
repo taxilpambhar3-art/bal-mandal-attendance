@@ -60,7 +60,7 @@
           <th>Name</th>
           <th>Bal Mandal</th>
           <th>Sanchalak</th>
-          <th>Guardian Name</th>
+          <th>Guardian & Mobile</th>
           <th>Attendance Rate</th>
           <th class="text-end">Actions</th>
         </tr>
@@ -94,7 +94,12 @@
               <i class="bi bi-person me-1"></i>{{ s.full_name if s else '—' }}
             </small>
           </td>
-          <td>{{ c.guardian_name or '—' }}</td>
+          <td>
+            <div>{{ c.guardian_name or '—' }}</div>
+            {% if c.mobile_number %}
+            <small class="text-muted"><i class="bi bi-telephone text-primary me-1"></i>{{ c.mobile_number }}</small>
+            {% endif %}
+          </td>
           <td>
             <div class="d-flex align-items-center gap-2">
               <div class="progress flex-grow-1" style="height: 6px; min-width: 60px;">

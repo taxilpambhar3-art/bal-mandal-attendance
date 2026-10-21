@@ -62,6 +62,14 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
 @app.on_event("startup")
 def on_startup():
     Base.metadata.create_all(bind=engine)
+    with engine.connect() as conn:
+        try:
+            cols = [r[1] for r in conn.exec_driver_sql("PRAGMA table_info(children)").fetchall()]
+            if cols and "mobile_number" not in cols:
+                conn.exec_driver_sql("ALTER TABLE children ADD COLUMN mobile_number VARCHAR(20) DEFAULT ''")
+                conn.commit()
+        except Exception as e:
+            print("Migration warning:", e)
     db = SessionLocal()
     try:
         seed_if_empty(db)

@@ -88,22 +88,23 @@ def seed_if_empty(db: Session) -> None:
     db.add_all(users)
 
     kids = [
-        ("CH-00123", "Aryan Patel", 9, "Jay Patel"),
-        ("CH-00124", "Dhruvi Shah", 8, "Nirav Shah"),
-        ("CH-00125", "Krishna Mehta", 10, "Amit Mehta"),
-        ("CH-00126", "Parth Joshi", 7, "Rajesh Joshi"),
-        ("CH-00127", "Riddhi Desai", 9, "Himesh Desai"),
-        ("CH-00128", "Yash Pandya", 11, "Kiran Pandya"),
-        ("CH-00129", "Anya Patel", 8, "Milan Patel"),
-        ("CH-00130", "Vaibhav Shah", 10, "Jignesh Shah"),
+        ("CH-00123", "Aryan Patel", 9, "Jay Patel", "9876543210"),
+        ("CH-00124", "Dhruvi Shah", 8, "Nirav Shah", "9898123456"),
+        ("CH-00125", "Krishna Mehta", 10, "Amit Mehta", "9825011223"),
+        ("CH-00126", "Parth Joshi", 7, "Rajesh Joshi", "9909033445"),
+        ("CH-00127", "Riddhi Desai", 9, "Himesh Desai", "9727055667"),
+        ("CH-00128", "Yash Pandya", 11, "Kiran Pandya", "9824077889"),
+        ("CH-00129", "Anya Patel", 8, "Jay Patel", "9876543210"),  # Sibling sharing mobile number
+        ("CH-00130", "Vaibhav Shah", 10, "Nirav Shah", "9898123456"),  # Sibling sharing mobile number
     ]
     child_objs = []
-    for code, name, age, guardian in kids:
+    for code, name, age, guardian, mobile in kids:
         c = Child(
             child_code=code,
             name=name,
             age=age,
             guardian_name=guardian,
+            mobile_number=mobile,
             bal_mandal_id=shaniwar.id,
         )
         child_objs.append(c)

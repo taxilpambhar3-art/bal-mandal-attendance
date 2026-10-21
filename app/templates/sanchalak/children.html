@@ -61,7 +61,7 @@
           <th>Child ID</th>
           <th>Name</th>
           <th>Age</th>
-          <th>Guardian Name</th>
+          <th>Guardian & Mobile</th>
           <th>Face Status</th>
           <th>Status</th>
           <th class="text-end">Actions</th>
@@ -83,7 +83,12 @@
           <td><span class="badge bg-light text-dark font-monospace border">{{ c.child_code }}</span></td>
           <td class="fw-semibold">{{ c.name }}</td>
           <td>{{ c.age }} yrs</td>
-          <td>{{ c.guardian_name or '—' }}</td>
+          <td>
+            <div>{{ c.guardian_name or '—' }}</div>
+            {% if c.mobile_number %}
+            <small class="text-muted"><i class="bi bi-telephone text-primary me-1"></i>{{ c.mobile_number }}</small>
+            {% endif %}
+          </td>
           <td>
             {% if c.face_photo %}
             <span class="badge badge-soft-success">

@@ -44,7 +44,20 @@
             <input name="guardian_name" class="form-control" placeholder="e.g. Jay Patel">
           </div>
 
-          <div class="col-12">
+          <div class="col-md-6">
+            <label class="form-label small fw-bold text-secondary">
+              <i class="bi bi-telephone-fill text-primary me-1"></i>Mobile Number <span class="text-danger">*</span>
+            </label>
+            <div class="input-group">
+              <span class="input-group-text bg-light text-secondary"><i class="bi bi-phone"></i></span>
+              <input type="tel" name="mobile_number" class="form-control" required placeholder="e.g. 9876543210" pattern="[0-9+\-\s()]{7,15}" title="Please enter a valid mobile number">
+            </div>
+            <small class="text-muted d-block mt-1" style="font-size:11px;">
+              <i class="bi bi-people-fill text-success me-1"></i>Compulsory. Multiple children from the same household can share this number.
+            </small>
+          </div>
+
+          <div class="col-md-6">
             <label class="form-label small fw-bold text-secondary">Bal Mandal</label>
             <input class="form-control bg-light" value="{{ mandal.name if mandal else 'Bal Mandal' }} ({{ mandal.weekday if mandal else '' }})" readonly>
           </div>

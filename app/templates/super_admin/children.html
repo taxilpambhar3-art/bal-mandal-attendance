@@ -67,7 +67,7 @@
           <th>Child Name</th>
           <th>Code</th>
           <th>Age</th>
-          <th>Guardian</th>
+          <th>Guardian & Mobile</th>
           <th>Branch</th>
           <th>Bal Mandal</th>
           <th>Monthly Attendance</th>
@@ -97,7 +97,10 @@
             {% if r.child.age %}{{ r.child.age }} yrs{% else %}<span class="text-muted">—</span>{% endif %}
           </td>
           <td>
-            {{ r.child.guardian_name or '—' }}
+            <div>{{ r.child.guardian_name or '—' }}</div>
+            {% if r.child.mobile_number %}
+            <small class="text-muted"><i class="bi bi-telephone text-primary me-1"></i>{{ r.child.mobile_number }}</small>
+            {% endif %}
           </td>
           <td>
             {% if r.branch %}
