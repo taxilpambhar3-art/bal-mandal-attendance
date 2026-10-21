@@ -87,24 +87,37 @@ def seed_if_empty(db: Session) -> None:
     ]
     db.add_all(users)
 
+    from .child_utils import parse_dob_strict
+
     kids = [
-        ("CH-00123", "Aryan Patel", 9, "Jay Patel", "9876543210"),
-        ("CH-00124", "Dhruvi Shah", 8, "Nirav Shah", "9898123456"),
-        ("CH-00125", "Krishna Mehta", 10, "Amit Mehta", "9825011223"),
-        ("CH-00126", "Parth Joshi", 7, "Rajesh Joshi", "9909033445"),
-        ("CH-00127", "Riddhi Desai", 9, "Himesh Desai", "9727055667"),
-        ("CH-00128", "Yash Pandya", 11, "Kiran Pandya", "9824077889"),
-        ("CH-00129", "Anya Patel", 8, "Jay Patel", "9876543210"),  # Sibling sharing mobile number
-        ("CH-00130", "Vaibhav Shah", 10, "Nirav Shah", "9898123456"),  # Sibling sharing mobile number
+        ("CH-00123", "Aryan", "Jayeshbhai", "Patel", "15/05/2015", "Male", "4th Standard", "A-201 Shivalik Heights, Maninagar", "9876543210", True, "Route #1 - Maninagar Cross Road"),
+        ("CH-00124", "Dhruvi", "Niravbhai", "Shah", "22/08/2016", "Female", "3rd Standard", "B-12 Radhe Society, Khokhra", "9898123456", False, ""),
+        ("CH-00125", "Krishna", "Amitbhai", "Mehta", "10/01/2014", "Female", "5th Standard", "45 Swaminarayan Park, Ghodasar", "9825011223", True, "Route #2 - Ghodasar Canal"),
+        ("CH-00126", "Parth", "Rajeshbhai", "Joshi", "05/11/2017", "Male", "2nd Standard", "12 Akshar Flats, Isanpur", "9909033445", False, ""),
+        ("CH-00127", "Riddhi", "Himeshbhai", "Desai", "18/03/2015", "Female", "4th Standard", "C-402 Nilkanth Residency, Maninagar", "9727055667", True, "Route #1 - Maninagar Cross Road"),
+        ("CH-00128", "Yash", "Kiranbhai", "Pandya", "30/09/2013", "Male", "6th Standard", "78 Yogeshwar Nagar, Vatva", "9824077889", False, ""),
+        ("CH-00129", "Anya", "Jayeshbhai", "Patel", "12/12/2016", "Female", "3rd Standard", "A-201 Shivalik Heights, Maninagar", "9876543210", True, "Route #1 - Maninagar Cross Road"),  # Sibling
+        ("CH-00130", "Vaibhav", "Niravbhai", "Shah", "14/04/2014", "Male", "5th Standard", "B-12 Radhe Society, Khokhra", "9898123456", False, ""),  # Sibling
     ]
     child_objs = []
-    for code, name, age, guardian, mobile in kids:
+    for code, fn, fath, sn, dob_str, gender, std, addr, mobile, uses_bus, bus_route in kids:
+        dob_dt, dob_clean, age = parse_dob_strict(dob_str)
         c = Child(
             child_code=code,
-            name=name,
+            name=f"{fn} {fath} {sn}".strip(),
+            first_name=fn,
+            father_name=fath,
+            surname=sn,
+            dob=dob_dt,
+            dob_str=dob_clean or dob_str,
             age=age,
-            guardian_name=guardian,
+            gender=gender,
+            standard=std,
+            address=addr,
+            guardian_name=fath,
             mobile_number=mobile,
+            uses_bus=uses_bus,
+            bus_route=bus_route,
             bal_mandal_id=shaniwar.id,
         )
         child_objs.append(c)

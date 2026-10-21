@@ -12,6 +12,7 @@ from ..database import get_db, UPLOAD_DIR
 from ..deps import role_required, safe_int
 from ..models import Attendance, BalMandal, Branch, Child, User
 from ..weeks import current_week_info, gujarati_month
+from ..child_utils import STANDARDS, promote_standard
 
 router = APIRouter(prefix="/super-admin", tags=["super-admin"])
 templates: Jinja2Templates | None = None
@@ -916,6 +917,25 @@ def children_list(
             search_query=q or "",
         ),
     )
+
+
+@router.post("/children/promote-standards")
+def promote_all_children_standards(
+    request: Request,
+    user: User = Depends(role_required("super_admin")),
+    db: Session = Depends(get_db),
+):
+    children = db.query(Child).filter(Child.is_active.is_(True)).all()
+    count = 0
+    today = date.today()
+    for c in children:
+        if c.standard:
+            c.standard = promote_standard(c.standard)
+            count += 1
+        if c.dob:
+            c.age = today.year - c.dob.year - ((today.month, today.day) < (c.dob.month, c.dob.day))
+    db.commit()
+    return RedirectResponse(f"/super-admin/children?promoted={count}", status_code=303)
 
 
 @router.get("/attendance")

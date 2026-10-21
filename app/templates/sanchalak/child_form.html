@@ -20,31 +20,64 @@
       <form id="childForm" method="post" action="/sanchalak/children/add">
         <input type="hidden" name="photo_data" id="photoData">
 
-        <div class="row g-3">
-          <div class="col-md-6">
-            <label class="form-label small fw-bold text-secondary">Child Full Name <span class="text-danger">*</span></label>
-            <input name="name" class="form-control" required placeholder="e.g. Aryan Patel" autofocus>
+        <!-- Row 1: First Name, Father's Name, Surname all in a single row -->
+        <div class="row g-3 mb-3">
+          <div class="col-md-4">
+            <label class="form-label small fw-bold text-secondary">First Name <span class="text-danger">*</span></label>
+            <input name="first_name" id="firstNameInput" class="form-control" required placeholder="e.g. Aryan" autofocus>
           </div>
+          <div class="col-md-4">
+            <label class="form-label small fw-bold text-secondary">Father's Name <span class="text-danger">*</span></label>
+            <input name="father_name" id="fatherNameInput" class="form-control" required placeholder="e.g. Jayeshbhai">
+          </div>
+          <div class="col-md-4">
+            <label class="form-label small fw-bold text-secondary">Surname <span class="text-danger">*</span></label>
+            <input name="surname" id="surnameInput" class="form-control" required placeholder="e.g. Patel">
+          </div>
+        </div>
 
-          <div class="col-md-6">
+        <!-- Row 2: Date of Birth (Strict DD/MM/YYYY), Gender, Standard/Grade -->
+        <div class="row g-3 mb-3">
+          <div class="col-md-4">
             <div class="d-flex justify-content-between align-items-center mb-1">
-              <label class="form-label small fw-bold text-secondary mb-0">Child ID / Code <span class="text-danger">*</span></label>
-              <button type="button" class="btn btn-link btn-sm p-0 text-decoration-none" style="font-size:11px;" onclick="genChildCode()">Auto Generate</button>
+              <label class="form-label small fw-bold text-secondary mb-0">
+                <i class="bi bi-calendar-date text-primary me-1"></i>Date of Birth <span class="text-danger">*</span>
+              </label>
+              <span id="calculatedAgeBadge" class="badge bg-success-subtle text-success border border-success-subtle" style="font-size:11px; display:none;">
+                <i class="bi bi-cake2 me-1"></i>Age: <span id="calcAgeValue"></span> yrs
+              </span>
             </div>
-            <input name="child_code" id="childCodeInput" class="form-control" required placeholder="e.g. CH-00140" value="CH-00{{ range(135, 999)|random }}">
+            <div class="input-group">
+              <span class="input-group-text bg-light text-secondary"><i class="bi bi-calendar-event"></i></span>
+              <input type="text" name="dob_str" id="dobInput" class="form-control font-monospace" required placeholder="DD/MM/YYYY" maxlength="10" pattern="^(0[1-9]|[12][0-9]|3[01])/(0[1-9]|1[0-2])/\d{4}$" title="Enter strictly in DD/MM/YYYY format (e.g. 15/08/2015)" oninput="formatAndCalculateDOB(this)">
+            </div>
+            <small class="text-muted" style="font-size:11px;">Format: DD/MM/YYYY (Auto calculates age)</small>
           </div>
 
           <div class="col-md-4">
-            <label class="form-label small fw-bold text-secondary">Age (Years) <span class="text-danger">*</span></label>
-            <input type="number" name="age" class="form-control" min="3" max="18" value="9" required>
+            <label class="form-label small fw-bold text-secondary mb-1">Gender <span class="text-danger">*</span></label>
+            <select name="gender" class="form-select" required>
+              <option value="Male" selected>👦 Male</option>
+              <option value="Female">👧 Female</option>
+            </select>
           </div>
 
-          <div class="col-md-8">
-            <label class="form-label small fw-bold text-secondary">Guardian Name (Father / Mother)</label>
-            <input name="guardian_name" class="form-control" placeholder="e.g. Jay Patel">
+          <div class="col-md-4">
+            <label class="form-label small fw-bold text-secondary mb-1">
+              <i class="bi bi-mortarboard-fill text-success me-1"></i>Standard / Grade <span class="text-danger">*</span>
+            </label>
+            <select name="standard" class="form-select" required>
+              <option value="">-- Select Standard --</option>
+              {% for std in standards %}
+              <option value="{{ std }}" {% if std == '4th Standard' %}selected{% endif %}>{{ std }}</option>
+              {% endfor %}
+            </select>
           </div>
+        </div>
 
-          <div class="col-md-6">
+        <!-- Row 3: Mobile Number, Bal Mandal, Child ID -->
+        <div class="row g-3 mb-3">
+          <div class="col-md-4">
             <label class="form-label small fw-bold text-secondary">
               <i class="bi bi-telephone-fill text-primary me-1"></i>Mobile Number <span class="text-danger">*</span>
             </label>
@@ -53,13 +86,58 @@
               <input type="tel" name="mobile_number" class="form-control" required placeholder="e.g. 9876543210" pattern="[0-9+\-\s()]{7,15}" title="Please enter a valid mobile number">
             </div>
             <small class="text-muted d-block mt-1" style="font-size:11px;">
-              <i class="bi bi-people-fill text-success me-1"></i>Compulsory. Multiple children from the same household can share this number.
+              <i class="bi bi-people-fill text-success me-1"></i>Shared household / sibling number allowed.
             </small>
           </div>
 
-          <div class="col-md-6">
+          <div class="col-md-4">
             <label class="form-label small fw-bold text-secondary">Bal Mandal</label>
             <input class="form-control bg-light" value="{{ mandal.name if mandal else 'Bal Mandal' }} ({{ mandal.weekday if mandal else '' }})" readonly>
+          </div>
+
+          <div class="col-md-4">
+            <div class="d-flex justify-content-between align-items-center mb-1">
+              <label class="form-label small fw-bold text-secondary mb-0">Child ID / Code <span class="text-danger">*</span></label>
+              <button type="button" class="btn btn-link btn-sm p-0 text-decoration-none" style="font-size:11px;" onclick="genChildCode()">Auto</button>
+            </div>
+            <input name="child_code" id="childCodeInput" class="form-control" required placeholder="e.g. CH-00140" value="CH-00{{ range(135, 999)|random }}">
+          </div>
+        </div>
+
+        <!-- Row 4: Residential Address -->
+        <div class="row g-3 mb-3">
+          <div class="col-12">
+            <label class="form-label small fw-bold text-secondary mb-1">
+              <i class="bi bi-geo-alt-fill text-danger me-1"></i>Residential Address
+            </label>
+            <textarea name="address" rows="2" class="form-control" placeholder="House/Flat No, Society, Landmark, Area, City"></textarea>
+          </div>
+        </div>
+
+        <!-- Row 5: Bus Transportation Flag -->
+        <div class="row g-3 mb-3">
+          <div class="col-12">
+            <div class="p-3 border rounded-3 bg-light">
+              <div class="form-check form-switch mb-2">
+                <input class="form-check-input" type="checkbox" role="switch" id="usesBusToggle" name="uses_bus" value="true" onchange="toggleBusDetails(this)">
+                <label class="form-check-label fw-bold text-dark user-select-none" for="usesBusToggle">
+                  <i class="bi bi-bus-front-fill text-warning me-1"></i>Comes by Bus (Bus Transportation)
+                </label>
+              </div>
+              <div id="busDetailsContainer" style="display:none;" class="mt-2 pt-2 border-top">
+                <div class="row g-2">
+                  <div class="col-md-6">
+                    <label class="form-label small fw-bold text-secondary mb-1">Bus Route / Stop Name</label>
+                    <input name="bus_route" class="form-control form-control-sm" placeholder="e.g. Route #3 - Maninagar Cross Road">
+                  </div>
+                  <div class="col-md-6 d-flex align-items-center">
+                    <small class="text-muted" style="font-size:11.5px;">
+                      <i class="bi bi-info-circle me-1"></i>Flagged for bus attendance & pickup coordination.
+                    </small>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -244,6 +322,43 @@ function clearCapturedFace() {
   faceBadge.className = 'badge badge-soft-secondary';
   faceBadge.innerText = 'No Face';
   document.getElementById('fileUploadInput').value = '';
+}
+
+function formatAndCalculateDOB(input) {
+  let v = input.value.replace(/\D/g, '').slice(0, 8);
+  if (v.length >= 5) {
+    v = v.slice(0, 2) + '/' + v.slice(2, 4) + '/' + v.slice(4);
+  } else if (v.length >= 3) {
+    v = v.slice(0, 2) + '/' + v.slice(2);
+  }
+  input.value = v;
+
+  const badge = document.getElementById('calculatedAgeBadge');
+  const valSpan = document.getElementById('calcAgeValue');
+  if (v.length === 10) {
+    const parts = v.split('/');
+    const d = parseInt(parts[0], 10);
+    const m = parseInt(parts[1], 10);
+    const y = parseInt(parts[2], 10);
+    const birthDate = new Date(y, m - 1, d);
+    const today = new Date();
+    if (birthDate && !isNaN(birthDate.getTime()) && birthDate <= today && m >= 1 && m <= 12 && d >= 1 && d <= 31) {
+      let age = today.getFullYear() - birthDate.getFullYear();
+      const mDiff = today.getMonth() - birthDate.getMonth();
+      if (mDiff < 0 || (mDiff === 0 && today.getDate() < birthDate.getDate())) {
+        age--;
+      }
+      valSpan.textContent = age;
+      badge.style.display = 'inline-block';
+      return;
+    }
+  }
+  badge.style.display = 'none';
+}
+
+function toggleBusDetails(toggle) {
+  const container = document.getElementById('busDetailsContainer');
+  container.style.display = toggle.checked ? 'block' : 'none';
 }
 
 // Auto generate child code

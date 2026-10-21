@@ -15,6 +15,7 @@ from ..deps import role_required, safe_int
 from ..face_matcher import compare_face_photos
 from ..models import Attendance, Child, User
 from ..weeks import current_week_info, gujarati_month, week_number_for
+from ..child_utils import STANDARDS, parse_dob_strict, promote_standard
 
 router = APIRouter(prefix="/sanchalak", tags=["sanchalak"])
 templates: Jinja2Templates | None = None
@@ -532,7 +533,7 @@ def child_add_form(
 ):
     return templates.TemplateResponse(
         "sanchalak/child_form.html",
-        _ctx(request, user, active="children", child=None),
+        _ctx(request, user, active="children", child=None, standards=STANDARDS),
     )
 
 
@@ -541,26 +542,68 @@ def child_add(
     request: Request,
     user: User = Depends(role_required("sanchalak")),
     db: Session = Depends(get_db),
-    name: str = Form(...),
+    first_name: str = Form(""),
+    father_name: str = Form(""),
+    surname: str = Form(""),
+    name: str = Form(""),
+    dob_str: str = Form(""),
     child_code: str = Form(...),
     mobile_number: str = Form(...),
-    age: str | None = Form(None),
-    guardian_name: str = Form(""),
+    gender: str = Form("Male"),
+    standard: str = Form(""),
+    address: str = Form(""),
+    uses_bus: bool = Form(False),
+    bus_route: str = Form(""),
     photo_data: str = Form(""),
 ):
+    fn = first_name.strip()
+    fath = father_name.strip()
+    sn = surname.strip()
+    full_name = f"{fn} {fath} {sn}".strip() if (fn or sn) else name.strip()
+    dob_dt, dob_clean, calculated_age = parse_dob_strict(dob_str)
+
     photo = _save_data_url(photo_data, prefix="enroll")
     child = Child(
-        name=name.strip(),
-        child_code=child_code.strip(),
-        age=safe_int(age),
-        guardian_name=guardian_name.strip() or None,
+        name=full_name,
+        first_name=fn,
+        father_name=fath,
+        surname=sn,
+        dob=dob_dt,
+        dob_str=dob_clean or dob_str.strip(),
+        age=calculated_age,
+        gender=gender.strip() or "Male",
+        standard=standard.strip(),
+        address=address.strip(),
+        guardian_name=fath or None,
         mobile_number=mobile_number.strip(),
+        uses_bus=bool(uses_bus),
+        bus_route=bus_route.strip() if uses_bus else "",
+        child_code=child_code.strip(),
         bal_mandal_id=user.bal_mandal_id,
         face_photo=photo,
     )
     db.add(child)
     db.commit()
     return RedirectResponse("/sanchalak/children", status_code=303)
+
+
+@router.post("/children/promote-standards")
+def promote_sanchalak_children_standards(
+    request: Request,
+    user: User = Depends(role_required("sanchalak")),
+    db: Session = Depends(get_db),
+):
+    children = db.query(Child).filter(Child.bal_mandal_id == user.bal_mandal_id, Child.is_active.is_(True)).all()
+    count = 0
+    today = date.today()
+    for c in children:
+        if c.standard:
+            c.standard = promote_standard(c.standard)
+            count += 1
+        if c.dob:
+            c.age = today.year - c.dob.year - ((today.month, today.day) < (c.dob.month, c.dob.day))
+    db.commit()
+    return RedirectResponse(f"/sanchalak/children?promoted={count}", status_code=303)
 
 
 @router.post("/children/{child_id}/face")
