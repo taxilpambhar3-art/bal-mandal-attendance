@@ -7,22 +7,10 @@
     <h6 class="fw-bold mb-0">Child Profiles (Children Directory)</h6>
     <small class="text-muted">{{ mandal.name if mandal else 'Bal Mandal' }} · Total {{ children|length }} registered children</small>
   </div>
-  <div class="d-flex gap-2">
-    <button type="button" class="btn btn-outline-primary btn-sm fw-bold shadow-sm" data-bs-toggle="modal" data-bs-target="#promoteStandardsModal">
-      <i class="bi bi-mortarboard-fill me-1"></i>Annual Grade Promotion
-    </button>
-    <a href="/sanchalak/children/add" class="btn btn-warning btn-sm fw-bold shadow-sm">
-      <i class="bi bi-person-plus-fill me-1"></i>Enroll Child
-    </a>
-  </div>
+  <a href="/sanchalak/children/add" class="btn btn-warning btn-sm fw-bold shadow-sm">
+    <i class="bi bi-person-plus-fill me-1"></i>Enroll Child
+  </a>
 </div>
-
-{% if request.query_params.get('promoted') %}
-<div class="alert alert-success py-2 px-3 mb-3 d-flex align-items-center gap-2 rounded-3" style="font-size:13.5px;">
-  <i class="bi bi-check-circle-fill text-success fs-5"></i>
-  <div><b>Annual Promotion Completed:</b> Successfully promoted {{ request.query_params.get('promoted') }} students to their next standard for the new academic year!</div>
-</div>
-{% endif %}
 
 <!-- Summary Quick Stats -->
 {% set enrolled_count = children | selectattr('face_photo') | list | length %}
@@ -72,7 +60,7 @@
           <th>Photo</th>
           <th>Child ID</th>
           <th>Name & Gender</th>
-          <th>Standard</th>
+          <th>Annual Grade</th>
           <th>DOB & Age</th>
           <th>Guardian & Mobile</th>
           <th>Bus</th>
@@ -213,41 +201,7 @@
             <i class="bi bi-check-lg me-1"></i>Save Face Photo
           </button>
         </div>
-</div>
-
-<!-- Annual Grade Promotion Confirmation Modal -->
-<div class="modal fade" id="promoteStandardsModal" tabindex="-1" aria-labelledby="promoteStandardsModalLabel" aria-hidden="true">
-  <div class="modal-dialog modal-dialog-centered">
-    <div class="modal-content border-0 shadow-lg" style="border-radius:16px;">
-      <div class="modal-header bg-primary text-white">
-        <h6 class="modal-title fw-bold" id="promoteStandardsModalLabel">
-          <i class="bi bi-mortarboard-fill me-2"></i>Annual Academic Grade Promotion
-        </h6>
-        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
-      <form method="post" action="/sanchalak/children/promote-standards">
-        <div class="modal-body p-4">
-          <div class="text-center mb-3">
-            <div class="d-inline-flex align-items-center justify-content-center bg-primary-subtle text-primary rounded-circle mb-2" style="width:56px;height:56px;">
-              <i class="bi bi-arrow-up-circle-fill fs-3"></i>
-            </div>
-            <h6 class="fw-bold text-dark">Promote All Mandal Students to Next Grade?</h6>
-            <p class="text-muted small mb-0">
-              This annual batch operation will advance all registered children in your Bal Mandal to the next academic grade (e.g. 1st ➔ 2nd, 2nd ➔ 3rd, ..., 12th ➔ College/Graduate) and recalculate their current age based on their Date of Birth.
-            </p>
-          </div>
-          <div class="note-box py-2 px-3 small">
-            <i class="bi bi-info-circle-fill text-warning me-1"></i>
-            <b>Tip:</b> Typically executed once a year at the start of the new school academic term.
-          </div>
-        </div>
-        <div class="modal-footer bg-light">
-          <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
-          <button type="submit" class="btn btn-primary btn-sm fw-bold">
-            <i class="bi bi-check2-circle me-1"></i>Confirm & Promote All
-          </button>
-        </div>
-      </form>
     </div>
   </div>
 </div>

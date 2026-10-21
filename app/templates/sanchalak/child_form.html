@@ -64,10 +64,10 @@
 
           <div class="col-md-4">
             <label class="form-label small fw-bold text-secondary mb-1">
-              <i class="bi bi-mortarboard-fill text-success me-1"></i>Standard / Grade <span class="text-danger">*</span>
+              <i class="bi bi-mortarboard-fill text-success me-1"></i>Annual Grade (Standard) <span class="text-danger">*</span>
             </label>
             <select name="standard" class="form-select" required>
-              <option value="">-- Select Standard --</option>
+              <option value="">-- Select Annual Grade --</option>
               {% for std in standards %}
               <option value="{{ std }}" {% if std == '4th Standard' %}selected{% endif %}>{{ std }}</option>
               {% endfor %}
