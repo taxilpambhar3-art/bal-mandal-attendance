@@ -11,8 +11,8 @@
     <div class="d-flex align-items-center gap-1 bg-light py-1 px-3 border rounded-pill shadow-sm" style="font-size:12px;">
       <span class="text-secondary fw-bold"><i class="bi bi-lightning-charge-fill text-warning me-1"></i>Scan Speed:</span>
       <select id="kioskDelaySelect" class="form-select form-select-sm border-0 bg-transparent fw-bold text-success py-0 ps-1 pe-4" style="width:auto;cursor:pointer;font-size:12px;">
-        <option value="0" selected>⚡ 0s (Instant)</option>
-        <option value="2">⏱️ 2s</option>
+        <option value="0">⚡ 0s (Instant)</option>
+        <option value="2" selected>⏱️ 2s (Default)</option>
         <option value="5">⏱️ 5s</option>
       </select>
     </div>
@@ -276,7 +276,7 @@
   let isAutoScanning = true;
   let isScanTriggered = false;
   let faceHoldTicks = 0;
-  let REQUIRED_HOLD_TICKS = 1; // Snappy 0s Instant trigger
+  let REQUIRED_HOLD_TICKS = 2; // Default 2s hold
 
   const kioskDelaySelect = document.getElementById('kioskDelaySelect');
   if (kioskDelaySelect) {
@@ -359,6 +359,41 @@
     }
   });
 
+  let mandalFaceMatcher = null;
+
+  // Build FaceMatcher for all enrolled children in this mandal
+  async function buildMandalFaceMatcher() {
+    if (!isAiModelLoaded) return;
+    try {
+      const optionsWithPhotos = Array.from(childSelect.querySelectorAll('option[data-photo]'))
+        .filter(opt => opt.getAttribute('data-photo') && opt.value !== 'auto');
+      const uniqueMap = new Map();
+      optionsWithPhotos.forEach(opt => uniqueMap.set(opt.value, opt));
+
+      const labeledList = [];
+      for (const [cid, opt] of uniqueMap.entries()) {
+        const photoName = opt.getAttribute('data-photo');
+        try {
+          const img = new Image();
+          img.crossOrigin = 'anonymous';
+          img.src = '/static/uploads/' + photoName;
+          await img.decode();
+          const det = await faceapi.detectSingleFace(img, new faceapi.TinyFaceDetectorOptions({ inputSize: 224, scoreThreshold: 0.40 }))
+            .withFaceLandmarks()
+            .withFaceDescriptor();
+          if (det) {
+            labeledList.push(new faceapi.LabeledFaceDescriptors(cid, [det.descriptor]));
+          }
+        } catch (e) {}
+      }
+      if (labeledList.length > 0) {
+        mandalFaceMatcher = new faceapi.FaceMatcher(labeledList, 0.46);
+      }
+    } catch (e) {
+      console.warn('Error building mandal face matcher:', e);
+    }
+  }
+
   // Load Face API Models
   async function loadFaceModels() {
     try {
@@ -371,6 +406,7 @@
         ]);
         isAiModelLoaded = true;
         updateEnrolledReference();
+        buildMandalFaceMatcher();
       }
     } catch (err) {
       console.warn('Face API models fallback to canvas motion detector:', err);
@@ -553,22 +589,29 @@
     const dataUrl = canvas.toDataURL('image/jpeg', 0.88);
     photoDataInput.value = dataUrl;
 
-    // If client Face-API has enrolled descriptor for specific child:
-    if (isAiModelLoaded && enrolledDescriptor && video.videoWidth) {
+    // Strict Face-API verification
+    if (isAiModelLoaded && video.videoWidth) {
       try {
-        const liveDetection = await faceapi.detectSingleFace(video, new faceapi.TinyFaceDetectorOptions())
+        const liveDetection = await faceapi.detectSingleFace(video, new faceapi.TinyFaceDetectorOptions({ inputSize: 224, scoreThreshold: 0.40 }))
           .withFaceLandmarks()
           .withFaceDescriptor();
 
         if (liveDetection) {
-          const dist = faceapi.euclideanDistance(enrolledDescriptor, liveDetection.descriptor);
-          const isMatch = dist < 0.58;
-          const score = Math.max(10, Math.min(99, Math.round((1.0 - (dist / 0.80)) * 100)));
-          clientVerifiedInput.value = isMatch ? 'true' : 'false';
-          clientScoreInput.value = score;
-        } else {
-          clientVerifiedInput.value = 'false';
-          clientScoreInput.value = '25';
+          if (enrolledDescriptor) {
+            const dist = faceapi.euclideanDistance(enrolledDescriptor, liveDetection.descriptor);
+            const isMatch = dist < 0.46;
+            const score = Math.max(10, Math.min(99, Math.round((1.0 - (dist / 0.65)) * 100)));
+            clientVerifiedInput.value = isMatch ? 'true' : 'false';
+            clientScoreInput.value = score;
+          } else if (mandalFaceMatcher && childSelect.value === 'auto') {
+            const bestMatch = mandalFaceMatcher.findBestMatch(liveDetection.descriptor);
+            if (bestMatch && bestMatch.label !== 'unknown' && bestMatch.distance < 0.46) {
+              childSelect.value = bestMatch.label;
+              const score = Math.max(10, Math.min(99, Math.round((1.0 - (bestMatch.distance / 0.65)) * 100)));
+              clientVerifiedInput.value = 'true';
+              clientScoreInput.value = score;
+            }
+          }
         }
       } catch (err) {
         console.warn('Client match eval fallback:', err);
@@ -605,7 +648,7 @@
     // 1. Immediately update today's verified feed
     updateLiveFeed(data);
 
-    const delaySec = parseInt(document.getElementById('kioskDelaySelect')?.value || '0', 10);
+    const delaySec = parseInt(document.getElementById('kioskDelaySelect')?.value || '2', 10);
 
     // 0-SECOND INSTANT MODE (0s scanning delay requested)
     if (delaySec === 0) {
@@ -692,14 +735,12 @@
       updateEnrolledReference();
     }
 
-    // Brief 1.5s cooldown so previous child can step away cleanly
-    setTimeout(() => {
-      isScanTriggered = false;
-      faceHoldTicks = 0;
-      captureBtn.disabled = false;
-      captureBtn.innerHTML = '<i class="bi bi-camera-fill me-1"></i>Manual Capture';
-      resetAutoScanUI();
-    }, 1200);
+    // Camera is ready for next child immediately after the 2s gap finishes
+    isScanTriggered = false;
+    faceHoldTicks = 0;
+    captureBtn.disabled = false;
+    captureBtn.innerHTML = '<i class="bi bi-camera-fill me-1"></i>Manual Capture';
+    resetAutoScanUI();
   };
 
   // Show In-Camera Mismatch / Fail Overlay

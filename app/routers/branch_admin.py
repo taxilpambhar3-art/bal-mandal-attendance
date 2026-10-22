@@ -801,20 +801,27 @@ def face_scan_submit(
         best_child = None
         best_match = None
         best_score = -1.0
+        second_score = -1.0
 
         for cand in candidates:
             enrolled_p = UPLOAD_DIR / cand.face_photo
             res = compare_face_photos(
                 live_img_path=live_path,
                 enrolled_img_path=enrolled_p,
-                threshold=60.0,
+                threshold=75.0,
             )
-            if res["confidence"] > best_score:
-                best_score = res["confidence"]
+            sc = res["confidence"]
+            if sc > best_score:
+                second_score = best_score
+                best_score = sc
                 best_match = res
                 best_child = cand
+            elif sc > second_score:
+                second_score = sc
 
-        if best_match and best_match["is_match"]:
+        # Ensure distinct identification: best_score must be >= 75.0 and clearly separated
+        is_distinct = (second_score < 40.0) or ((best_score - second_score) >= 8.0)
+        if best_match and best_match["is_match"] and best_score >= 75.0 and is_distinct:
             child = best_child
             match_result = best_match
         else:
@@ -846,7 +853,7 @@ def face_scan_submit(
         match_result = compare_face_photos(
             live_img_path=live_path,
             enrolled_img_path=enrolled_p,
-            threshold=60.0,
+            threshold=75.0,
         )
         if not match_result["is_match"]:
             return JSONResponse({
@@ -1080,12 +1087,12 @@ def top_attendees(
     )
 
 
-# --- REPORTS ---
 @router.get("/reports")
 def reports(
     request: Request,
     user: User = Depends(role_required("branch_admin")),
     db: Session = Depends(get_db),
+    type: str | None = None,
     year: str | None = None,
     month: str | None = None,
     week: str | None = None,
@@ -1096,6 +1103,10 @@ def reports(
     month_val = safe_int(month) or info["month"]
     week_val = safe_int(week)
     m_id = safe_int(mandal_id)
+    report_type = type or request.query_params.get("type") or ("weekly" if week_val else "monthly")
+
+    if report_type in ("weekly", "week") and not week_val:
+        week_val = info["week_number"] if month_val == info["month"] and year_val == info["year"] else 1
 
     mandals = db.query(BalMandal).filter(BalMandal.branch_id == user.branch_id).all()
     bm_ids = [m.id for m in mandals]
@@ -1162,6 +1173,7 @@ def reports(
             year=year_val,
             month=month_val,
             week_filter=week_val,
+            report_type=report_type,
             month_label=f"{gujarati_month(month_val)} {year_val}",
             week_rows=week_rows,
             comparison=comparison,

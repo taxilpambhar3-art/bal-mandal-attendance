@@ -21,6 +21,13 @@
 <form class="panel mb-4 py-3" method="get" action="/branch-admin/reports">
   <div class="row g-2 align-items-end">
     <div class="col-md-2">
+      <label class="form-label small mb-1 fw-bold text-secondary">View Type</label>
+      <select name="type" class="form-select form-select-sm">
+        <option value="monthly" {% if report_type != 'weekly' and report_type != 'week' %}selected{% endif %}>📅 Monthly</option>
+        <option value="weekly" {% if report_type == 'weekly' or report_type == 'week' %}selected{% endif %}>📊 Weekly</option>
+      </select>
+    </div>
+    <div class="col-md-2">
       <label class="form-label small mb-1 fw-bold text-secondary">Year</label>
       <input type="number" name="year" class="form-control form-control-sm" value="{{ year }}">
     </div>
@@ -41,7 +48,7 @@
         {% endfor %}
       </select>
     </div>
-    <div class="col-md-4">
+    <div class="col-md-2">
       <label class="form-label small mb-1 fw-bold text-secondary">Bal Mandal Filter:</label>
       <select name="mandal_id" class="form-select form-select-sm">
         <option value="">All Bal Mandals</option>
@@ -129,8 +136,20 @@
 <!-- Week-wise Breakdown Table -->
 <div class="panel p-0 overflow-hidden mb-4">
   <div class="p-3 pb-2 d-flex justify-content-between align-items-center border-bottom">
-    <h6 class="mb-0"><i class="bi bi-calendar3-range text-secondary me-2"></i>Weekly Summary — {{ month_label }}</h6>
-    <span class="badge badge-soft-info">Week 1–5 Reset Cycle</span>
+    <div class="d-flex align-items-center gap-2">
+      <h6 class="mb-0"><i class="bi bi-calendar3-range text-secondary me-2"></i>Weekly Summary — {{ month_label }}</h6>
+      {% if week_filter %}
+      <span class="badge badge-soft-success"><i class="bi bi-funnel-fill me-1"></i>Week {{ week_filter }} Only</span>
+      {% endif %}
+    </div>
+    <div class="d-flex align-items-center gap-2">
+      {% if week_filter %}
+      <a href="/branch-admin/reports?year={{ year }}&month={{ month }}&type=monthly{% if selected_mandal %}&mandal_id={{ selected_mandal }}{% endif %}" class="btn btn-sm btn-outline-secondary py-0 px-2" style="font-size:12px;">
+        <i class="bi bi-arrow-counterclockwise me-1"></i>Show All Weeks
+      </a>
+      {% endif %}
+      <span class="badge badge-soft-info">Week 1–5 Reset Cycle</span>
+    </div>
   </div>
   <div class="table-responsive">
     <table class="table mock table-hover mb-0 align-middle" id="branchReportsTable">
@@ -143,10 +162,12 @@
           <th>Absent</th>
           <th>Attendance %</th>
           <th>Status</th>
+          <th>Action</th>
         </tr>
       </thead>
       <tbody>
       {% for r in week_rows %}
+        {% if not week_filter or r.week == week_filter %}
         <tr class="{% if r.week == week.week_number %}table-success-subtle{% endif %}">
           <td><b class="text-success">Week {{ r.week }}</b></td>
           <td>{{ r.mandals }}</td>
@@ -173,7 +194,19 @@
             <span class="badge badge-soft-secondary">Pending</span>
             {% endif %}
           </td>
+          <td>
+            {% if week_filter == r.week %}
+            <a href="/branch-admin/reports?year={{ year }}&month={{ month }}&type=monthly{% if selected_mandal %}&mandal_id={{ selected_mandal }}{% endif %}" class="btn btn-sm btn-outline-secondary py-0 px-2" title="Show All Weeks">
+              <i class="bi bi-x-circle me-1"></i>All Weeks
+            </a>
+            {% else %}
+            <a href="/branch-admin/reports?year={{ year }}&month={{ month }}&week={{ r.week }}&type=weekly{% if selected_mandal %}&mandal_id={{ selected_mandal }}{% endif %}" class="btn btn-sm btn-outline-success py-0 px-2" title="View Week {{ r.week }} Details">
+              Details <i class="bi bi-chevron-right"></i>
+            </a>
+            {% endif %}
+          </td>
         </tr>
+        {% endif %}
       {% endfor %}
       </tbody>
     </table>

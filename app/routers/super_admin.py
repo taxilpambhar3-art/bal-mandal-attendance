@@ -545,6 +545,7 @@ def reports(
     request: Request,
     user: User = Depends(role_required("super_admin")),
     db: Session = Depends(get_db),
+    type: str | None = None,
     year: str | None = None,
     month: str | None = None,
     week: str | None = None,
@@ -557,6 +558,10 @@ def reports(
     week_val = safe_int(week)
     b_id = safe_int(branch_id)
     m_id = safe_int(mandal_id)
+    report_type = type or request.query_params.get("type") or ("weekly" if week_val else "monthly")
+
+    if report_type in ("weekly", "week") and not week_val:
+        week_val = info["week_number"] if month_val == info["month"] and year_val == info["year"] else 1
 
     q = db.query(Attendance).filter(Attendance.year == year_val, Attendance.month == month_val)
     if week_val:
@@ -651,6 +656,7 @@ def reports(
             year=year_val,
             month=month_val,
             week_filter=week_val,
+            report_type=report_type,
             month_label=f"{gujarati_month(month_val)} {year_val}",
             total_children=total_children,
             present=present,

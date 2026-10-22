@@ -23,9 +23,9 @@
     <div class="row g-3 align-items-end">
       <div class="col-md-3">
         <label class="form-label small mb-1 fw-bold text-secondary">Report View Type</label>
-        <select class="form-select form-select-sm" id="viewTypeSelect" onchange="if(this.value==='custom') window.location.href='/sanchalak/reports/custom';">
-          <option value="month" selected>📅 Monthly</option>
-          <option value="week">📊 Weekly</option>
+        <select name="type" class="form-select form-select-sm" id="viewTypeSelect" onchange="if(this.value==='custom') window.location.href='/sanchalak/reports/custom';">
+          <option value="monthly" {% if report_type != 'weekly' and report_type != 'week' %}selected{% endif %}>📅 Monthly</option>
+          <option value="weekly" {% if report_type == 'weekly' or report_type == 'week' %}selected{% endif %}>📊 Weekly</option>
           <option value="custom">🗓️ Custom Date Range</option>
         </select>
       </div>
@@ -126,8 +126,20 @@
 <!-- Week-wise Breakdown Table -->
 <div class="panel p-0 overflow-hidden mb-4">
   <div class="p-3 pb-2 d-flex justify-content-between align-items-center border-bottom">
-    <h6 class="mb-0"><i class="bi bi-table text-secondary me-2"></i>Week-by-Week Breakdown</h6>
-    <small class="text-muted">{{ month_label }}</small>
+    <div class="d-flex align-items-center gap-2">
+      <h6 class="mb-0"><i class="bi bi-table text-secondary me-2"></i>Week-by-Week Breakdown</h6>
+      {% if week_filter %}
+      <span class="badge badge-soft-primary"><i class="bi bi-funnel-fill me-1"></i>Week {{ week_filter }} Only</span>
+      {% endif %}
+    </div>
+    <div class="d-flex align-items-center gap-2">
+      {% if week_filter %}
+      <a href="/sanchalak/reports?month={{ month }}&year={{ year }}&type=monthly" class="btn btn-sm btn-outline-secondary py-0 px-2" style="font-size:12px;">
+        <i class="bi bi-arrow-counterclockwise me-1"></i>Show All Weeks
+      </a>
+      {% endif %}
+      <small class="text-muted">{{ month_label }}</small>
+    </div>
   </div>
   <div class="table-responsive">
     <table class="table mock table-hover mb-0 align-middle" id="reportsTable">
@@ -145,6 +157,7 @@
       </thead>
       <tbody>
         {% for r in week_rows %}
+        {% if not week_filter or r.week == week_filter %}
         <tr class="{% if r.week == week.week_number %}table-primary-subtle{% endif %}">
           <td><b class="text-primary">Week {{ r.week }}</b></td>
           <td>{{ mandal.weekday if mandal else '—' }}</td>
@@ -172,15 +185,74 @@
             {% endif %}
           </td>
           <td>
-            <a href="/sanchalak/history" class="btn btn-sm btn-outline-primary py-0 px-2" title="View History">
+            {% if week_filter == r.week %}
+            <a href="/sanchalak/reports?month={{ month }}&year={{ year }}&type=monthly" class="btn btn-sm btn-outline-secondary py-0 px-2" title="Show All Weeks">
+              <i class="bi bi-x-circle me-1"></i>All Weeks
+            </a>
+            {% else %}
+            <a href="/sanchalak/reports?month={{ month }}&year={{ year }}&week={{ r.week }}&type=weekly" class="btn btn-sm btn-outline-primary py-0 px-2" title="View Week {{ r.week }} Details">
               Details <i class="bi bi-chevron-right"></i>
             </a>
+            {% endif %}
           </td>
         </tr>
+        {% endif %}
         {% endfor %}
       </tbody>
     </table>
   </div>
+
+  {% if week_filter and week_attendees %}
+  <div class="border-top p-3 bg-light">
+    <div class="d-flex justify-content-between align-items-center mb-2 flex-wrap gap-2">
+      <h6 class="mb-0 fw-bold text-dark" style="font-size:13.5px;">
+        <i class="bi bi-person-check-fill text-success me-1"></i>Week {{ week_filter }} Child Attendance Details ({{ week_attendees|length }} Children)
+      </h6>
+      <div class="d-flex gap-2">
+        <span class="badge bg-success-subtle text-success border border-success-subtle">
+          {{ week_attendees|selectattr('status', 'equalto', 'present')|list|length }} Present
+        </span>
+        <span class="badge bg-danger-subtle text-danger border border-danger-subtle">
+          {{ week_attendees|selectattr('status', 'equalto', 'absent')|list|length }} Absent
+        </span>
+      </div>
+    </div>
+    <div class="table-responsive" style="max-height:360px; overflow-y:auto;">
+      <table class="table table-sm table-hover bg-white rounded border mb-0 align-middle" style="font-size:12.5px;">
+        <thead class="table-light">
+          <tr>
+            <th style="width:45px;">#</th>
+            <th>Child Name</th>
+            <th>Child Code</th>
+            <th>Standard</th>
+            <th>Attendance Status</th>
+            <th>Scan Timestamp</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for a in week_attendees %}
+          <tr>
+            <td>{{ loop.index }}</td>
+            <td class="fw-bold text-dark">{{ a.child.name }}</td>
+            <td><span class="badge badge-soft-dark">{{ a.child.child_code }}</span></td>
+            <td>{{ a.child.standard or '—' }}</td>
+            <td>
+              {% if a.status == 'present' %}
+              <span class="badge bg-success text-white fw-bold"><i class="bi bi-check-circle-fill me-1"></i>Present</span>
+              {% else %}
+              <span class="badge bg-danger-subtle text-danger fw-semibold"><i class="bi bi-x-circle me-1"></i>Absent</span>
+              {% endif %}
+            </td>
+            <td class="text-muted small">
+              {{ format_dt(a.scanned_at) if a.scanned_at else '—' }}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+  {% endif %}
 </div>
 {% endblock %}
 

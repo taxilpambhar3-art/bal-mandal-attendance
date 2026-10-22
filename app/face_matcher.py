@@ -59,9 +59,19 @@ def _compute_hsv_hist(crop: Image.Image) -> np.ndarray:
 
 def _compute_normalized_vector(crop: Image.Image) -> np.ndarray:
     """Extracts normalized spatial luminance vector."""
-    gray = np.array(crop.convert("L").resize((32, 32), Image.Resampling.LANCZOS), dtype=np.float32)
+    gray = np.array(crop.convert("L").resize((48, 48), Image.Resampling.LANCZOS), dtype=np.float32)
     norm = (gray - gray.mean()) / (gray.std() + 1e-6)
     return norm.flatten()
+
+
+def _compute_spatial_gradients(crop: Image.Image) -> tuple[np.ndarray, np.ndarray]:
+    """Extracts horizontal and vertical spatial edge gradients for fine facial contour matching."""
+    gray = np.array(crop.convert("L").resize((48, 48), Image.Resampling.LANCZOS), dtype=np.float32)
+    gx = gray[:, 2:] - gray[:, :-2]
+    gy = gray[2:, :] - gray[:-2, :]
+    gx_norm = (gx - gx.mean()) / (gx.std() + 1e-6)
+    gy_norm = (gy - gy.mean()) / (gy.std() + 1e-6)
+    return gx_norm.flatten(), gy_norm.flatten()
 
 
 def _has_valid_face_content(img: Image.Image) -> bool:
@@ -76,7 +86,7 @@ def _has_valid_face_content(img: Image.Image) -> bool:
 def compare_face_photos(
     live_img_path: str | Path,
     enrolled_img_path: Optional[str | Path],
-    threshold: float = 60.0,
+    threshold: float = 75.0,
     client_verified: Optional[bool] = None,
     client_score: Optional[float] = None,
 ) -> Dict[str, Any]:
@@ -135,24 +145,37 @@ def compare_face_photos(
     crop_live = _get_face_crop(im_live)
     crop_enrolled = _get_face_crop(im_enrolled)
 
-    # 1. Luminance Cosine
+    # 1. Luminance Cosine (calibrated: uncorrelated luminance < 0.20 maps to 0)
     v1 = _compute_normalized_vector(crop_live)
     v2 = _compute_normalized_vector(crop_enrolled)
-    cos = float(np.dot(v1, v2) / (np.linalg.norm(v1) * np.linalg.norm(v2) + 1e-6))
-    cos_norm = max(0.0, min(1.0, (cos + 1.0) / 2.0))
+    cos_lum = float(np.dot(v1, v2) / (np.linalg.norm(v1) * np.linalg.norm(v2) + 1e-6))
+    s_lum = max(0.0, min(1.0, (cos_lum - 0.20) / 0.80))
 
-    # 2. Difference Hash (dHash)
+    # 2. Horizontal & Vertical Spatial Edge Gradients
+    gx1, gy1 = _compute_spatial_gradients(crop_live)
+    gx2, gy2 = _compute_spatial_gradients(crop_enrolled)
+    cos_gx = float(np.dot(gx1, gx2) / (np.linalg.norm(gx1) * np.linalg.norm(gx2) + 1e-6))
+    cos_gy = float(np.dot(gy1, gy2) / (np.linalg.norm(gy1) * np.linalg.norm(gy2) + 1e-6))
+    s_gx = max(0.0, min(1.0, (cos_gx - 0.10) / 0.90))
+    s_gy = max(0.0, min(1.0, (cos_gy - 0.10) / 0.90))
+
+    # 3. Difference Hash (dHash)
     dh1 = _compute_dhash(crop_live)
     dh2 = _compute_dhash(crop_enrolled)
-    dhash_sim = 1.0 - (np.count_nonzero(dh1 != dh2) / 64.0)
+    dh_raw = 1.0 - (np.count_nonzero(dh1 != dh2) / 64.0)
+    s_dh = max(0.0, min(1.0, (dh_raw - 0.50) / 0.50))
 
-    # 3. HSV Color & Skin Distribution
+    # 4. HSV Color & Skin Distribution (reduced to 5% weight to avoid false positive skin tone matches)
     col1 = _compute_hsv_hist(crop_live)
     col2 = _compute_hsv_hist(crop_enrolled)
-    col_sim = float(np.sum(np.minimum(col1, col2)))
+    col_raw = float(np.sum(np.minimum(col1, col2)))
+    s_col = max(0.0, min(1.0, (col_raw - 0.60) / 0.40))
 
     # Composite backend confidence
-    confidence = round((0.35 * cos_norm + 0.35 * dhash_sim + 0.30 * col_sim) * 100, 1)
+    confidence = round(
+        (0.35 * s_lum + 0.25 * s_gx + 0.25 * s_gy + 0.10 * s_dh + 0.05 * s_col) * 100,
+        1,
+    )
 
     is_match = confidence >= threshold
 

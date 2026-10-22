@@ -243,20 +243,27 @@ def face_scan_submit(
         best_child = None
         best_match = None
         best_score = -1.0
+        second_score = -1.0
 
         for cand in candidates:
             enrolled_p = UPLOAD_DIR / cand.face_photo
             res = compare_face_photos(
                 live_img_path=live_path,
                 enrolled_img_path=enrolled_p,
-                threshold=60.0,
+                threshold=75.0,
             )
-            if res["confidence"] > best_score:
-                best_score = res["confidence"]
+            sc = res["confidence"]
+            if sc > best_score:
+                second_score = best_score
+                best_score = sc
                 best_match = res
                 best_child = cand
+            elif sc > second_score:
+                second_score = sc
 
-        if best_match and best_match["is_match"]:
+        # Ensure distinct identification: best_score must be >= 75.0 and clearly separated
+        is_distinct = (second_score < 40.0) or ((best_score - second_score) >= 8.0)
+        if best_match and best_match["is_match"] and best_score >= 75.0 and is_distinct:
             child = best_child
             match_result = best_match
         else:
@@ -331,7 +338,7 @@ def face_scan_submit(
         match_result = compare_face_photos(
             live_img_path=live_path,
             enrolled_img_path=enrolled_path,
-            threshold=60.0,
+            threshold=75.0,
             client_verified=c_ver,
             client_score=parsed_client_score,
         )
@@ -771,6 +778,7 @@ def reports(
     request: Request,
     user: User = Depends(role_required("sanchalak")),
     db: Session = Depends(get_db),
+    type: str | None = None,
     year: str | None = None,
     month: str | None = None,
     week: str | None = None,
@@ -779,6 +787,11 @@ def reports(
     year_val = safe_int(year) or info["year"]
     month_val = safe_int(month) or info["month"]
     week_val = safe_int(week)
+    report_type = type or request.query_params.get("type") or ("weekly" if week_val else "monthly")
+
+    # If weekly view selected but no week number passed, default to current week
+    if report_type in ("weekly", "week") and not week_val:
+        week_val = info["week_number"] if month_val == info["month"] and year_val == info["year"] else 1
 
     total = (
         db.query(Child)
@@ -810,6 +823,34 @@ def reports(
         )
     avg = round((total_present_sum / (total * 5)) * 100, 1) if total else 0
 
+    week_attendees = []
+    if week_val:
+        atts = (
+            db.query(Attendance)
+            .filter(
+                Attendance.bal_mandal_id == user.bal_mandal_id,
+                Attendance.year == year_val,
+                Attendance.month == month_val,
+                Attendance.week_number == week_val,
+            )
+            .all()
+        )
+        att_map = {a.child_id: a for a in atts}
+        children_list = (
+            db.query(Child)
+            .filter(Child.bal_mandal_id == user.bal_mandal_id, Child.is_active.is_(True))
+            .order_by(Child.name)
+            .all()
+        )
+        for c in children_list:
+            a = att_map.get(c.id)
+            week_attendees.append({
+                "child": c,
+                "status": "present" if a else "absent",
+                "scanned_at": a.scanned_at if a else None,
+                "scan_photo": a.scan_photo if a else None,
+            })
+
     return templates.TemplateResponse(
         "sanchalak/reports.html",
         _ctx(
@@ -819,11 +860,13 @@ def reports(
             year=year_val,
             month=month_val,
             week_filter=week_val,
+            report_type=report_type,
             month_label=f"{gujarati_month(month_val)} {year_val}",
             total=total,
             total_present_sum=total_present_sum,
             avg=avg,
             week_rows=week_rows,
+            week_attendees=week_attendees,
         ),
     )
 
@@ -840,7 +883,7 @@ def attendance_report_alias(
 ):
     if type == "custom":
         return RedirectResponse("/sanchalak/reports/custom", status_code=303)
-    return reports(request, user, db, year, month, week)
+    return reports(request, user, db, type, year, month, week)
 
 
 @router.get("/reports/custom")
