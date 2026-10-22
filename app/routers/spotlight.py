@@ -20,75 +20,14 @@ def spotlight_search(
     db: Session = Depends(get_db),
 ):
     query_str = (q or "").strip()
+    if not query_str:
+        return JSONResponse({"query": "", "categories": []})
+
     term = f"%{query_str}%"
     role = user.role
-
     categories: list[dict] = []
 
-    # 1. Quick Actions & Navigation
-    all_actions = []
-    if role == "super_admin":
-        all_actions = [
-            {"title": "Consolidated Dashboard", "subtitle": "System Overview & Analytics", "badge": "Page", "url": "/super-admin/dashboard", "icon": "bi-speedometer2"},
-            {"title": "Branches Directory", "subtitle": "Manage Statewide Branches", "badge": "Directory", "url": "/super-admin/branches", "icon": "bi-building"},
-            {"title": "Add New Branch", "subtitle": "Create Branch & Admin Account", "badge": "Action", "url": "/super-admin/branches/add", "icon": "bi-building-add"},
-            {"title": "All Bal Mandals", "subtitle": "View Mandals by Branch", "badge": "Directory", "url": "/super-admin/mandals", "icon": "bi-diagram-3"},
-            {"title": "Children Directory", "subtitle": "View all registered children statewide", "badge": "Directory", "url": "/super-admin/children", "icon": "bi-people"},
-            {"title": "Annual Grade Promotion", "subtitle": "Promote standard for all active children", "badge": "Action", "url": "/super-admin/children", "icon": "bi-mortarboard"},
-            {"title": "Credentials & Passwords", "subtitle": "View usernames and reset passwords", "badge": "Security", "url": "/super-admin/credentials", "icon": "bi-key"},
-            {"title": "User Management", "subtitle": "Branch admins & sanchalaks", "badge": "Users", "url": "/super-admin/users", "icon": "bi-person-badge"},
-            {"title": "Statewide Attendance Scans", "subtitle": "Live face scan history", "badge": "Logs", "url": "/super-admin/attendance", "icon": "bi-clock-history"},
-            {"title": "Consolidated Reports", "subtitle": "Monthly & weekly reports", "badge": "Reports", "url": "/super-admin/reports", "icon": "bi-file-earmark-bar-graph"},
-        ]
-    elif role == "branch_admin":
-        all_actions = [
-            {"title": "Branch Dashboard", "subtitle": "Branch KPIs & operations", "badge": "Page", "url": "/branch-admin/dashboard", "icon": "bi-speedometer2"},
-            {"title": "Enroll New Child", "subtitle": "Register child with photo & DOB", "badge": "Action", "url": "/branch-admin/children/add", "icon": "bi-person-plus"},
-            {"title": "Children Directory", "subtitle": "Edit profiles & manage children", "badge": "Directory", "url": "/branch-admin/children", "icon": "bi-people"},
-            {"title": "Annual Grade Promotion", "subtitle": "Promote standard for active children", "badge": "Action", "url": "/branch-admin/children", "icon": "bi-mortarboard"},
-            {"title": "Start Face Scan", "subtitle": "Live face recognition scanner", "badge": "Action", "url": "/branch-admin/face-scan", "icon": "bi-camera-video"},
-            {"title": "Bal Mandals", "subtitle": "Manage mandals in this branch", "badge": "Directory", "url": "/branch-admin/bal-mandals", "icon": "bi-diagram-3"},
-            {"title": "Add New Bal Mandal", "subtitle": "Create new mandal unit", "badge": "Action", "url": "/branch-admin/bal-mandals/add", "icon": "bi-diagram-3-fill"},
-            {"title": "Sanchalak Accounts", "subtitle": "Manage branch sanchalaks", "badge": "Users", "url": "/branch-admin/sanchalaks", "icon": "bi-person-badge"},
-            {"title": "Manual Attendance Sheet", "subtitle": "Mark weekly attendance table", "badge": "Attendance", "url": "/branch-admin/manual-attendance", "icon": "bi-table"},
-            {"title": "Attendance Scan Logs", "subtitle": "Recent scan logs & photos", "badge": "Logs", "url": "/branch-admin/attendance", "icon": "bi-clock-history"},
-            {"title": "Branch Attendance Reports", "subtitle": "Monthly statistics & exports", "badge": "Reports", "url": "/branch-admin/reports", "icon": "bi-bar-chart-line"},
-            {"title": "Top Attendees Ranking", "subtitle": "Highest attendance children leaderboard", "badge": "Analytics", "url": "/branch-admin/top-attendees", "icon": "bi-trophy"},
-        ]
-    elif role == "sanchalak":
-        all_actions = [
-            {"title": "Sanchalak Dashboard", "subtitle": "Mandal overview & trend chart", "badge": "Page", "url": "/sanchalak/dashboard", "icon": "bi-speedometer2"},
-            {"title": "Start Face Scan Attendance", "subtitle": "Live camera face recognition", "badge": "Action", "url": "/sanchalak/face-scan", "icon": "bi-camera-video"},
-            {"title": "Enroll New Child", "subtitle": "Add child with face photo & details", "badge": "Action", "url": "/sanchalak/children/add", "icon": "bi-person-plus"},
-            {"title": "Children Directory", "subtitle": "View and edit enrolled children", "badge": "Directory", "url": "/sanchalak/children", "icon": "bi-people"},
-            {"title": "Annual Grade Promotion", "subtitle": "Advance grades for active children", "badge": "Action", "url": "/sanchalak/children", "icon": "bi-mortarboard"},
-            {"title": "Top Attendees Ranking", "subtitle": "Highest attendance children leaderboard", "badge": "Analytics", "url": "/sanchalak/top-attendees", "icon": "bi-trophy"},
-            {"title": "Scan History", "subtitle": "Recent attendance timestamps", "badge": "Logs", "url": "/sanchalak/history", "icon": "bi-clock-history"},
-            {"title": "Monthly Attendance Reports", "subtitle": "Mandal statistics & averages", "badge": "Reports", "url": "/sanchalak/reports", "icon": "bi-bar-chart"},
-            {"title": "Custom Attendance Report", "subtitle": "Detailed date range reports", "badge": "Reports", "url": "/sanchalak/reports/custom", "icon": "bi-file-earmark-text"},
-        ]
-
-    matched_actions = []
-    if query_str:
-        q_lower = query_str.lower()
-        for act in all_actions:
-            if q_lower in act["title"].lower() or q_lower in act["subtitle"].lower() or q_lower in act["badge"].lower():
-                matched_actions.append(act)
-    else:
-        matched_actions = all_actions[:6]
-
-    if matched_actions:
-        categories.append({
-            "name": "Quick Navigation & Actions",
-            "icon": "bi-lightning-charge-fill",
-            "items": matched_actions,
-        })
-
-    # If query is empty, return top navigation right away
-    if not query_str:
-        return JSONResponse({"query": query_str, "categories": categories})
-
-    # 2. Children Search
+    # 1. Children Search
     child_query = db.query(Child).options(joinedload(Child.bal_mandal).joinedload(BalMandal.branch))
     if role == "branch_admin":
         mandals = db.query(BalMandal.id).filter(BalMandal.branch_id == user.branch_id).all()

@@ -327,12 +327,22 @@ function renderSpotlightResults(categories, query) {
 
   spotlightSelectedIndex = -1;
 
+  if (!query) {
+    container.innerHTML = `
+      <div class="text-center py-5 text-muted">
+        <i class="bi bi-search fs-2 d-block mb-2 text-primary opacity-50"></i>
+        <div class="fw-semibold">Type anything to search</div>
+        <small class="text-muted d-block mt-1">Search child name, child code (CH-XXXX), mobile number, standard, or mandal.</small>
+      </div>`;
+    return;
+  }
+
   if (!categories || categories.length === 0) {
     container.innerHTML = `
       <div class="text-center py-5 text-muted">
         <i class="bi bi-search fs-2 d-block mb-2 text-secondary opacity-50"></i>
         <div class="fw-semibold">No matching records found</div>
-        <small class="text-muted d-block mt-1">Try searching by child name, child code (CH-XXXX), guardian mobile, or annual grade.</small>
+        <small class="text-muted d-block mt-1">No results for "${escapeHtml(query)}". Try another name, code, or mobile number.</small>
       </div>`;
     return;
   }
@@ -398,6 +408,171 @@ function escapeHtml(str) {
     .replace(/'/g, '&#39;');
 }
 
+// ================= DASHBOARD INLINE LIVE SPOTLIGHT SEARCH =================
+let dashboardSpotlightTimer = null;
+let dashboardSelectedIndex = -1;
+
+async function handleDashboardSpotlightInput(val) {
+  const dropdown = document.getElementById('dashboardSpotlightDropdown');
+  const clearBtn = document.getElementById('dashboardSpotlightClearBtn');
+  if (!dropdown) return;
+
+  const query = (val || '').trim();
+  if (clearBtn) {
+    if (query) clearBtn.classList.remove('d-none');
+    else clearBtn.classList.add('d-none');
+  }
+
+  if (!query) {
+    dropdown.classList.add('d-none');
+    dropdown.innerHTML = '';
+    return;
+  }
+
+  clearTimeout(dashboardSpotlightTimer);
+  dashboardSpotlightTimer = setTimeout(async () => {
+    try {
+      dropdown.classList.remove('d-none');
+      dropdown.innerHTML = `
+        <div class="text-center py-3 text-muted small">
+          <div class="spinner-border spinner-border-sm text-primary me-2"></div>Searching records...
+        </div>`;
+      
+      const res = await fetch(`/api/spotlight?q=${encodeURIComponent(query)}`);
+      if (!res.ok) throw new Error('Search failed');
+      const data = await res.json();
+      renderDashboardResults(data.categories, query);
+    } catch (e) {
+      dropdown.innerHTML = `<div class="text-center py-3 text-danger small">Unable to load search results.</div>`;
+    }
+  }, 160);
+}
+
+function renderDashboardResults(categories, query) {
+  const dropdown = document.getElementById('dashboardSpotlightDropdown');
+  if (!dropdown) return;
+
+  dashboardSelectedIndex = -1;
+
+  if (!categories || categories.length === 0) {
+    dropdown.innerHTML = `
+      <div class="text-center py-4 text-muted">
+        <i class="bi bi-search fs-4 d-block mb-1 text-secondary opacity-50"></i>
+        <div class="small fw-semibold">No matching records found</div>
+        <small class="text-muted" style="font-size:11px;">No records found for "${escapeHtml(query)}". Try another name, code, or mobile.</small>
+      </div>`;
+    return;
+  }
+
+  let html = '';
+  let idx = 0;
+
+  categories.forEach(cat => {
+    html += `
+      <div class="spotlight-group mb-2">
+        <div class="spotlight-group-title d-flex align-items-center gap-1" style="font-size:10.5px; font-weight:700; color:#64748b; padding:4px 8px;">
+          <i class="bi ${cat.icon || 'bi-folder'} text-primary me-1"></i>
+          <span>${escapeHtml(cat.name)}</span>
+        </div>`;
+
+    cat.items.forEach(item => {
+      const isFirst = (idx === 0);
+      let visualEl = '';
+      if (item.photo) {
+        visualEl = `<img src="${item.photo}" class="spotlight-avatar border" style="width:34px;height:34px;border-radius:50%;object-fit:cover;" alt="">`;
+      } else {
+        visualEl = `
+          <div class="spotlight-icon-pill text-primary" style="width:34px;height:34px;border-radius:50%;background:#f1f5f9;display:flex;align-items:center;justify-content:center;font-size:14px;">
+            <i class="bi ${item.icon || 'bi-circle-fill'}"></i>
+          </div>`;
+      }
+
+      html += `
+        <a href="${item.url}" class="spotlight-item dashboard-spotlight-item ${isFirst ? 'active' : ''}" data-index="${idx}" data-url="${item.url}" style="padding:6px 10px; margin-bottom:2px; border-radius:8px; text-decoration:none; display:flex; align-items:center; justify-content:space-between; color:#1e293b;">
+          <div class="d-flex align-items-center gap-2 overflow-hidden me-2">
+            ${visualEl}
+            <div class="text-truncate">
+              <div class="fw-bold text-dark text-truncate" style="font-size: 13px;">${escapeHtml(item.title)}</div>
+              <div class="small text-muted text-truncate" style="font-size: 11.5px;">${escapeHtml(item.subtitle)}</div>
+              ${item.meta ? `<div class="text-secondary opacity-75 text-truncate" style="font-size: 10.5px;">${escapeHtml(item.meta)}</div>` : ''}
+            </div>
+          </div>
+          <div class="d-flex align-items-center gap-1 flex-shrink-0">
+            ${item.badge ? `<span class="badge ${item.badge_class || 'bg-light text-secondary border'}" style="font-size: 10px;">${escapeHtml(item.badge)}</span>` : ''}
+            <i class="bi bi-chevron-right text-muted" style="font-size:11px;"></i>
+          </div>
+        </a>`;
+      idx++;
+    });
+
+    html += `</div>`;
+  });
+
+  dropdown.innerHTML = html;
+  if (idx > 0) dashboardSelectedIndex = 0;
+}
+
+function handleDashboardSpotlightKey(e) {
+  const dropdown = document.getElementById('dashboardSpotlightDropdown');
+  if (!dropdown || dropdown.classList.contains('d-none')) return;
+
+  const items = dropdown.querySelectorAll('.dashboard-spotlight-item');
+  if (!items || items.length === 0) return;
+
+  if (e.key === 'ArrowDown') {
+    e.preventDefault();
+    dashboardSelectedIndex = (dashboardSelectedIndex + 1) % items.length;
+    updateActiveDashboardItem(items);
+  } else if (e.key === 'ArrowUp') {
+    e.preventDefault();
+    dashboardSelectedIndex = (dashboardSelectedIndex - 1 + items.length) % items.length;
+    updateActiveDashboardItem(items);
+  } else if (e.key === 'Enter') {
+    e.preventDefault();
+    if (dashboardSelectedIndex >= 0 && items[dashboardSelectedIndex]) {
+      const targetUrl = items[dashboardSelectedIndex].dataset.url;
+      if (targetUrl) window.location.href = targetUrl;
+    }
+  } else if (e.key === 'Escape') {
+    dropdown.classList.add('d-none');
+  }
+}
+
+function updateActiveDashboardItem(items) {
+  items.forEach((item, idx) => {
+    if (idx === dashboardSelectedIndex) {
+      item.classList.add('active');
+      item.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+    } else {
+      item.classList.remove('active');
+    }
+  });
+}
+
+function clearDashboardSpotlight() {
+  const input = document.getElementById('dashboardSpotlightInput');
+  const dropdown = document.getElementById('dashboardSpotlightDropdown');
+  const clearBtn = document.getElementById('dashboardSpotlightClearBtn');
+  if (input) {
+    input.value = '';
+    input.focus();
+  }
+  if (clearBtn) clearBtn.classList.add('d-none');
+  if (dropdown) {
+    dropdown.classList.add('d-none');
+    dropdown.innerHTML = '';
+  }
+}
+
+// Click outside to hide dashboard dropdown
+document.addEventListener('click', (e) => {
+  const wrap = document.querySelector('.spotlight-dashboard-search-wrap');
+  const dropdown = document.getElementById('dashboardSpotlightDropdown');
+  if (dropdown && wrap && !wrap.contains(e.target)) {
+    dropdown.classList.add('d-none');
+  }
+});
+
 // Keyboard navigation and Global Shortcuts
 document.addEventListener('DOMContentLoaded', () => {
   const input = document.getElementById('spotlightSearchInput');
@@ -410,7 +585,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     input.addEventListener('keydown', (e) => {
-      const items = document.querySelectorAll('.spotlight-item');
+      const items = document.querySelectorAll('.spotlight-item:not(.dashboard-spotlight-item)');
       if (!items || items.length === 0) return;
 
       if (e.key === 'ArrowDown') {

@@ -39,19 +39,28 @@
       </div>
     </div>
     <div class="col-lg-7 col-md-6">
-      <div class="input-group shadow-sm rounded-pill overflow-hidden border">
-        <span class="input-group-text bg-white border-0 ps-3 text-primary"><i class="bi bi-search"></i></span>
-        <input type="text"
-               class="form-control border-0 bg-white"
-               placeholder="Search child name, ID (CH-XXXX), mobile, branch, mandal... (Press ⌘K)"
-               onclick="openSpotlightModal()"
-               onfocus="openSpotlightModal()"
-               readonly
-               style="cursor: pointer; font-size: 13.5px;">
-        <button class="btn btn-primary px-3 fw-bold d-flex align-items-center gap-1" type="button" onclick="openSpotlightModal()">
-          <span>Search</span>
-          <kbd class="bg-white text-primary border-0 px-1 rounded ms-1 d-none d-sm-inline" style="font-size:10px;">⌘K</kbd>
-        </button>
+      <div class="spotlight-dashboard-search-wrap position-relative">
+        <div class="input-group shadow-sm rounded-pill overflow-hidden border bg-white">
+          <span class="input-group-text bg-white border-0 ps-3 text-primary"><i class="bi bi-search"></i></span>
+          <input type="text"
+                 id="dashboardSpotlightInput"
+                 class="form-control border-0 bg-white shadow-none ps-2"
+                 placeholder="Search child name, ID (CH-XXXX), mobile, branch, mandal..."
+                 autocomplete="off"
+                 spellcheck="false"
+                 oninput="handleDashboardSpotlightInput(this.value)"
+                 onkeydown="handleDashboardSpotlightKey(event)"
+                 style="font-size: 13.5px;">
+          <button type="button" id="dashboardSpotlightClearBtn" class="btn btn-link text-muted p-1 pe-2 border-0 d-none text-decoration-none" onclick="clearDashboardSpotlight()">
+            <i class="bi bi-x-circle-fill"></i>
+          </button>
+          <button class="btn btn-primary px-3 fw-bold d-flex align-items-center gap-1" type="button" onclick="openSpotlightModal(document.getElementById('dashboardSpotlightInput').value)">
+            <span>Search</span>
+            <kbd class="bg-white text-primary border-0 px-1 rounded ms-1 d-none d-sm-inline" style="font-size:10px;">⌘K</kbd>
+          </button>
+        </div>
+        <!-- Live Floating Results Dropdown -->
+        <div id="dashboardSpotlightDropdown" class="position-absolute w-100 bg-white border rounded-4 shadow-lg p-2 mt-2 d-none overflow-auto" style="z-index: 1050; max-height: 400px; top: 100%; left: 0;"></div>
       </div>
     </div>
   </div>
