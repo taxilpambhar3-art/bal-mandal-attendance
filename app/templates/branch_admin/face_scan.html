@@ -121,6 +121,27 @@
           </div>
           <small class="text-white-50 mt-1" style="font-size:11px;">Preparing camera for the next child...</small>
         </div>
+
+        <!-- In-Camera Mismatch / Fail Overlay -->
+        <div id="kioskFailOverlay" class="position-absolute" style="inset:0; background:rgba(15,23,42,0.92); backdrop-filter:blur(8px); display:none; flex-direction:column; justify-content:center; align-items:center; z-index:20; padding:20px; text-align:center;">
+          <div class="rounded-circle d-flex align-items-center justify-content-center bg-danger text-white mb-2 shadow" style="width:52px;height:52px;">
+            <i class="bi bi-x-lg fs-2"></i>
+          </div>
+          <h5 class="fw-bold text-danger mb-1">Attendance Failed (Face Mismatch)</h5>
+          <p class="text-white-50 small mb-2" id="kioskFailMsg">Face does not match</p>
+          <span class="badge bg-danger mb-3 px-3 py-1" id="kioskFailScore">35% Mismatch</span>
+          
+          <div class="w-100 mt-1 mb-2" style="max-width:280px;">
+            <div class="d-flex justify-content-between align-items-center text-white-50 mb-1" style="font-size:12px;">
+              <span>Automatic retry:</span>
+              <b class="text-warning fs-6" id="failCountdownSec">3s</b>
+            </div>
+          </div>
+
+          <button type="button" class="btn btn-warning btn-sm fw-bold px-4 shadow" onclick="dismissKioskFailNow()">
+            <i class="bi bi-arrow-repeat me-1"></i>Try Again
+          </button>
+        </div>
       </div>
 
       <!-- Kiosk Actions Bar -->
@@ -218,13 +239,26 @@
   </div>
 </div>
 
+<!-- Hidden Enrolled Children Reference for Neural FaceMatcher -->
+<select id="branchChildMatcherSelect" style="display:none;">
+  {% for c in children %}
+  {% if c.face_photo %}
+  <option value="{{ c.id }}" data-photo="{{ c.face_photo }}" data-name="{{ c.name }}" data-code="{{ c.child_code }}" data-mandal="{{ c.bal_mandal_id }}">{{ c.name }}</option>
+  {% endif %}
+  {% endfor %}
+</select>
+
+<!-- Local Face-API.js for neural embeddings and FaceMatcher -->
+<script src="/static/js/face-api.min.js"></script>
+
 <script>
 let videoStream = null;
 let isProcessing = false;
-let autoScanTimer = null;
+let isAiModelLoaded = false;
+let branchFaceMatcher = null;
 let motionInterval = null;
-let consecutivePresenceTicks = 0;
-const REQUIRED_HOLD_TICKS = 1;
+let faceHoldTicks = 0;
+let REQUIRED_HOLD_TICKS = 2; // Default 2s hold gap
 
 const video = document.getElementById('video');
 const canvas = document.getElementById('canvas');
@@ -246,9 +280,16 @@ const kioskSuccessScore = document.getElementById('kioskSuccessScore');
 const kioskLivePhoto = document.getElementById('kioskLivePhoto');
 const kioskEnrolledPhoto = document.getElementById('kioskEnrolledPhoto');
 const kioskCountdownBar = document.getElementById('kioskCountdownBar');
+const kioskFailOverlay = document.getElementById('kioskFailOverlay');
 const scannedChildrenList = document.getElementById('scannedChildrenList');
 const todayCountBadge = document.getElementById('todayCountBadge');
 const noScansMsg = document.getElementById('noScansMsg');
+
+if (kioskDelaySelect) {
+  kioskDelaySelect.addEventListener('change', () => {
+    REQUIRED_HOLD_TICKS = kioskDelaySelect.value === '0' ? 1 : 2;
+  });
+}
 
 const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 function playChime(success = true) {
@@ -287,6 +328,7 @@ async function startCamera() {
     video.onloadedmetadata = () => {
       motionCanvas.width = 160;
       motionCanvas.height = 120;
+      loadFaceModels();
       startFacePresenceMonitor();
     };
   } catch (err) {
@@ -296,26 +338,106 @@ async function startCamera() {
   }
 }
 
+async function loadFaceModels() {
+  try {
+    if (typeof faceapi !== 'undefined') {
+      const MODEL_URL = '/static/models';
+      await Promise.all([
+        faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL),
+        faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL),
+        faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL)
+      ]);
+      isAiModelLoaded = true;
+      await buildBranchFaceMatcher();
+    }
+  } catch (err) {
+    console.warn('Face API load error in branch admin:', err);
+  }
+}
+
+async function buildBranchFaceMatcher() {
+  if (!isAiModelLoaded) return;
+  try {
+    const matcherSelect = document.getElementById('branchChildMatcherSelect');
+    const selectedMandalId = document.getElementById('mandalSelector')?.value || '';
+    const options = Array.from(matcherSelect.querySelectorAll('option[data-photo]'));
+    const filtered = selectedMandalId 
+      ? options.filter(opt => opt.getAttribute('data-mandal') === selectedMandalId)
+      : options;
+
+    const uniqueMap = new Map();
+    filtered.forEach(opt => uniqueMap.set(opt.value, opt));
+
+    const labeledList = [];
+    for (const [cid, opt] of uniqueMap.entries()) {
+      const photoName = opt.getAttribute('data-photo');
+      try {
+        const img = new Image();
+        img.crossOrigin = 'anonymous';
+        img.src = '/static/uploads/' + photoName;
+        await img.decode();
+        const det = await faceapi.detectSingleFace(img, new faceapi.TinyFaceDetectorOptions({ inputSize: 320, scoreThreshold: 0.25 }))
+          .withFaceLandmarks()
+          .withFaceDescriptor();
+        if (det) {
+          labeledList.push(new faceapi.LabeledFaceDescriptors(cid, [det.descriptor]));
+        }
+      } catch (e) {
+        console.warn('Branch face descriptor error:', cid, e);
+      }
+    }
+    if (labeledList.length > 0) {
+      branchFaceMatcher = new faceapi.FaceMatcher(labeledList, 0.40);
+      console.log(`Branch FaceMatcher loaded with ${labeledList.length} enrolled child descriptors.`);
+    }
+  } catch (e) {
+    console.warn('Error building branch face matcher:', e);
+  }
+}
+
 function startFacePresenceMonitor() {
   if (motionInterval) clearInterval(motionInterval);
-  motionInterval = setInterval(() => {
+  motionInterval = setInterval(async () => {
     if (isProcessing || !autoScanToggle.checked || !video.videoWidth) return;
-    motionCtx.drawImage(video, 0, 0, 160, 120);
-    const frame = motionCtx.getImageData(40, 20, 80, 80);
-    const data = frame.data;
-    let totalLuma = 0;
-    for (let i = 0; i < data.length; i += 16) {
-      totalLuma += 0.299 * data[i] + 0.587 * data[i+1] + 0.114 * data[i+2];
+
+    let facePresent = false;
+    if (isAiModelLoaded) {
+      try {
+        const det = await faceapi.detectSingleFace(video, new faceapi.TinyFaceDetectorOptions({ inputSize: 224, scoreThreshold: 0.35 }));
+        if (det) facePresent = true;
+      } catch (e) {}
+    } else {
+      motionCtx.drawImage(video, 0, 0, 160, 120);
+      const frame = motionCtx.getImageData(40, 20, 80, 80);
+      const data = frame.data;
+      let totalLuma = 0;
+      for (let i = 0; i < data.length; i += 16) {
+        totalLuma += 0.299 * data[i] + 0.587 * data[i+1] + 0.114 * data[i+2];
+      }
+      const avgLuma = totalLuma / (data.length / 16);
+      if (avgLuma > 30 && avgLuma < 235) facePresent = true;
     }
-    const avgLuma = totalLuma / (data.length / 16);
-    if (avgLuma > 20 && avgLuma < 240) {
-      consecutivePresenceTicks++;
-      if (consecutivePresenceTicks >= REQUIRED_HOLD_TICKS) {
-        consecutivePresenceTicks = 0;
-        captureAndVerify();
+
+    if (facePresent) {
+      faceHoldTicks++;
+      faceRing.classList.add('scanning');
+      autoScanProgress.style.display = 'block';
+      const remainingSec = Math.max(0, Math.ceil((REQUIRED_HOLD_TICKS - faceHoldTicks) * 0.3));
+      document.getElementById('countdownSec').innerText = remainingSec > 0 ? remainingSec + 's' : 'Scanning...';
+      camOverlayLabel.innerHTML = '<span class="text-success fw-bold"><i class="bi bi-check-circle-fill me-1"></i>Face detected! Hold steady...</span>';
+
+      if (faceHoldTicks >= REQUIRED_HOLD_TICKS) {
+        faceHoldTicks = 0;
+        await captureAndVerify();
       }
     } else {
-      consecutivePresenceTicks = 0;
+      if (faceHoldTicks > 0) {
+        faceHoldTicks--;
+      } else {
+        faceRing.classList.remove('scanning');
+        autoScanProgress.style.display = 'none';
+        camOverlayLabel.innerHTML = '<i class="bi bi-person-bounding-box me-1"></i>Look at the camera to mark attendance automatically';
+      }
     }
   }, 280);
 }
@@ -334,59 +456,114 @@ async function captureAndVerify() {
   canvas.height = video.videoHeight || 480;
   const ctx = canvas.getContext('2d');
   ctx.drawImage(video, 0, 0);
-  const photoData = canvas.toDataURL('image/jpeg', 0.9);
+  const photoData = canvas.toDataURL('image/jpeg', 0.88);
 
-  const selectedMandalId = document.getElementById('mandalSelector').value;
-  const formData = new FormData();
-  formData.append('photo_data', photoData);
-  formData.append('child_id', 'auto');
-  if (selectedMandalId) formData.append('mandal_id', selectedMandalId);
+  if (isAiModelLoaded && video.videoWidth) {
+    try {
+      const liveDetection = await faceapi.detectSingleFace(video, new faceapi.TinyFaceDetectorOptions({ inputSize: 224, scoreThreshold: 0.35 }))
+        .withFaceLandmarks()
+        .withFaceDescriptor();
 
-  try {
-    const res = await fetch('/branch-admin/face-scan?ajax=1', {
-      method: 'POST',
-      body: formData,
-      headers: { 'X-Requested-With': 'XMLHttpRequest' }
-    });
-    const data = await res.json();
-
-    if (data.success && data.is_match) {
-      playChime(true);
-      faceRing.style.borderColor = '#10b981';
-      faceRing.classList.remove('scanning');
-
-      const selectedDelay = parseInt(kioskDelaySelect.value || '2', 10);
-      if (selectedDelay === 0) {
-        showInstantToast(data);
-        addScannedChildRow(data);
-        setTimeout(() => {
-          isProcessing = false;
-          faceRing.style.borderColor = '#10b981';
-          camOverlayLabel.innerHTML = '<i class="bi bi-person-bounding-box me-1"></i>Look at the camera to scan automatically';
-        }, 300);
-      } else {
-        showKioskSuccessOverlay(data, selectedDelay);
-        addScannedChildRow(data);
+      if (!liveDetection) {
+        showKioskFail({ message: "No clear face detected in camera! Please face the lens directly.", confidence: 0 });
+        return;
       }
-    } else {
-      playChime(false);
-      faceRing.style.borderColor = '#ef4444';
-      faceRing.classList.remove('scanning');
-      camOverlayLabel.innerHTML = '<i class="bi bi-x-circle me-1 text-danger"></i>Face not recognized! Please try again.';
-      setTimeout(() => {
-        isProcessing = false;
+
+      if (!branchFaceMatcher || !branchFaceMatcher.labeledDescriptors || branchFaceMatcher.labeledDescriptors.length === 0) {
+        showKioskFail({ message: "No enrolled face photos found for this Bal Mandal!", confidence: 0 });
+        return;
+      }
+
+      const bestMatch = branchFaceMatcher.findBestMatch(liveDetection.descriptor);
+      if (!bestMatch || bestMatch.label === 'unknown' || bestMatch.distance >= 0.40) {
+        const diffScore = Math.max(5, Math.min(45, Math.round((1.0 - (bestMatch ? bestMatch.distance / 0.65 : 1.0)) * 100)));
+        showKioskFail({
+          message: "Face does not match any registered child (Unrecognized Child Face)!",
+          confidence: diffScore
+        });
+        return;
+      }
+
+      // Positive match verified
+      const matchedChildId = bestMatch.label;
+      const score = Math.max(75, Math.min(99, Math.round((1.0 - (bestMatch.distance / 0.50)) * 100)));
+
+      const selectedMandalId = document.getElementById('mandalSelector')?.value;
+      const formData = new FormData();
+      formData.append('photo_data', photoData);
+      formData.append('child_id', matchedChildId);
+      formData.append('client_verified', 'true');
+      formData.append('client_score', score);
+      if (selectedMandalId) formData.append('mandal_id', selectedMandalId);
+
+      const res = await fetch('/branch-admin/face-scan?ajax=1', {
+        method: 'POST',
+        body: formData,
+        headers: { 'X-Requested-With': 'XMLHttpRequest' }
+      });
+      const data = await res.json();
+
+      if (data.success && data.is_match) {
+        playChime(true);
         faceRing.style.borderColor = '#10b981';
-        camOverlayLabel.innerHTML = '<i class="bi bi-person-bounding-box me-1"></i>Look at the camera to scan automatically';
-      }, 1000);
+        faceRing.classList.remove('scanning');
+
+        const selectedDelay = parseInt(kioskDelaySelect.value || '2', 10);
+        if (selectedDelay === 0) {
+          showInstantToast(data);
+          addScannedChildRow(data);
+          setTimeout(() => {
+            isProcessing = false;
+            faceRing.style.borderColor = '#10b981';
+            camOverlayLabel.innerHTML = '<i class="bi bi-person-bounding-box me-1"></i>Look at the camera to scan automatically';
+          }, 300);
+        } else {
+          showKioskSuccessOverlay(data, selectedDelay);
+          addScannedChildRow(data);
+        }
+      } else {
+        showKioskFail(data);
+      }
+    } catch (err) {
+      console.error('Scan error:', err);
+      showKioskFail({ message: "Network error during scan. Please try again.", confidence: 0 });
     }
-  } catch (err) {
-    console.error('Scan error:', err);
-    isProcessing = false;
-    faceRing.style.borderColor = '#10b981';
-    faceRing.classList.remove('scanning');
-    camOverlayLabel.innerHTML = '<i class="bi bi-exclamation-triangle me-1"></i>Network error. Please try again.';
+  } else {
+    showKioskFail({ message: "AI Models are initializing. Please wait...", confidence: 0 });
   }
 }
+
+let failTimer = null;
+function showKioskFail(data) {
+  playChime(false);
+  faceRing.style.borderColor = '#ef4444';
+  faceRing.classList.remove('scanning');
+  document.getElementById('kioskFailMsg').innerText = data.message || 'Face not recognized';
+  document.getElementById('kioskFailScore').innerText = (data.confidence || 0) + '% Match (Mismatch)';
+  kioskFailOverlay.style.display = 'flex';
+
+  let failRemaining = 3;
+  const failSecEl = document.getElementById('failCountdownSec');
+  if (failTimer) clearInterval(failTimer);
+  failTimer = setInterval(() => {
+    failRemaining--;
+    if (failSecEl) failSecEl.innerText = failRemaining + 's';
+    if (failRemaining <= 0) {
+      clearInterval(failTimer);
+      dismissKioskFailNow();
+    }
+  }, 1000);
+}
+
+window.dismissKioskFailNow = function() {
+  if (failTimer) clearInterval(failTimer);
+  kioskFailOverlay.style.display = 'none';
+  isProcessing = false;
+  faceHoldTicks = 0;
+  faceRing.style.borderColor = '#10b981';
+  faceRing.classList.remove('scanning');
+  camOverlayLabel.innerHTML = '<i class="bi bi-person-bounding-box me-1"></i>Look at the camera to scan automatically';
+};
 
 let toastHideTimeout = null;
 function showInstantToast(data) {

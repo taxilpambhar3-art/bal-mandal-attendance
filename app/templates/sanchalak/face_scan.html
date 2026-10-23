@@ -378,16 +378,19 @@
           img.crossOrigin = 'anonymous';
           img.src = '/static/uploads/' + photoName;
           await img.decode();
-          const det = await faceapi.detectSingleFace(img, new faceapi.TinyFaceDetectorOptions({ inputSize: 224, scoreThreshold: 0.40 }))
+          const det = await faceapi.detectSingleFace(img, new faceapi.TinyFaceDetectorOptions({ inputSize: 320, scoreThreshold: 0.25 }))
             .withFaceLandmarks()
             .withFaceDescriptor();
           if (det) {
             labeledList.push(new faceapi.LabeledFaceDescriptors(cid, [det.descriptor]));
           }
-        } catch (e) {}
+        } catch (e) {
+          console.warn('Error computing descriptor for child', cid, e);
+        }
       }
       if (labeledList.length > 0) {
-        mandalFaceMatcher = new faceapi.FaceMatcher(labeledList, 0.46);
+        mandalFaceMatcher = new faceapi.FaceMatcher(labeledList, 0.40);
+        console.log(`FaceMatcher ready with ${labeledList.length} enrolled child descriptors.`);
       }
     } catch (e) {
       console.warn('Error building mandal face matcher:', e);
@@ -454,7 +457,7 @@
           img.crossOrigin = 'anonymous';
           img.src = '/static/uploads/' + photoName;
           await img.decode();
-          const detection = await faceapi.detectSingleFace(img, new faceapi.TinyFaceDetectorOptions())
+          const detection = await faceapi.detectSingleFace(img, new faceapi.TinyFaceDetectorOptions({ inputSize: 320, scoreThreshold: 0.25 }))
             .withFaceLandmarks()
             .withFaceDescriptor();
           if (detection) {
@@ -592,30 +595,61 @@
     // Strict Face-API verification
     if (isAiModelLoaded && video.videoWidth) {
       try {
-        const liveDetection = await faceapi.detectSingleFace(video, new faceapi.TinyFaceDetectorOptions({ inputSize: 224, scoreThreshold: 0.40 }))
+        const liveDetection = await faceapi.detectSingleFace(video, new faceapi.TinyFaceDetectorOptions({ inputSize: 224, scoreThreshold: 0.35 }))
           .withFaceLandmarks()
           .withFaceDescriptor();
 
-        if (liveDetection) {
-          if (enrolledDescriptor) {
-            const dist = faceapi.euclideanDistance(enrolledDescriptor, liveDetection.descriptor);
-            const isMatch = dist < 0.46;
-            const score = Math.max(10, Math.min(99, Math.round((1.0 - (dist / 0.65)) * 100)));
-            clientVerifiedInput.value = isMatch ? 'true' : 'false';
-            clientScoreInput.value = score;
-          } else if (mandalFaceMatcher && childSelect.value === 'auto') {
-            const bestMatch = mandalFaceMatcher.findBestMatch(liveDetection.descriptor);
-            if (bestMatch && bestMatch.label !== 'unknown' && bestMatch.distance < 0.46) {
-              childSelect.value = bestMatch.label;
-              const score = Math.max(10, Math.min(99, Math.round((1.0 - (bestMatch.distance / 0.65)) * 100)));
-              clientVerifiedInput.value = 'true';
-              clientScoreInput.value = score;
-            }
+        if (!liveDetection) {
+          showKioskFail({ message: "No clear face detected in camera! Please look directly at the lens.", confidence: 0 });
+          return;
+        }
+
+        if (childSelect.value === 'auto') {
+          if (!mandalFaceMatcher || !mandalFaceMatcher.labeledDescriptors || mandalFaceMatcher.labeledDescriptors.length === 0) {
+            showKioskFail({ message: "No registered face photos found in this Bal Mandal!", confidence: 0 });
+            return;
           }
+          const bestMatch = mandalFaceMatcher.findBestMatch(liveDetection.descriptor);
+          if (!bestMatch || bestMatch.label === 'unknown' || bestMatch.distance >= 0.40) {
+            const diffScore = Math.max(5, Math.min(45, Math.round((1.0 - (bestMatch ? bestMatch.distance / 0.65 : 1.0)) * 100)));
+            showKioskFail({
+              message: "Face does not match any registered child in this Bal Mandal (Unrecognized Child Face)!",
+              confidence: diffScore
+            });
+            return;
+          }
+          // Positive neural match
+          childSelect.value = bestMatch.label;
+          const score = Math.max(75, Math.min(99, Math.round((1.0 - (bestMatch.distance / 0.50)) * 100)));
+          clientVerifiedInput.value = 'true';
+          clientScoreInput.value = score;
+        } else {
+          // Specific child selected
+          if (!enrolledDescriptor) {
+            showKioskFail({ message: "Selected child does not have an enrolled face photo!", confidence: 0 });
+            return;
+          }
+          const dist = faceapi.euclideanDistance(enrolledDescriptor, liveDetection.descriptor);
+          if (dist >= 0.40) {
+            const diffScore = Math.max(5, Math.min(45, Math.round((1.0 - (dist / 0.65)) * 100)));
+            showKioskFail({
+              message: "Face does not match the selected child (Face Mismatch)!",
+              confidence: diffScore
+            });
+            return;
+          }
+          const score = Math.max(75, Math.min(99, Math.round((1.0 - (dist / 0.50)) * 100)));
+          clientVerifiedInput.value = 'true';
+          clientScoreInput.value = score;
         }
       } catch (err) {
-        console.warn('Client match eval fallback:', err);
+        console.warn('Client match eval error:', err);
+        showKioskFail({ message: "Face verification error. Please try again.", confidence: 0 });
+        return;
       }
+    } else if (!isAiModelLoaded) {
+      showKioskFail({ message: "Face AI models are loading. Please wait 2 seconds...", confidence: 0 });
+      return;
     }
 
     // Submit seamlessly via AJAX

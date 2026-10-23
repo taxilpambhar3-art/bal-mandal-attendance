@@ -250,7 +250,7 @@ def face_scan_submit(
             res = compare_face_photos(
                 live_img_path=live_path,
                 enrolled_img_path=enrolled_p,
-                threshold=75.0,
+                threshold=85.0,
             )
             sc = res["confidence"]
             if sc > best_score:
@@ -261,13 +261,13 @@ def face_scan_submit(
             elif sc > second_score:
                 second_score = sc
 
-        # Ensure distinct identification: best_score must be >= 75.0 and clearly separated
-        is_distinct = (second_score < 40.0) or ((best_score - second_score) >= 8.0)
-        if best_match and best_match["is_match"] and best_score >= 75.0 and is_distinct:
+        # Strict identification: best_score must be >= 85.0 and distinctly separated
+        is_distinct = (best_score >= 85.0) and ((second_score < 40.0) or ((best_score - second_score) >= 20.0))
+        if best_match and best_match["is_match"] and is_distinct:
             child = best_child
             match_result = best_match
         else:
-            msg = "Face does not match any registered child (Unrecognized Child Face)!"
+            msg = "Face does not match any registered child in this Bal Mandal (Unrecognized Child Face)!"
             if is_ajax:
                 return JSONResponse({
                     "success": False,
@@ -338,7 +338,7 @@ def face_scan_submit(
         match_result = compare_face_photos(
             live_img_path=live_path,
             enrolled_img_path=enrolled_path,
-            threshold=75.0,
+            threshold=85.0,
             client_verified=c_ver,
             client_score=parsed_client_score,
         )

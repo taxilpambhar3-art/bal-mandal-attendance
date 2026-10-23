@@ -29,16 +29,16 @@ def _load_image(img_input: str | Path | Image.Image) -> Optional[Image.Image]:
 
 
 def _get_face_crop(img: Image.Image) -> Image.Image:
-    """Center crop 65% of the frame where child's face is positioned in circular ring."""
+    """Center crop 50% of the frame focusing directly on the face (eyes, nose, mouth) rather than background."""
     w, h = img.size
-    cw, ch = int(w * 0.65), int(h * 0.65)
+    cw, ch = int(w * 0.50), int(h * 0.50)
     cx = w // 2
-    cy = int(h * 0.45)  # Slightly above middle
+    cy = int(h * 0.44)  # Eye / nose level
     left = max(0, cx - cw // 2)
     top = max(0, cy - ch // 2)
     right = min(w, left + cw)
     bottom = min(h, top + ch)
-    return img.crop((left, top, right, bottom)).resize((128, 128), Image.Resampling.LANCZOS)
+    return img.crop((left, top, right, bottom)).resize((96, 96), Image.Resampling.LANCZOS)
 
 
 def _compute_dhash(crop: Image.Image) -> np.ndarray:
@@ -86,7 +86,7 @@ def _has_valid_face_content(img: Image.Image) -> bool:
 def compare_face_photos(
     live_img_path: str | Path,
     enrolled_img_path: Optional[str | Path],
-    threshold: float = 75.0,
+    threshold: float = 85.0,
     client_verified: Optional[bool] = None,
     client_score: Optional[float] = None,
 ) -> Dict[str, Any]:
@@ -132,7 +132,7 @@ def compare_face_photos(
 
     # If client-side deep neural face-api already evaluated the descriptor:
     if client_verified is not None and client_score is not None:
-        is_match = bool(client_verified)
+        is_match = bool(client_verified) and float(client_score) >= 70.0
         return {
             "is_match": is_match,
             "confidence": round(float(client_score), 1),
@@ -145,35 +145,29 @@ def compare_face_photos(
     crop_live = _get_face_crop(im_live)
     crop_enrolled = _get_face_crop(im_enrolled)
 
-    # 1. Luminance Cosine (calibrated: uncorrelated luminance < 0.20 maps to 0)
+    # 1. Luminance Cosine on facial core (different faces in same room correlate ~0.90; same face > 0.96)
     v1 = _compute_normalized_vector(crop_live)
     v2 = _compute_normalized_vector(crop_enrolled)
     cos_lum = float(np.dot(v1, v2) / (np.linalg.norm(v1) * np.linalg.norm(v2) + 1e-6))
-    s_lum = max(0.0, min(1.0, (cos_lum - 0.20) / 0.80))
+    s_lum = max(0.0, min(1.0, (cos_lum - 0.93) / 0.07))
 
     # 2. Horizontal & Vertical Spatial Edge Gradients
     gx1, gy1 = _compute_spatial_gradients(crop_live)
     gx2, gy2 = _compute_spatial_gradients(crop_enrolled)
     cos_gx = float(np.dot(gx1, gx2) / (np.linalg.norm(gx1) * np.linalg.norm(gx2) + 1e-6))
     cos_gy = float(np.dot(gy1, gy2) / (np.linalg.norm(gy1) * np.linalg.norm(gy2) + 1e-6))
-    s_gx = max(0.0, min(1.0, (cos_gx - 0.10) / 0.90))
-    s_gy = max(0.0, min(1.0, (cos_gy - 0.10) / 0.90))
+    s_gx = max(0.0, min(1.0, (cos_gx - 0.85) / 0.15))
+    s_gy = max(0.0, min(1.0, (cos_gy - 0.85) / 0.15))
 
     # 3. Difference Hash (dHash)
     dh1 = _compute_dhash(crop_live)
     dh2 = _compute_dhash(crop_enrolled)
     dh_raw = 1.0 - (np.count_nonzero(dh1 != dh2) / 64.0)
-    s_dh = max(0.0, min(1.0, (dh_raw - 0.50) / 0.50))
-
-    # 4. HSV Color & Skin Distribution (reduced to 5% weight to avoid false positive skin tone matches)
-    col1 = _compute_hsv_hist(crop_live)
-    col2 = _compute_hsv_hist(crop_enrolled)
-    col_raw = float(np.sum(np.minimum(col1, col2)))
-    s_col = max(0.0, min(1.0, (col_raw - 0.60) / 0.40))
+    s_dh = max(0.0, min(1.0, (dh_raw - 0.90) / 0.10))
 
     # Composite backend confidence
     confidence = round(
-        (0.35 * s_lum + 0.25 * s_gx + 0.25 * s_gy + 0.10 * s_dh + 0.05 * s_col) * 100,
+        (0.40 * s_lum + 0.30 * s_gx + 0.20 * s_gy + 0.10 * s_dh) * 100,
         1,
     )
 

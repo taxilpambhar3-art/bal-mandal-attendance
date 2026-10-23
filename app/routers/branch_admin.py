@@ -779,6 +779,17 @@ def face_scan_submit(
     live_photo_name = _save_data_url(photo_data, prefix="scan_live")
     live_path = UPLOAD_DIR / (live_photo_name or "")
 
+    c_ver: bool | None = None
+    if client_verified and client_verified.strip():
+        c_ver = client_verified.strip().lower() in ("true", "1", "yes")
+
+    parsed_client_score: float | None = None
+    if client_score and client_score.strip():
+        try:
+            parsed_client_score = float(client_score.strip())
+        except ValueError:
+            parsed_client_score = None
+
     if not live_photo_name:
         msg = "Photo could not be captured. Please face the camera and try again."
         return JSONResponse({"success": False, "is_match": False, "confidence": 0.0, "message": msg})
@@ -808,7 +819,7 @@ def face_scan_submit(
             res = compare_face_photos(
                 live_img_path=live_path,
                 enrolled_img_path=enrolled_p,
-                threshold=75.0,
+                threshold=85.0,
             )
             sc = res["confidence"]
             if sc > best_score:
@@ -819,9 +830,9 @@ def face_scan_submit(
             elif sc > second_score:
                 second_score = sc
 
-        # Ensure distinct identification: best_score must be >= 75.0 and clearly separated
-        is_distinct = (second_score < 40.0) or ((best_score - second_score) >= 8.0)
-        if best_match and best_match["is_match"] and best_score >= 75.0 and is_distinct:
+        # Strict identification: best_score must be >= 85.0 and distinctly separated
+        is_distinct = (best_score >= 85.0) and ((second_score < 40.0) or ((best_score - second_score) >= 20.0))
+        if best_match and best_match["is_match"] and is_distinct:
             child = best_child
             match_result = best_match
         else:
@@ -853,7 +864,9 @@ def face_scan_submit(
         match_result = compare_face_photos(
             live_img_path=live_path,
             enrolled_img_path=enrolled_p,
-            threshold=75.0,
+            threshold=85.0,
+            client_verified=c_ver,
+            client_score=parsed_client_score,
         )
         if not match_result["is_match"]:
             return JSONResponse({
