@@ -1,144 +1,397 @@
 {% extends "base.html" %}
-{% block title %}Login — Bal Mandal Attendance System{% endblock %}
+{% block title %}Login — Bal Mandal Attendance Portal{% endblock %}
 {% block head %}
 <style>
+  :root {
+    --brand-primary: #2563eb;
+    --brand-dark: #0f172a;
+    --brand-accent: #4f46e5;
+  }
+
+  /* Full viewport immersive background with mesh glow */
   .login-page-wrapper {
     min-height: 100vh;
     min-height: 100dvh;
-    background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: 16px 12px;
+    padding: 24px 16px;
+    position: relative;
+    overflow: hidden;
+    background-color: #0b1329;
+    background-image: 
+      radial-gradient(at 0% 0%, rgba(37, 99, 235, 0.28) 0px, transparent 50%),
+      radial-gradient(at 100% 0%, rgba(79, 70, 229, 0.25) 0px, transparent 50%),
+      radial-gradient(at 50% 100%, rgba(14, 165, 233, 0.2) 0px, transparent 50%),
+      radial-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px);
+    background-size: 100% 100%, 100% 100%, 100% 100%, 28px 28px;
   }
-  @media (min-width: 576px) {
-    .login-page-wrapper {
-      padding: 32px 16px;
-    }
+
+  /* Ambient glowing backdrop spheres */
+  .glow-sphere-1 {
+    position: absolute;
+    top: -120px;
+    left: -100px;
+    width: 380px;
+    height: 380px;
+    background: radial-gradient(circle, rgba(37, 99, 235, 0.35) 0%, rgba(37, 99, 235, 0) 70%);
+    border-radius: 50%;
+    filter: blur(40px);
+    pointer-events: none;
+    animation: floatOrb 10s ease-in-out infinite alternate;
   }
+  .glow-sphere-2 {
+    position: absolute;
+    bottom: -100px;
+    right: -80px;
+    width: 360px;
+    height: 360px;
+    background: radial-gradient(circle, rgba(99, 102, 241, 0.3) 0%, rgba(99, 102, 241, 0) 70%);
+    border-radius: 50%;
+    filter: blur(45px);
+    pointer-events: none;
+    animation: floatOrb 12s ease-in-out infinite alternate-reverse;
+  }
+
+  @keyframes floatOrb {
+    0% { transform: translateY(0) scale(1); }
+    100% { transform: translateY(24px) scale(1.08); }
+  }
+
+  /* Card Container */
   .login-card {
     width: 100%;
     max-width: 440px;
-    border-radius: 20px;
+    border-radius: 24px;
     background: rgba(255, 255, 255, 0.98);
-    backdrop-filter: blur(12px);
-    box-shadow: 0 10px 35px rgba(0, 0, 0, 0.25);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    box-shadow: 
+      0 20px 60px -15px rgba(0, 0, 0, 0.45),
+      0 0 0 1px rgba(255, 255, 255, 0.35) inset,
+      0 1px 3px rgba(0, 0, 0, 0.1);
     border: 0;
     overflow: hidden;
+    position: relative;
+    z-index: 10;
+    transition: transform 0.25s ease, box-shadow 0.25s ease;
   }
+
   .login-card-body {
-    padding: 24px 20px;
+    padding: 30px 24px 28px;
   }
   @media (min-width: 576px) {
     .login-card-body {
-      padding: 36px 32px;
+      padding: 38px 34px 34px;
     }
   }
-  /* Ensure iOS Safari does NOT auto-zoom inputs */
-  .login-input {
-    font-size: 16px !important;
-    height: 48px;
+
+  /* Brand Icon & Status Pill */
+  .brand-icon-wrapper {
+    position: relative;
+    display: inline-block;
+    margin-bottom: 14px;
+  }
+  .brand-icon-box {
+    width: 66px;
+    height: 66px;
+    border-radius: 20px;
+    background: linear-gradient(135deg, #2563eb 0%, #4338ca 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #ffffff;
+    font-size: 32px;
+    box-shadow: 0 10px 25px -5px rgba(37, 99, 235, 0.45);
+    position: relative;
+  }
+  .pulse-indicator {
+    position: absolute;
+    bottom: -2px;
+    right: -2px;
+    width: 16px;
+    height: 16px;
+    background: #10b981;
+    border: 3px solid #ffffff;
+    border-radius: 50%;
+    box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7);
+    animation: livePulse 2s infinite;
+  }
+  @keyframes livePulse {
+    0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
+    70% { box-shadow: 0 0 0 7px rgba(16, 185, 129, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+  }
+
+  .portal-title {
+    font-weight: 800;
+    letter-spacing: -0.5px;
+    color: #0f172a;
+    font-size: clamp(1.3rem, 4.5vw, 1.55rem);
+    margin-bottom: 4px;
+  }
+  .portal-subtitle {
+    color: #64748b;
+    font-size: 13px;
+    font-weight: 500;
+  }
+  .status-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 3px 10px;
+    background: #f0fdf4;
+    border: 1px solid #bbf7d0;
+    border-radius: 999px;
+    color: #15803d;
+    font-size: 11px;
+    font-weight: 600;
+    margin-top: 6px;
+  }
+  .status-dot {
+    width: 6px;
+    height: 6px;
+    background: #16a34a;
+    border-radius: 50%;
+  }
+
+  /* Form Elements */
+  .form-label-custom {
+    font-size: 12.5px;
+    font-weight: 700;
+    color: #334155;
+    margin-bottom: 6px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .login-input-group {
+    border-radius: 14px;
+    overflow: hidden;
+    border: 1px solid #cbd5e1;
+    background: #f8fafc;
+    transition: all 0.2s ease;
+  }
+  .login-input-group:focus-within {
+    border-color: #2563eb;
+    background: #ffffff;
+    box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.12);
   }
   .login-input-group .input-group-text {
-    height: 48px;
-    background: #f8fafc;
-    border-color: #cbd5e1;
+    background: transparent;
+    border: 0;
+    color: #64748b;
+    font-size: 17px;
+    padding-left: 14px;
+    padding-right: 10px;
   }
-  .login-btn {
+  .login-input {
+    font-size: 15px !important;
     height: 48px;
+    border: 0;
+    background: transparent;
+    color: #0f172a;
+    font-weight: 500;
+    padding-right: 14px;
+  }
+  .login-input:focus {
+    background: transparent;
+    box-shadow: none;
+    border: 0;
+  }
+  .login-input::placeholder {
+    color: #94a3b8;
+    font-weight: 400;
+    font-size: 14px;
+  }
+  .pwd-toggle-btn {
+    background: transparent;
+    border: 0;
+    color: #64748b;
+    padding: 0 14px;
+    cursor: pointer;
+    transition: color 0.15s ease;
+    display: flex;
+    align-items: center;
+  }
+  .pwd-toggle-btn:hover {
+    color: #2563eb;
+  }
+
+  /* Submit Button */
+  .login-btn {
+    height: 50px;
     font-size: 15px;
     font-weight: 700;
-    border-radius: 12px;
+    border-radius: 14px;
+    background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+    border: 0;
+    color: #ffffff;
+    box-shadow: 0 8px 20px -3px rgba(37, 99, 235, 0.4);
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    position: relative;
+    overflow: hidden;
   }
-  .demo-role-item {
-    transition: all 0.15s ease-in-out;
+  .login-btn:hover {
+    background: linear-gradient(135deg, #1d4ed8 0%, #1e40af 100%);
+    box-shadow: 0 10px 24px -2px rgba(37, 99, 235, 0.5);
+    transform: translateY(-1px);
+    color: #ffffff;
+  }
+  .login-btn:active {
+    transform: translateY(0);
+    box-shadow: 0 4px 12px -2px rgba(37, 99, 235, 0.4);
+  }
+  .login-btn.btn-pulse-active {
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%) !important;
+    box-shadow: 0 8px 20px -3px rgba(16, 185, 129, 0.4) !important;
+  }
+
+  /* Quick Demo Logins Section */
+  .demo-section-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 10px;
+  }
+  .demo-section-title {
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.3px;
+    text-transform: uppercase;
+    color: #64748b;
+  }
+  .demo-role-card {
+    transition: all 0.2s ease;
     border: 1px solid #e2e8f0;
-    background: #ffffff;
-    border-radius: 12px;
+    background: #f8fafc;
+    border-radius: 14px;
     padding: 10px 12px;
     cursor: pointer;
     text-align: left;
     width: 100%;
+    position: relative;
   }
-  .demo-role-item:hover, .demo-role-item:active {
-    background: #f1f5f9;
+  .demo-role-card:hover {
+    background: #ffffff;
     border-color: #cbd5e1;
-    transform: translateY(-1px);
+    transform: translateY(-1.5px);
+    box-shadow: 0 6px 16px -2px rgba(15, 23, 42, 0.08);
+  }
+  .demo-role-card.active-selected {
+    background: #ffffff;
+    border-color: #2563eb;
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
   }
   .role-icon-box {
     width: 38px;
     height: 38px;
-    border-radius: 10px;
+    border-radius: 11px;
     display: flex;
     align-items: center;
     justify-content: center;
     font-size: 17px;
     flex-shrink: 0;
   }
+
+  /* Feedback Toast */
   .toast-fill {
     position: fixed;
-    bottom: 20px;
+    bottom: 24px;
     left: 50%;
-    transform: translateX(-50%);
+    transform: translateX(-50%) translateY(20px);
     background: #0f172a;
-    color: #fff;
-    padding: 8px 16px;
-    border-radius: 20px;
-    font-size: 13px;
+    color: #ffffff;
+    padding: 10px 20px;
+    border-radius: 999px;
+    font-size: 13.5px;
+    font-weight: 600;
     z-index: 1050;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
     opacity: 0;
     pointer-events: none;
-    transition: opacity 0.25s ease;
+    transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    display: flex;
+    align-items: center;
+    gap: 8px;
   }
   .toast-fill.show {
     opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+
+  .footer-caption {
+    text-align: center;
+    margin-top: 18px;
+    font-size: 11.5px;
+    color: #94a3b8;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
   }
 </style>
 {% endblock %}
 
 {% block body %}
 <div class="login-page-wrapper">
+  <!-- Ambient background glow elements -->
+  <div class="glow-sphere-1"></div>
+  <div class="glow-sphere-2"></div>
+
   <div class="login-card">
     <div class="login-card-body">
       
       <!-- Brand Header -->
       <div class="text-center mb-3 mb-sm-4">
-        <div class="d-inline-flex align-items-center justify-content-center mb-2 shadow-sm"
-             style="width: 60px; height: 60px; border-radius: 16px; background: #eff6ff;">
-          <i class="bi bi-person-bounding-box" style="font-size: 30px; color: #1d4ed8;"></i>
+        <div class="brand-icon-wrapper">
+          <div class="brand-icon-box">
+            <i class="bi bi-person-bounding-box"></i>
+          </div>
+          <span class="pulse-indicator" title="System Live"></span>
         </div>
-        <h4 class="fw-bold mb-1 text-dark" style="letter-spacing: -0.3px; font-size: clamp(1.2rem, 4vw, 1.45rem);">
+        <h4 class="portal-title">
           Bal Mandal Attendance
         </h4>
-        <p class="text-muted mb-0" style="font-size: 12.5px;">
+        <p class="portal-subtitle mb-1">
           Face Scanner Web Attendance Portal
         </p>
+        <div>
+          <span class="status-pill">
+            <span class="status-dot"></span> Face Recognition Model Live
+          </span>
+        </div>
       </div>
 
       {% if error %}
-      <div class="alert alert-danger py-2 px-3 d-flex align-items-center gap-2 mb-3" style="font-size: 13px; border-radius: 10px;">
-        <i class="bi bi-exclamation-triangle-fill flex-shrink-0"></i>
-        <div>{{ error }}</div>
+      <div class="alert alert-danger py-2 px-3 d-flex align-items-center gap-2 mb-3" style="font-size: 13px; border-radius: 12px;">
+        <i class="bi bi-exclamation-triangle-fill flex-shrink-0 text-danger"></i>
+        <div class="fw-medium">{{ error }}</div>
       </div>
       {% endif %}
 
       <!-- Sign In Form -->
-      <form method="post" action="/login" id="loginForm">
+      <form method="post" action="/login" id="loginForm" onsubmit="handleFormSubmit()">
         <div class="mb-3">
-          <label class="form-label small fw-bold text-secondary mb-1">Username</label>
-          <div class="input-group login-input-group">
-            <span class="input-group-text border-end-0 text-secondary"><i class="bi bi-person"></i></span>
-            <input name="username" id="usernameInput" class="form-control login-input border-start-0 ps-1" required placeholder="Enter username" autocomplete="username" inputmode="text" autofocus>
+          <label class="form-label-custom">
+            <span>Username</span>
+            <span class="text-muted fw-normal" style="font-size: 11px;">Required</span>
+          </label>
+          <div class="login-input-group d-flex align-items-center">
+            <span class="input-group-text"><i class="bi bi-person"></i></span>
+            <input name="username" id="usernameInput" class="form-control login-input ps-0" required placeholder="Enter username" autocomplete="username" inputmode="text" autofocus>
           </div>
         </div>
 
         <div class="mb-3">
-          <label class="form-label small fw-bold text-secondary mb-1">Password</label>
-          <div class="input-group login-input-group">
-            <span class="input-group-text border-end-0 text-secondary"><i class="bi bi-lock"></i></span>
-            <input name="password" id="passwordInput" type="password" class="form-control login-input border-start-0 border-end-0 ps-1" required placeholder="••••••••" autocomplete="current-password">
-            <button class="input-group-text border-start-0 text-secondary px-3" type="button" onclick="togglePassword()" aria-label="Toggle password visibility">
+          <label class="form-label-custom">
+            <span>Password</span>
+            <span class="text-muted fw-normal" style="font-size: 11px;">Required</span>
+          </label>
+          <div class="login-input-group d-flex align-items-center">
+            <span class="input-group-text"><i class="bi bi-lock"></i></span>
+            <input name="password" id="passwordInput" type="password" class="form-control login-input ps-0" required placeholder="Enter password" autocomplete="current-password">
+            <button class="pwd-toggle-btn" type="button" onclick="togglePassword()" aria-label="Toggle password visibility">
               <i class="bi bi-eye" id="eyeIcon"></i>
             </button>
           </div>
@@ -146,102 +399,117 @@
 
         <div class="d-flex justify-content-between align-items-center mb-3">
           <div class="form-check mb-0">
-            <input class="form-check-input" type="checkbox" id="rm" checked>
-            <label class="form-check-label small text-muted user-select-none" for="rm">Remember me</label>
+            <input class="form-check-input" type="checkbox" id="rm" checked style="cursor: pointer;">
+            <label class="form-check-label small text-muted user-select-none" for="rm" style="cursor: pointer; font-size: 12.5px;">Keep me signed in</label>
           </div>
-          <span class="small text-muted" style="font-size: 12px;">Auto-Role Redirect</span>
+          <span class="small text-muted" style="font-size: 11.5px; font-weight: 500;">Role Auto-Routing</span>
         </div>
 
-        <button type="submit" id="submitBtn" class="btn btn-primary w-100 login-btn shadow-sm">
-          <i class="bi bi-box-arrow-in-right me-1"></i> Sign In
+        <button type="submit" id="submitBtn" class="btn login-btn w-100">
+          <span id="btnText"><i class="bi bi-box-arrow-in-right me-1"></i> Sign In to Portal</span>
+          <span id="btnSpinner" class="spinner-border spinner-border-sm me-1 d-none" role="status" aria-hidden="true"></span>
         </button>
       </form>
 
       <!-- Quick 1-Tap Demo Logins -->
-      <div class="mt-3 pt-3 border-top">
-        <div class="d-flex align-items-center justify-content-between mb-2">
-          <span class="small fw-bold text-secondary">
-            <i class="bi bi-lightning-charge-fill text-warning me-1"></i>Quick Demo Login:
+      <div class="mt-4 pt-3 border-top">
+        <div class="demo-section-header">
+          <span class="demo-section-title">
+            <i class="bi bi-lightning-charge-fill text-warning me-1"></i>Quick Demo Login
           </span>
-          <span class="badge bg-light text-muted border" style="font-size: 11px;">Tap to fill</span>
+          <span class="badge bg-primary-subtle text-primary border border-primary-subtle" style="font-size: 10.5px; border-radius: 6px;">
+            1-Tap Fill
+          </span>
         </div>
 
         <div class="d-flex flex-column gap-2">
           <!-- Super Admin -->
-          <div class="demo-role-item d-flex align-items-center justify-content-between" onclick="fillLogin('superadmin', 'password', 'Super Admin')">
+          <div class="demo-role-card d-flex align-items-center justify-content-between" id="cardSuperadmin" onclick="fillLogin('superadmin', 'password', 'Super Admin', this)">
             <div class="d-flex align-items-center gap-2 text-truncate">
               <div class="role-icon-box bg-primary-subtle text-primary">
-                <i class="bi bi-shield-shaded"></i>
+                <i class="bi bi-shield-check"></i>
               </div>
               <div class="text-truncate">
                 <div class="fw-bold text-dark lh-1" style="font-size: 13px;">Super Admin</div>
-                <small class="text-muted" style="font-size: 11px;">All Branches & Reports</small>
+                <small class="text-muted" style="font-size: 11px;">All Branches, Analytics & Reports</small>
               </div>
             </div>
-            <span class="badge bg-light text-secondary border font-monospace ms-2" style="font-size: 11px;">superadmin</span>
+            <span class="badge bg-white text-secondary border font-monospace ms-2 shadow-xs" style="font-size: 11px; padding: 5px 8px;">superadmin</span>
           </div>
 
           <!-- Branch Admin -->
-          <div class="demo-role-item d-flex align-items-center justify-content-between" onclick="fillLogin('maninagar_admin', 'password', 'Branch Admin')">
+          <div class="demo-role-card d-flex align-items-center justify-content-between" id="cardBranchadmin" onclick="fillLogin('maninagar_admin', 'password', 'Branch Admin', this)">
             <div class="d-flex align-items-center gap-2 text-truncate">
               <div class="role-icon-box bg-success-subtle text-success">
                 <i class="bi bi-building"></i>
               </div>
               <div class="text-truncate">
                 <div class="fw-bold text-dark lh-1" style="font-size: 13px;">Branch Admin</div>
-                <small class="text-muted" style="font-size: 11px;">Maninagar Branch</small>
+                <small class="text-muted" style="font-size: 11px;">Maninagar Branch Management</small>
               </div>
             </div>
-            <span class="badge bg-light text-secondary border font-monospace ms-2" style="font-size: 11px;">maninagar_admin</span>
+            <span class="badge bg-white text-secondary border font-monospace ms-2 shadow-xs" style="font-size: 11px; padding: 5px 8px;">maninagar_admin</span>
           </div>
 
           <!-- Sanchalak -->
-          <div class="demo-role-item d-flex align-items-center justify-content-between" onclick="fillLogin('hetal_shani', 'password', 'Sanchalak')">
+          <div class="demo-role-card d-flex align-items-center justify-content-between" id="cardSanchalak" onclick="fillLogin('hetal_shani', 'password', 'Sanchalak', this)">
             <div class="d-flex align-items-center gap-2 text-truncate">
               <div class="role-icon-box bg-warning-subtle text-warning">
-                <i class="bi bi-person-badge"></i>
+                <i class="bi bi-camera-video"></i>
               </div>
               <div class="text-truncate">
                 <div class="fw-bold text-dark lh-1" style="font-size: 13px;">Sanchalak</div>
-                <small class="text-muted" style="font-size: 11px;">Face Scanner & Attendance</small>
+                <small class="text-muted" style="font-size: 11px;">AI Face Scanner & Live Attendance</small>
               </div>
             </div>
-            <span class="badge bg-light text-secondary border font-monospace ms-2" style="font-size: 11px;">hetal_shani</span>
+            <span class="badge bg-white text-secondary border font-monospace ms-2 shadow-xs" style="font-size: 11px; padding: 5px 8px;">hetal_shani</span>
           </div>
         </div>
+      </div>
+
+      <!-- Security note footer -->
+      <div class="footer-caption">
+        <i class="bi bi-shield-lock-fill text-muted"></i>
+        <span>Biometric-Protected & Encrypted Portal Session</span>
       </div>
 
     </div>
   </div>
 
+  <!-- Notification Toast -->
   <div id="toastFill" class="toast-fill">
-    <i class="bi bi-check2-circle text-success me-1"></i> Filled credentials for <span id="toastRoleName"></span>
+    <i class="bi bi-check-circle-fill text-success"></i>
+    <span>Filled credentials for <strong id="toastRoleName"></strong></span>
   </div>
 </div>
 {% endblock %}
 
 {% block scripts %}
 <script>
-function fillLogin(user, pass, roleLabel) {
+function fillLogin(user, pass, roleLabel, cardElement) {
   const u = document.getElementById('usernameInput');
   const p = document.getElementById('passwordInput');
   u.value = user;
   p.value = pass;
+
+  // Highlight selected demo card
+  document.querySelectorAll('.demo-role-card').forEach(c => c.classList.remove('active-selected'));
+  if (cardElement) {
+    cardElement.classList.add('active-selected');
+  }
   
   // Show quick toast feedback
   const toast = document.getElementById('toastFill');
   document.getElementById('toastRoleName').textContent = roleLabel;
   toast.classList.add('show');
-  setTimeout(() => toast.classList.remove('show'), 1800);
+  setTimeout(() => toast.classList.remove('show'), 2000);
 
   // Briefly pulse submit button so the user knows they can tap it
   const btn = document.getElementById('submitBtn');
-  btn.classList.add('btn-success');
-  btn.classList.remove('btn-primary');
+  btn.classList.add('btn-pulse-active');
   setTimeout(() => {
-    btn.classList.remove('btn-success');
-    btn.classList.add('btn-primary');
-  }, 400);
+    btn.classList.remove('btn-pulse-active');
+  }, 450);
 }
 
 function togglePassword() {
@@ -254,6 +522,17 @@ function togglePassword() {
     p.type = 'password';
     eye.className = 'bi bi-eye';
   }
+}
+
+function handleFormSubmit() {
+  const btn = document.getElementById('submitBtn');
+  const btnText = document.getElementById('btnText');
+  const btnSpinner = document.getElementById('btnSpinner');
+  
+  btnText.textContent = ' Signing In...';
+  btnSpinner.classList.remove('d-none');
+  btn.style.pointerEvents = 'none';
+  btn.style.opacity = '0.9';
 }
 </script>
 {% endblock %}
