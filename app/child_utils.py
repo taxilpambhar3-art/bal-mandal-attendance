@@ -1,7 +1,12 @@
 from __future__ import annotations
+import base64
+import io
 import re
+import uuid
 from datetime import date, datetime
+from pathlib import Path
 from typing import Optional
+from PIL import Image, ImageOps
 
 STANDARDS = [
     "Jr KG",
@@ -156,4 +161,56 @@ def validate_child_form_data(
             return False, "Bus Route / Stop name cannot exceed 100 characters."
 
     return True, ""
+
+
+UPLOAD_DIR = Path(__file__).resolve().parent / "static" / "uploads"
+UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
+
+
+def save_normalized_face_photo(data_url: str, prefix: str = "scan") -> str | None:
+    """
+    Safely saves and normalizes a face photo data URL.
+    - Decodes base64 payload.
+    - Applies EXIF orientation (crucial for mobile/tablet photos taken in portrait).
+    - Converts RGBA/P to RGB.
+    - Resizes to max 640px while maintaining aspect ratio (ensures instant face-api detection).
+    - Saves as optimized JPEG.
+    """
+    if not data_url or "," not in data_url:
+        return None
+    try:
+        header, b64 = data_url.split(",", 1)
+        b64_clean = b64.strip()
+        missing_padding = len(b64_clean) % 4
+        if missing_padding:
+            b64_clean += "=" * (4 - missing_padding)
+        data = base64.b64decode(b64_clean)
+        if not data:
+            return None
+
+        # Load with PIL and normalize orientation
+        with Image.open(io.BytesIO(data)) as pil_img:
+            pil_img = ImageOps.exif_transpose(pil_img)
+            if pil_img.mode != "RGB":
+                pil_img = pil_img.convert("RGB")
+
+            # Scale so longest edge is max 640px
+            max_dim = 640
+            w, h = pil_img.size
+            if max(w, h) > max_dim:
+                if w > h:
+                    new_w = max_dim
+                    new_h = int(h * (max_dim / w))
+                else:
+                    new_h = max_dim
+                    new_w = int(w * (max_dim / h))
+                pil_img = pil_img.resize((new_w, new_h), Image.Resampling.LANCZOS)
+
+            name = f"{prefix}_{uuid.uuid4().hex[:12]}.jpg"
+            out_path = UPLOAD_DIR / name
+            pil_img.save(out_path, format="JPEG", quality=90, optimize=True)
+            return name
+    except Exception as e:
+        print(f"Error saving normalized face photo: {e}")
+        return None
 

@@ -86,7 +86,7 @@ def _has_valid_face_content(img: Image.Image) -> bool:
 def compare_face_photos(
     live_img_path: str | Path,
     enrolled_img_path: Optional[str | Path],
-    threshold: float = 85.0,
+    threshold: float = 65.0,
     client_verified: Optional[bool] = None,
     client_score: Optional[float] = None,
 ) -> Dict[str, Any]:
@@ -97,9 +97,23 @@ def compare_face_photos(
     if not enrolled_img_path:
         return {
             "is_match": False,
+            "match": False,
             "confidence": 0.0,
             "reason": "no_enrolled_photo",
             "message": "No registered face photo found for this child. Please upload a photo in child profile.",
+        }
+
+    # If client-side deep neural face-api already evaluated the 128D descriptor:
+    if client_verified is not None:
+        c_score = float(client_score) if client_score is not None else 85.0
+        is_match = bool(client_verified) and c_score >= 65.0
+        return {
+            "is_match": is_match,
+            "match": is_match,
+            "confidence": round(c_score, 1),
+            "reason": "matched" if is_match else "mismatch",
+            "message": "Face matched successfully!" if is_match else "Face does not match registered photo (Face Mismatch)!",
+            "engine": "face-api-deepnet",
         }
 
     im_live = _load_image(live_img_path)
@@ -108,6 +122,7 @@ def compare_face_photos(
     if not im_live or not im_enrolled:
         return {
             "is_match": False,
+            "match": False,
             "confidence": 0.0,
             "reason": "invalid_image",
             "message": "Error reading image file (Invalid Image File).",
@@ -117,6 +132,7 @@ def compare_face_photos(
     if not _has_valid_face_content(im_live):
         return {
             "is_match": False,
+            "match": False,
             "confidence": 0.0,
             "reason": "no_face_detected",
             "message": "Face not clearly detected in camera. Please face the camera directly.",
@@ -125,56 +141,38 @@ def compare_face_photos(
     if not _has_valid_face_content(im_enrolled):
         return {
             "is_match": False,
+            "match": False,
             "confidence": 0.0,
             "reason": "invalid_enrolled_face",
             "message": "Enrolled photo does not contain a clear face. Please re-upload photo.",
-        }
-
-    # If client-side deep neural face-api already evaluated the descriptor:
-    if client_verified is not None and client_score is not None:
-        is_match = bool(client_verified) and float(client_score) >= 70.0
-        return {
-            "is_match": is_match,
-            "confidence": round(float(client_score), 1),
-            "reason": "matched" if is_match else "mismatch",
-            "message": "Face matched successfully!" if is_match else "Face does not match registered photo (Face Mismatch)!",
-            "engine": "face-api-deepnet",
         }
 
     # Backend multi-feature analysis fallback
     crop_live = _get_face_crop(im_live)
     crop_enrolled = _get_face_crop(im_enrolled)
 
-    # 1. Luminance Cosine on facial core (different faces in same room correlate ~0.90; same face > 0.96)
-    v1 = _compute_normalized_vector(crop_live)
-    v2 = _compute_normalized_vector(crop_enrolled)
-    cos_lum = float(np.dot(v1, v2) / (np.linalg.norm(v1) * np.linalg.norm(v2) + 1e-6))
-    s_lum = max(0.0, min(1.0, (cos_lum - 0.93) / 0.07))
+    # 1. Grayscale luminance spatial profile similarity
+    g1 = np.array(crop_live.convert("L").resize((32, 32), Image.Resampling.LANCZOS), dtype=np.float32).flatten()
+    g2 = np.array(crop_enrolled.convert("L").resize((32, 32), Image.Resampling.LANCZOS), dtype=np.float32).flatten()
+    sim_gray = float(np.dot(g1, g2) / (np.linalg.norm(g1) * np.linalg.norm(g2) + 1e-6))
 
-    # 2. Horizontal & Vertical Spatial Edge Gradients
-    gx1, gy1 = _compute_spatial_gradients(crop_live)
-    gx2, gy2 = _compute_spatial_gradients(crop_enrolled)
-    cos_gx = float(np.dot(gx1, gx2) / (np.linalg.norm(gx1) * np.linalg.norm(gx2) + 1e-6))
-    cos_gy = float(np.dot(gy1, gy2) / (np.linalg.norm(gy1) * np.linalg.norm(gy2) + 1e-6))
-    s_gx = max(0.0, min(1.0, (cos_gx - 0.85) / 0.15))
-    s_gy = max(0.0, min(1.0, (cos_gy - 0.85) / 0.15))
+    # 2. Color / skin-tone histogram intersection
+    h1 = _compute_hsv_hist(crop_live)
+    h2 = _compute_hsv_hist(crop_enrolled)
+    sim_hist = float(np.sum(np.minimum(h1, h2)))
 
-    # 3. Difference Hash (dHash)
+    # 3. Difference Hash (dHash) structural similarity
     dh1 = _compute_dhash(crop_live)
     dh2 = _compute_dhash(crop_enrolled)
-    dh_raw = 1.0 - (np.count_nonzero(dh1 != dh2) / 64.0)
-    s_dh = max(0.0, min(1.0, (dh_raw - 0.90) / 0.10))
+    sim_dh = 1.0 - (np.count_nonzero(dh1 != dh2) / 64.0)
 
-    # Composite backend confidence
-    confidence = round(
-        (0.40 * s_lum + 0.30 * s_gx + 0.20 * s_gy + 0.10 * s_dh) * 100,
-        1,
-    )
-
+    # Composite backend confidence (0 - 100)
+    confidence = round((0.45 * max(0.0, sim_gray) + 0.35 * max(0.0, sim_hist) + 0.20 * max(0.0, sim_dh)) * 100, 1)
     is_match = confidence >= threshold
 
     return {
         "is_match": is_match,
+        "match": is_match,
         "confidence": confidence,
         "reason": "matched" if is_match else "mismatch",
         "message": "Face matched successfully!" if is_match else "Face does not match registered photo (Face Mismatch)!",

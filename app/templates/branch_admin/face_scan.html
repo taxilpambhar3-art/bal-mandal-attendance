@@ -338,7 +338,7 @@
 <select id="branchChildMatcherSelect" style="display:none;">
   {% for c in children %}
   {% if c.face_photo %}
-  <option value="{{ c.id }}" data-photo="{{ c.face_photo }}" data-name="{{ c.name }}" data-code="{{ c.child_code }}" data-mandal="{{ c.bal_mandal_id }}">{{ c.name }}</option>
+  <option value="{{ c.id }}" data-photo="{{ c.face_photo }}" data-descriptor="{{ c.face_descriptor or '' }}" data-name="{{ c.name }}" data-code="{{ c.child_code }}" data-mandal="{{ c.bal_mandal_id }}">{{ c.name }}</option>
   {% endif %}
   {% endfor %}
 </select>
@@ -509,6 +509,66 @@ async function loadFaceModels() {
   }
 }
 
+const MATCH_THRESHOLD = 0.54; // Recommended threshold: genuine matches 0.38 - 0.52; distinct faces > 0.62
+
+// Distance to Confidence Score mapper (0 - 100%)
+function distanceToConfidence(dist) {
+  if (dist <= 0.20) return 99;
+  if (dist <= 0.35) return Math.round(92 + (0.35 - dist) * 46);
+  if (dist <= 0.45) return Math.round(85 + (0.45 - dist) * 70);
+  if (dist <= 0.54) return Math.round(72 + (0.54 - dist) * 144);
+  return Math.max(10, Math.round((1.0 - (dist / 0.65)) * 100));
+}
+
+// Multi-pass descriptor extractor with canvas downscaling fallback
+async function extractDescriptorFromPhoto(photoUrl) {
+  if (!photoUrl) return null;
+  try {
+    const src = photoUrl.startsWith('/') || photoUrl.startsWith('data:') ? photoUrl : ('/static/uploads/' + photoUrl);
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.src = src;
+    if (!img.complete) {
+      await img.decode().catch(() => {});
+    }
+
+    // Pass 1: standard TinyFaceDetector (inputSize: 320, scoreThreshold: 0.20)
+    let det = await faceapi.detectSingleFace(img, new faceapi.TinyFaceDetectorOptions({ inputSize: 320, scoreThreshold: 0.20 }))
+      .withFaceLandmarks()
+      .withFaceDescriptor();
+    if (det && det.descriptor) return det.descriptor;
+
+    // Pass 2: higher resolution TinyFaceDetector (inputSize: 416, scoreThreshold: 0.15)
+    det = await faceapi.detectSingleFace(img, new faceapi.TinyFaceDetectorOptions({ inputSize: 416, scoreThreshold: 0.15 }))
+      .withFaceLandmarks()
+      .withFaceDescriptor();
+    if (det && det.descriptor) return det.descriptor;
+
+    // Pass 3: draw onto canvas resized to max 640px and detect
+    const c = document.createElement('canvas');
+    let w = img.naturalWidth || img.width || 640;
+    let h = img.naturalHeight || img.height || 480;
+    const maxDim = 640;
+    if (w > maxDim || h > maxDim) {
+      if (w > h) { h = Math.round((h * maxDim) / w); w = maxDim; }
+      else { w = Math.round((w * maxDim) / h); h = maxDim; }
+    }
+    c.width = w;
+    c.height = h;
+    const ctx = c.getContext('2d');
+    ctx.drawImage(img, 0, 0, w, h);
+    det = await faceapi.detectSingleFace(c, new faceapi.TinyFaceDetectorOptions({ inputSize: 320, scoreThreshold: 0.15 }))
+      .withFaceLandmarks()
+      .withFaceDescriptor();
+    if (det && det.descriptor) return det.descriptor;
+
+    return null;
+  } catch(err) {
+    console.warn('extractDescriptorFromPhoto error:', err);
+    return null;
+  }
+}
+
 async function buildBranchFaceMatcher() {
   if (!isAiModelLoaded) return;
   try {
@@ -524,25 +584,30 @@ async function buildBranchFaceMatcher() {
 
     const labeledList = [];
     for (const [cid, opt] of uniqueMap.entries()) {
-      const photoName = opt.getAttribute('data-photo');
-      try {
-        const img = new Image();
-        img.crossOrigin = 'anonymous';
-        img.src = '/static/uploads/' + photoName;
-        await img.decode();
-        const det = await faceapi.detectSingleFace(img, new faceapi.TinyFaceDetectorOptions({ inputSize: 320, scoreThreshold: 0.25 }))
-          .withFaceLandmarks()
-          .withFaceDescriptor();
-        if (det) {
-          labeledList.push(new faceapi.LabeledFaceDescriptors(cid, [det.descriptor]));
-        }
-      } catch (e) {
-        console.warn('Branch face descriptor error:', cid, e);
+      let descriptor = null;
+      const descStr = opt.getAttribute('data-descriptor');
+
+      if (descStr && descStr.length > 20) {
+        try {
+          const arr = JSON.parse(descStr);
+          if (Array.isArray(arr) && arr.length >= 64) {
+            descriptor = new Float32Array(arr);
+          }
+        } catch(e) {}
+      }
+
+      if (!descriptor) {
+        const photoName = opt.getAttribute('data-photo');
+        descriptor = await extractDescriptorFromPhoto(photoName);
+      }
+
+      if (descriptor) {
+        labeledList.push(new faceapi.LabeledFaceDescriptors(cid, [descriptor]));
       }
     }
     if (labeledList.length > 0) {
-      branchFaceMatcher = new faceapi.FaceMatcher(labeledList, 0.40);
-      console.log(`Branch FaceMatcher loaded with ${labeledList.length} enrolled child descriptors.`);
+      branchFaceMatcher = new faceapi.FaceMatcher(labeledList, MATCH_THRESHOLD);
+      console.log(`Branch FaceMatcher loaded with ${labeledList.length} enrolled child descriptors. (Threshold: ${MATCH_THRESHOLD})`);
     }
   } catch (e) {
     console.warn('Error building branch face matcher:', e);
@@ -638,17 +703,17 @@ async function handlePromptScan() {
     }
 
     const bestMatch = branchFaceMatcher.findBestMatch(liveDetection.descriptor);
-    if (!bestMatch || bestMatch.label === 'unknown' || bestMatch.distance >= 0.40) {
-      const diffScore = Math.max(5, Math.min(45, Math.round((1.0 - (bestMatch ? bestMatch.distance / 0.65 : 1.0)) * 100)));
+    if (!bestMatch || bestMatch.label === 'unknown' || bestMatch.distance >= MATCH_THRESHOLD) {
+      const diffScore = distanceToConfidence(bestMatch ? bestMatch.distance : 0.70);
       showKioskFail({
         message: "Face does not match any registered child!",
-        confidence: diffScore
+        confidence: diffScore < 60 ? diffScore : 45
       });
       return;
     }
 
     const matchedChildId = bestMatch.label;
-    const score = Math.max(75, Math.min(99, Math.round((1.0 - (bestMatch.distance / 0.50)) * 100)));
+    const score = distanceToConfidence(bestMatch.distance);
     const opt = document.querySelector(`#branchChildMatcherSelect option[value="${matchedChildId}"]`);
 
     pendingPromptData = {
@@ -754,17 +819,17 @@ async function captureAndVerify() {
       }
 
       const bestMatch = branchFaceMatcher.findBestMatch(liveDetection.descriptor);
-      if (!bestMatch || bestMatch.label === 'unknown' || bestMatch.distance >= 0.40) {
-        const diffScore = Math.max(5, Math.min(45, Math.round((1.0 - (bestMatch ? bestMatch.distance / 0.65 : 1.0)) * 100)));
+      if (!bestMatch || bestMatch.label === 'unknown' || bestMatch.distance >= MATCH_THRESHOLD) {
+        const diffScore = distanceToConfidence(bestMatch ? bestMatch.distance : 0.70);
         showKioskFail({
           message: "Face does not match any registered child!",
-          confidence: diffScore
+          confidence: diffScore < 60 ? diffScore : 45
         });
         return;
       }
 
       const matchedChildId = bestMatch.label;
-      const score = Math.max(75, Math.min(99, Math.round((1.0 - (bestMatch.distance / 0.50)) * 100)));
+      const score = distanceToConfidence(bestMatch.distance);
 
       const selectedMandalId = document.getElementById('mandalSelector')?.value;
       const formData = new FormData();

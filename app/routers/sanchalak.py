@@ -32,26 +32,11 @@ def _ctx(request: Request, user: User, **extra):
     }
 
 
+from ..child_utils import parse_dob_strict, validate_child_form_data, STANDARDS, save_normalized_face_photo
+
+
 def _save_data_url(data_url: str, prefix: str = "scan") -> str | None:
-    if not data_url or "," not in data_url:
-        return None
-    try:
-        header, b64 = data_url.split(",", 1)
-        ext = "jpg" if "jpeg" in header or "jpg" in header else "png"
-        name = f"{prefix}_{uuid.uuid4().hex[:12]}.{ext}"
-        path = UPLOAD_DIR / name
-        b64_clean = b64.strip()
-        missing_padding = len(b64_clean) % 4
-        if missing_padding:
-            b64_clean += "=" * (4 - missing_padding)
-        data = base64.b64decode(b64_clean)
-        if not data:
-            return None
-        path.write_bytes(data)
-        return name
-    except Exception as e:
-        print(f"Error saving data URL: {e}")
-        return None
+    return save_normalized_face_photo(data_url, prefix)
 
 
 @router.get("/")
@@ -250,7 +235,7 @@ def face_scan_submit(
             res = compare_face_photos(
                 live_img_path=live_path,
                 enrolled_img_path=enrolled_p,
-                threshold=85.0,
+                threshold=65.0,
             )
             sc = res["confidence"]
             if sc > best_score:
@@ -261,9 +246,7 @@ def face_scan_submit(
             elif sc > second_score:
                 second_score = sc
 
-        # Strict identification: best_score must be >= 85.0 and distinctly separated
-        is_distinct = (best_score >= 85.0) and ((second_score < 40.0) or ((best_score - second_score) >= 20.0))
-        if best_match and best_match["is_match"] and is_distinct:
+        if best_match and best_match["is_match"] and best_score >= 65.0:
             child = best_child
             match_result = best_match
         else:
@@ -338,7 +321,7 @@ def face_scan_submit(
         match_result = compare_face_photos(
             live_img_path=live_path,
             enrolled_img_path=enrolled_path,
-            threshold=85.0,
+            threshold=65.0,
             client_verified=c_ver,
             client_score=parsed_client_score,
         )
@@ -562,6 +545,7 @@ def child_add(
     uses_bus: bool = Form(False),
     bus_route: str = Form(""),
     photo_data: str = Form(""),
+    face_descriptor: str = Form(""),
 ):
     form_data = {
         "first_name": first_name,
@@ -631,6 +615,7 @@ def child_add(
         child_code=child_code.strip(),
         bal_mandal_id=user.bal_mandal_id,
         face_photo=photo,
+        face_descriptor=face_descriptor.strip() if face_descriptor and face_descriptor.strip().startswith("[") else None,
     )
     db.add(child)
     db.commit()
@@ -672,6 +657,7 @@ def child_edit_submit(
     uses_bus: bool = Form(False),
     bus_route: str = Form(""),
     photo_data: str = Form(""),
+    face_descriptor: str = Form(""),
 ):
     child = db.get(Child, child_id)
     if not child or child.bal_mandal_id != user.bal_mandal_id:
@@ -730,6 +716,12 @@ def child_edit_submit(
         new_photo = _save_data_url(photo_data, prefix=f"enroll_c{child.id}")
         if new_photo:
             child.face_photo = new_photo
+            if face_descriptor and face_descriptor.strip().startswith("["):
+                child.face_descriptor = face_descriptor.strip()
+            else:
+                child.face_descriptor = None
+    elif face_descriptor and face_descriptor.strip().startswith("["):
+        child.face_descriptor = face_descriptor.strip()
 
     db.commit()
     # HISTORY IS PRESERVED: attendance table is untouched!
@@ -762,6 +754,7 @@ def update_child_face(
     user: User = Depends(role_required("sanchalak")),
     db: Session = Depends(get_db),
     photo_data: str = Form(...),
+    face_descriptor: str = Form(""),
 ):
     child = db.get(Child, child_id)
     if not child or child.bal_mandal_id != user.bal_mandal_id:
@@ -769,6 +762,10 @@ def update_child_face(
     photo = _save_data_url(photo_data, prefix=f"enroll_c{child.id}")
     if photo:
         child.face_photo = photo
+        if face_descriptor and face_descriptor.strip().startswith("["):
+            child.face_descriptor = face_descriptor.strip()
+        else:
+            child.face_descriptor = None
         db.commit()
     return RedirectResponse("/sanchalak/children", status_code=303)
 

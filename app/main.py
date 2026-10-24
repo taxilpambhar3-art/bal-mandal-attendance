@@ -82,6 +82,7 @@ def on_startup():
                 "address": "TEXT DEFAULT ''",
                 "uses_bus": "BOOLEAN DEFAULT 0",
                 "bus_route": "VARCHAR(100) DEFAULT ''",
+                "face_descriptor": "TEXT DEFAULT NULL",
             }
             for col_name, col_def in new_cols.items():
                 if cols and col_name not in cols:

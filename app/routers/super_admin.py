@@ -22,18 +22,11 @@ templates: Jinja2Templates | None = None
 CITIES = ["Ahmedabad", "Surat", "Vadodara", "Rajkot", "Bhavnagar"]
 
 
+from ..child_utils import parse_dob_strict, validate_child_form_data, STANDARDS, save_normalized_face_photo
+
+
 def _save_data_url(data_url: str, prefix: str = "scan") -> str | None:
-    if not data_url or "," not in data_url:
-        return None
-    try:
-        header, b64 = data_url.split(",", 1)
-        ext = "jpg" if "jpeg" in header or "jpg" in header else "png"
-        name = f"{prefix}_{uuid.uuid4().hex[:12]}.{ext}"
-        path = UPLOAD_DIR / name
-        path.write_bytes(base64.b64decode(b64))
-        return name
-    except Exception:
-        return None
+    return save_normalized_face_photo(data_url, prefix)
 
 
 def _ctx(request: Request, user: User, **extra):
@@ -1130,6 +1123,7 @@ def child_edit_submit(
     uses_bus: bool = Form(False),
     bus_route: str = Form(""),
     photo_data: str = Form(""),
+    face_descriptor: str = Form(""),
 ):
     child = db.get(Child, child_id)
     if not child:
@@ -1207,8 +1201,12 @@ def child_edit_submit(
         new_photo = _save_data_url(photo_data, prefix=f"enroll_c{child.id}")
         if new_photo:
             child.face_photo = new_photo
-
-    db.commit()
+            if face_descriptor and face_descriptor.strip().startswith("["):
+                child.face_descriptor = face_descriptor.strip()
+            else:
+                child.face_descriptor = None
+    elif face_descriptor and face_descriptor.strip().startswith("["):
+        child.face_descriptor = face_descriptor.strip()
     # HISTORY IS PRESERVED: attendance table is untouched!
     return RedirectResponse("/super-admin/children?updated=1", status_code=303)
 

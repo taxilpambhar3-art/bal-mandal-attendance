@@ -221,6 +221,7 @@
       </div>
       <form id="modalFaceForm" method="post" action="">
         <input type="hidden" name="photo_data" id="modalPhotoData">
+        <input type="hidden" name="face_descriptor" id="modalFaceDescriptor">
         <div class="modal-body">
           <!-- Video preview -->
           <div class="camera-box position-relative mb-3" style="aspect-ratio: 4/3; min-height: 220px; background: #0f172a; border-radius: 12px; overflow: hidden;">
@@ -251,10 +252,10 @@
 
           <!-- Preview of captured photo -->
           <div id="modalPreviewBox" class="p-2 border rounded-3 text-center bg-white" style="display: none;">
-            <small class="text-muted fw-bold d-block mb-1">New Face Photo:</small>
+            <small class="text-muted fw-bold d-block mb-1">Face Photo Preview:</small>
             <img id="modalPreviewImg" class="rounded-3 shadow-sm mx-auto mb-2" style="width: 100px; height: 100px; object-fit: cover; border: 2px solid #10b981;" alt="Preview">
             <div>
-              <span class="badge badge-soft-success"><i class="bi bi-check-circle-fill me-1"></i>Ready to Save</span>
+              <span id="modalFaceBadge" class="badge badge-soft-success"><i class="bi bi-check-circle-fill me-1"></i>Ready to Save</span>
             </div>
           </div>
         </div>
@@ -271,23 +272,47 @@
 {% endblock %}
 
 {% block scripts %}
+<script src="/static/js/face-api.min.js"></script>
 <script>
 let modalStream = null;
 let modalFacing = 'user';
+let isModalAiLoaded = false;
 const modalVideo = document.getElementById('modalVideo');
 const modalCanvas = document.getElementById('modalCanvas');
 const modalPhotoData = document.getElementById('modalPhotoData');
+const modalFaceDescriptor = document.getElementById('modalFaceDescriptor');
 const modalSubmitBtn = document.getElementById('modalSubmitBtn');
 const modalPreviewBox = document.getElementById('modalPreviewBox');
 const modalPreviewImg = document.getElementById('modalPreviewImg');
+const modalFaceBadge = document.getElementById('modalFaceBadge');
 const modalFaceForm = document.getElementById('modalFaceForm');
 const modalChildInfo = document.getElementById('modalChildInfo');
 const faceModal = new bootstrap.Modal(document.getElementById('faceModal'));
+
+// Preload Face-API models
+async function loadModalAiModels() {
+  try {
+    if (typeof faceapi !== 'undefined') {
+      const MODEL_URL = '/static/models';
+      await Promise.all([
+        faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL),
+        faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL),
+        faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL)
+      ]);
+      isModalAiLoaded = true;
+      console.log('Modal Face-API models loaded.');
+    }
+  } catch(e) {
+    console.warn('Face-API modal preload warning:', e);
+  }
+}
+loadModalAiModels();
 
 function openFaceModal(childId, childName, childCode, currentPhoto) {
   modalChildInfo.innerText = childName + ' (' + childCode + ')';
   modalFaceForm.action = '/sanchalak/children/' + childId + '/face';
   modalPhotoData.value = '';
+  if (modalFaceDescriptor) modalFaceDescriptor.value = '';
   modalSubmitBtn.disabled = true;
   modalPreviewBox.style.display = 'none';
   document.getElementById('modalFileInput').value = '';
@@ -345,25 +370,90 @@ document.getElementById('modalSnapBtn').addEventListener('click', () => {
     ctx.fillText('Face Photo Captured', 180, 240);
   }
 
-  const dataUrl = modalCanvas.toDataURL('image/jpeg', 0.88);
+  const dataUrl = modalCanvas.toDataURL('image/jpeg', 0.90);
   setModalPhoto(dataUrl);
 });
 
 function handleModalFile(input) {
   if (input.files && input.files[0]) {
+    const file = input.files[0];
     const reader = new FileReader();
     reader.onload = function(e) {
-      setModalPhoto(e.target.result);
+      // Draw onto canvas to resize to max 640px before processing
+      const tempImg = new Image();
+      tempImg.onload = function() {
+        const c = document.createElement('canvas');
+        let w = tempImg.naturalWidth || tempImg.width || 640;
+        let h = tempImg.naturalHeight || tempImg.height || 480;
+        const maxDim = 640;
+        if (w > maxDim || h > maxDim) {
+          if (w > h) { h = Math.round((h * maxDim) / w); w = maxDim; }
+          else { w = Math.round((w * maxDim) / h); h = maxDim; }
+        }
+        c.width = w;
+        c.height = h;
+        const ctx = c.getContext('2d');
+        ctx.drawImage(tempImg, 0, 0, w, h);
+        const resizedDataUrl = c.toDataURL('image/jpeg', 0.90);
+        setModalPhoto(resizedDataUrl);
+      };
+      tempImg.src = e.target.result;
     };
-    reader.readAsDataURL(input.files[0]);
+    reader.readAsDataURL(file);
   }
 }
 
-function setModalPhoto(dataUrl) {
+async function setModalPhoto(dataUrl) {
   modalPhotoData.value = dataUrl;
   modalPreviewImg.src = dataUrl;
   modalPreviewBox.style.display = 'block';
   modalSubmitBtn.disabled = false;
+
+  if (modalFaceBadge) {
+    modalFaceBadge.className = 'badge badge-soft-info';
+    modalFaceBadge.innerHTML = '<span class="spinner-border spinner-border-sm me-1" style="width:10px;height:10px;"></span>Verifying face...';
+  }
+
+  // Generate 128D neural descriptor if model loaded
+  if (typeof faceapi !== 'undefined' && isModalAiLoaded) {
+    try {
+      const img = new Image();
+      img.src = dataUrl;
+      await img.decode();
+      let det = await faceapi.detectSingleFace(img, new faceapi.TinyFaceDetectorOptions({ inputSize: 320, scoreThreshold: 0.20 }))
+        .withFaceLandmarks()
+        .withFaceDescriptor();
+      if (!det) {
+        det = await faceapi.detectSingleFace(img, new faceapi.TinyFaceDetectorOptions({ inputSize: 416, scoreThreshold: 0.15 }))
+          .withFaceLandmarks()
+          .withFaceDescriptor();
+      }
+      if (det && det.descriptor) {
+        if (modalFaceDescriptor) modalFaceDescriptor.value = JSON.stringify(Array.from(det.descriptor));
+        if (modalFaceBadge) {
+          modalFaceBadge.className = 'badge badge-soft-success';
+          modalFaceBadge.innerHTML = '<i class="bi bi-shield-check me-1"></i>Face Verified & Biometric Ready ✓';
+        }
+      } else {
+        if (modalFaceDescriptor) modalFaceDescriptor.value = '';
+        if (modalFaceBadge) {
+          modalFaceBadge.className = 'badge badge-soft-warning';
+          modalFaceBadge.innerHTML = '<i class="bi bi-exclamation-triangle-fill me-1"></i>Face not clear. Look directly at camera.';
+        }
+      }
+    } catch(err) {
+      console.warn('Face biometric extraction error:', err);
+      if (modalFaceBadge) {
+        modalFaceBadge.className = 'badge badge-soft-success';
+        modalFaceBadge.innerHTML = '<i class="bi bi-check-circle-fill me-1"></i>Photo Ready';
+      }
+    }
+  } else {
+    if (modalFaceBadge) {
+      modalFaceBadge.className = 'badge badge-soft-success';
+      modalFaceBadge.innerHTML = '<i class="bi bi-check-circle-fill me-1"></i>Photo Ready';
+    }
+  }
 }
 </script>
 {% endblock %}

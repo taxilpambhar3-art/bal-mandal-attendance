@@ -91,6 +91,7 @@ class Child(Base):
     bus_route: Mapped[Optional[str]] = mapped_column(String(100), nullable=True, default="")
     bal_mandal_id: Mapped[int] = mapped_column(ForeignKey("bal_mandals.id"))
     face_photo: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
+    face_descriptor: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
 

@@ -34,6 +34,7 @@
 
       <form id="childForm" method="post" action="{% if child %}/sanchalak/children/{{ child.id }}/edit{% else %}/sanchalak/children/add{% endif %}" onsubmit="return validateFormClient(event)" novalidate>
         <input type="hidden" name="photo_data" id="photoData">
+        <input type="hidden" name="face_descriptor" id="faceDescriptor" value="{{ child.face_descriptor or '' if child else '' }}">
 
         <!-- Row 1: First Name, Father's Name, Surname all in a single row -->
         <div class="row g-3 mb-3">
@@ -228,6 +229,14 @@
         </button>
       </div>
 
+      <!-- Or Upload Image File -->
+      <div class="border rounded-3 p-2 bg-light mb-3">
+        <label class="form-label small fw-bold text-secondary mb-1">
+          <i class="bi bi-upload me-1"></i>Or Upload Face Photo from Computer / Phone:
+        </label>
+        <input type="file" id="formPhotoFile" accept="image/*" class="form-control form-control-sm" onchange="handleFormPhotoUpload(this)">
+      </div>
+
       <div class="alert alert-info py-2 px-3 small mb-0">
         <i class="bi bi-info-circle-fill me-1"></i>Ensure good lighting on the child's face. Attendance records are never deleted on edit.
       </div>
@@ -235,6 +244,7 @@
   </div>
 </div>
 
+<script src="/static/js/face-api.min.js"></script>
 <script>
 const regVideo = document.getElementById('regVideo');
 const regCanvas = document.getElementById('regCanvas');
@@ -242,12 +252,32 @@ const enrolledPreview = document.getElementById('enrolledPreview');
 const snapFaceBtn = document.getElementById('snapFaceBtn');
 const retakeFaceBtn = document.getElementById('retakeFaceBtn');
 const photoDataInput = document.getElementById('photoData');
+const faceDescriptorInput = document.getElementById('faceDescriptor');
 const statusDot = document.getElementById('statusDot');
 const faceStatusText = document.getElementById('faceStatusText');
 const faceBadge = document.getElementById('faceBadge');
 const regRing = document.getElementById('regRing');
 const regLabel = document.getElementById('regLabel');
 let regStream = null;
+let isFormAiLoaded = false;
+
+// Preload face-api models
+async function loadFormAi() {
+  try {
+    if (typeof faceapi !== 'undefined') {
+      const MODEL_URL = '/static/models';
+      await Promise.all([
+        faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL),
+        faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL),
+        faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL)
+      ]);
+      isFormAiLoaded = true;
+    }
+  } catch(e) {
+    console.warn('Face-API preload warning:', e);
+  }
+}
+loadFormAi();
 
 async function startRegCam() {
   try {
@@ -265,6 +295,61 @@ async function startRegCam() {
   }
 }
 
+async function applyEnrolledPhoto(dataUrl) {
+  photoDataInput.value = dataUrl;
+  enrolledPreview.src = dataUrl;
+  enrolledPreview.style.display = 'block';
+  regVideo.style.display = 'none';
+  regRing.style.display = 'none';
+  regLabel.style.display = 'none';
+
+  snapFaceBtn.style.display = 'none';
+  retakeFaceBtn.style.display = 'inline-block';
+
+  statusDot.style.background = '#0ea5e9';
+  faceStatusText.innerHTML = '<span class="spinner-border spinner-border-sm me-1" style="width:10px;height:10px;"></span>Analyzing facial features...';
+
+  if (typeof faceapi !== 'undefined' && isFormAiLoaded) {
+    try {
+      const img = new Image();
+      img.src = dataUrl;
+      await img.decode();
+      let det = await faceapi.detectSingleFace(img, new faceapi.TinyFaceDetectorOptions({ inputSize: 320, scoreThreshold: 0.20 }))
+        .withFaceLandmarks()
+        .withFaceDescriptor();
+      if (!det) {
+        det = await faceapi.detectSingleFace(img, new faceapi.TinyFaceDetectorOptions({ inputSize: 416, scoreThreshold: 0.15 }))
+          .withFaceLandmarks()
+          .withFaceDescriptor();
+      }
+      if (det && det.descriptor) {
+        if (faceDescriptorInput) faceDescriptorInput.value = JSON.stringify(Array.from(det.descriptor));
+        statusDot.style.background = '#10b981';
+        faceStatusText.innerHTML = '<span class="text-success fw-bold"><i class="bi bi-shield-check me-1"></i>Face Verified & Biometric Ready ✓</span>';
+        faceBadge.className = 'badge badge-soft-success';
+        faceBadge.textContent = 'Biometric Ready ✓';
+      } else {
+        if (faceDescriptorInput) faceDescriptorInput.value = '';
+        statusDot.style.background = '#f59e0b';
+        faceStatusText.innerHTML = '<span class="text-warning fw-bold"><i class="bi bi-exclamation-triangle-fill me-1"></i>Face not clearly detected. Ensure child looks directly at camera.</span>';
+        faceBadge.className = 'badge badge-soft-warning';
+        faceBadge.textContent = 'Unclear Face';
+      }
+    } catch(e) {
+      statusDot.style.background = '#10b981';
+      faceStatusText.textContent = 'Face photo ready!';
+      faceBadge.className = 'badge badge-soft-success';
+      faceBadge.textContent = 'Photo Ready';
+    }
+  } else {
+    statusDot.style.background = '#10b981';
+    faceStatusText.textContent = 'Face photo ready!';
+    faceStatusText.className = 'fw-bold text-success';
+    faceBadge.className = 'badge badge-soft-success';
+    faceBadge.textContent = 'Face Ready ✓';
+  }
+}
+
 snapFaceBtn.addEventListener('click', () => {
   if (!regVideo.videoWidth) {
     alert('Camera stream not ready yet. Please wait a moment or ensure camera permissions are allowed.');
@@ -275,27 +360,44 @@ snapFaceBtn.addEventListener('click', () => {
   const ctx = regCanvas.getContext('2d');
   ctx.drawImage(regVideo, 0, 0);
 
-  const dataUrl = regCanvas.toDataURL('image/jpeg', 0.92);
-  photoDataInput.value = dataUrl;
-
-  enrolledPreview.src = dataUrl;
-  enrolledPreview.style.display = 'block';
-  regVideo.style.display = 'none';
-  regRing.style.display = 'none';
-  regLabel.style.display = 'none';
-
-  snapFaceBtn.style.display = 'none';
-  retakeFaceBtn.style.display = 'inline-block';
-
-  statusDot.style.background = '#10b981';
-  faceStatusText.textContent = 'Face photo captured successfully!';
-  faceStatusText.className = 'fw-bold text-success';
-  faceBadge.className = 'badge badge-soft-success';
-  faceBadge.textContent = 'Face Ready ✓';
+  const dataUrl = regCanvas.toDataURL('image/jpeg', 0.90);
+  applyEnrolledPhoto(dataUrl);
 });
+
+function handleFormPhotoUpload(input) {
+  if (input.files && input.files[0]) {
+    const file = input.files[0];
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      const tempImg = new Image();
+      tempImg.onload = function() {
+        const c = document.createElement('canvas');
+        let w = tempImg.naturalWidth || tempImg.width || 640;
+        let h = tempImg.naturalHeight || tempImg.height || 480;
+        const maxDim = 640;
+        if (w > maxDim || h > maxDim) {
+          if (w > h) { h = Math.round((h * maxDim) / w); w = maxDim; }
+          else { w = Math.round((w * maxDim) / h); h = maxDim; }
+        }
+        c.width = w;
+        c.height = h;
+        const ctx = c.getContext('2d');
+        ctx.drawImage(tempImg, 0, 0, w, h);
+        const resizedDataUrl = c.toDataURL('image/jpeg', 0.90);
+        applyEnrolledPhoto(resizedDataUrl);
+      };
+      tempImg.src = e.target.result;
+    };
+    reader.readAsDataURL(file);
+  }
+}
 
 retakeFaceBtn.addEventListener('click', () => {
   photoDataInput.value = '';
+  if (faceDescriptorInput) faceDescriptorInput.value = '';
+  const fileInput = document.getElementById('formPhotoFile');
+  if (fileInput) fileInput.value = '';
+
   enrolledPreview.style.display = 'none';
   regVideo.style.display = 'block';
   regRing.style.display = 'block';
