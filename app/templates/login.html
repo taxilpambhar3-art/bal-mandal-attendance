@@ -93,17 +93,18 @@
     margin-bottom: 14px;
   }
   .brand-icon-box {
-    width: clamp(96px, 20vw, 116px);
-    height: clamp(96px, 20vw, 116px);
+    width: clamp(112px, 24vw, 134px);
+    height: clamp(112px, 24vw, 134px);
     border-radius: 28px;
     background: #ffffff;
     border: 2.5px solid rgba(172, 43, 49, 0.28);
     display: flex;
     align-items: center;
     justify-content: center;
-    box-shadow: 0 14px 35px -5px rgba(172, 43, 49, 0.35), 0 0 20px rgba(245, 158, 11, 0.15);
+    box-shadow: 0 16px 40px -5px rgba(172, 43, 49, 0.35), 0 0 25px rgba(245, 158, 11, 0.18);
     position: relative;
-    padding: 8px;
+    padding: 0;
+    overflow: hidden;
     transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
   }
   .brand-icon-box:hover {
@@ -350,7 +351,7 @@
       <div class="text-center mb-3 mb-sm-4">
         <div class="brand-icon-wrapper">
           <div class="brand-icon-box">
-            <img src="/static/img/logo.png" alt="Bal Mandal Attendance Portal Logo" style="width: 100%; height: 100%; object-fit: contain;">
+            <img src="/static/img/logo.png" alt="Bal Mandal Attendance Portal Logo" style="width: 100%; height: 100%; object-fit: cover; display: block;">
           </div>
           <span class="pulse-indicator" title="System Live"></span>
         </div>
