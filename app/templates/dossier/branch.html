@@ -1,0 +1,206 @@
+{% extends "partials/shell.html" %}
+{% block title %}{{ branch.name }} — Branch Dossier{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+  <div>
+    <nav aria-label="breadcrumb">
+      <ol class="breadcrumb mb-1" style="font-size:12px;">
+        <li class="breadcrumb-item"><a href="/" class="text-decoration-none">Home</a></li>
+        <li class="breadcrumb-item active">{{ branch.name }}</li>
+      </ol>
+    </nav>
+    <div class="d-flex align-items-center gap-2">
+      <span class="badge bg-danger-subtle text-danger border border-danger-subtle px-2 py-1 font-monospace">
+        <i class="bi bi-building-fill me-1"></i>BRANCH DOSSIER
+      </span>
+      <h5 class="fw-bold mb-0 text-dark">{{ branch.name }}</h5>
+      <span class="badge bg-primary-subtle text-primary border border-primary-subtle font-monospace">{{ branch.code }}</span>
+      {% if branch.is_active %}
+      <span class="badge badge-soft-success">Active</span>
+      {% else %}
+      <span class="badge badge-soft-secondary">Inactive</span>
+      {% endif %}
+    </div>
+  </div>
+  <div class="d-flex gap-2 flex-wrap">
+    {% if user.role == 'super_admin' %}
+    <a href="/super-admin/branches/{{ branch.id }}/edit" class="btn btn-outline-secondary btn-sm fw-semibold shadow-sm">
+      <i class="bi bi-pencil-square me-1"></i>Edit Branch
+    </a>
+    <a href="/super-admin/branches/{{ branch.id }}/summary" class="btn btn-outline-primary btn-sm fw-semibold shadow-sm">
+      <i class="bi bi-card-checklist me-1"></i>Full Summary
+    </a>
+    {% endif %}
+    <button type="button" class="btn btn-outline-dark btn-sm fw-semibold shadow-sm" onclick="window.print()">
+      <i class="bi bi-printer me-1"></i>Print Dossier
+    </button>
+    <a href="javascript:history.back()" class="btn btn-light btn-sm fw-semibold border shadow-sm">
+      <i class="bi bi-arrow-left me-1"></i>Back
+    </a>
+  </div>
+</div>
+
+<!-- Primary Overview Card -->
+<div class="panel mb-4 p-4 border-0 shadow-sm" style="background: linear-gradient(135deg, #ffffff 0%, #fffbf8 100%); border-top: 4px solid #AC2B31 !important;">
+  <div class="row g-4 align-items-center">
+    <div class="col-md-7">
+      <div class="d-flex align-items-center gap-2 mb-2">
+        <h4 class="fw-bold text-dark mb-0">{{ branch.name }}</h4>
+        <span class="badge bg-light text-dark border">
+          <i class="bi bi-geo-alt-fill text-danger me-1"></i>{{ branch.city }}
+        </span>
+      </div>
+      <p class="text-muted small mb-3">
+        Address: <b>{{ branch.address or 'No address recorded' }}</b>
+        {% if branch.phone %} · Phone: <b><a href="tel:{{ branch.phone }}" class="text-decoration-none text-primary">{{ branch.phone }}</a></b>{% endif %}
+      </p>
+      <div class="d-flex align-items-center gap-3 flex-wrap">
+        <div>
+          <small class="text-muted d-block" style="font-size:11px;">BRANCH CODE</small>
+          <span class="badge bg-primary-subtle text-primary border border-primary-subtle font-monospace fs-6">{{ branch.code }}</span>
+        </div>
+        <div class="border-start ps-3">
+          <small class="text-muted d-block" style="font-size:11px;">BRANCH ADMINS</small>
+          {% if branch.admins %}
+            {% for a in branch.admins %}
+            <span class="badge bg-light text-dark border me-1">
+              <i class="bi bi-person-badge text-primary me-1"></i>{{ a.full_name }} (@{{ a.username }})
+            </span>
+            {% endfor %}
+          {% else %}
+          <span class="badge bg-warning-subtle text-warning">Not Assigned</span>
+          {% endif %}
+        </div>
+        <div class="border-start ps-3">
+          <small class="text-muted d-block" style="font-size:11px;">CREATED DATE</small>
+          <span class="fw-bold text-dark">{{ branch.created_at.strftime('%d %b %Y') if branch.created_at else '—' }}</span>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-5">
+      <div class="p-3 bg-light rounded-3 border">
+        <div class="d-flex justify-content-between align-items-center mb-1">
+          <span class="small fw-bold text-secondary">Branch Overall Attendance Rate</span>
+          <span class="badge badge-soft-success fw-bold">{{ stats.attendance_rate }}%</span>
+        </div>
+        <div class="progress mb-2" style="height: 8px;">
+          <div class="progress-bar {% if stats.attendance_rate >= 75 %}bg-success{% elif stats.attendance_rate >= 50 %}bg-warning{% else %}bg-danger{% endif %}"
+               style="width: {{ stats.attendance_rate }}%;"></div>
+        </div>
+        <div class="d-flex justify-content-between text-muted" style="font-size: 11px;">
+          <span>{{ stats.present_this_week }} Present This Week</span>
+          <span>{{ stats.total_children }} Enrolled Children</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- KPI Cards -->
+<div class="row g-3 mb-4">
+  <div class="col-6 col-lg-3">
+    <div class="stat-card">
+      <div class="ico bg-primary-subtle text-primary"><i class="bi bi-diagram-3-fill"></i></div>
+      <h3>{{ stats.total_mandals }}</h3>
+      <p>Bal Mandals</p>
+    </div>
+  </div>
+  <div class="col-6 col-lg-3">
+    <div class="stat-card">
+      <div class="ico bg-warning-subtle text-warning"><i class="bi bi-people-fill"></i></div>
+      <h3>{{ stats.total_children }}</h3>
+      <p>Total Enrolled Children</p>
+    </div>
+  </div>
+  <div class="col-6 col-lg-3">
+    <div class="stat-card">
+      <div class="ico bg-success-subtle text-success"><i class="bi bi-check-circle-fill"></i></div>
+      <h3>{{ stats.present_this_week }}</h3>
+      <p>Present This Week</p>
+    </div>
+  </div>
+  <div class="col-6 col-lg-3">
+    <div class="stat-card">
+      <div class="ico bg-info-subtle text-info"><i class="bi bi-graph-up-arrow"></i></div>
+      <h3>{{ stats.attendance_rate }}%</h3>
+      <p>Attendance Rate</p>
+    </div>
+  </div>
+</div>
+
+<!-- Bal Mandals under this branch table -->
+<div class="panel mb-4 p-0 overflow-hidden">
+  <div class="p-3 border-bottom d-flex justify-content-between align-items-center bg-white flex-wrap gap-2">
+    <div>
+      <h6 class="fw-bold mb-0 text-dark">
+        <i class="bi bi-diagram-3 text-primary me-2"></i>Bal Mandals under {{ branch.name }}
+      </h6>
+      <small class="text-muted">Click any Bal Mandal's name to view its complete dossier</small>
+    </div>
+    <span class="badge badge-soft-primary fw-bold">{{ mandals_data|length }} Mandals</span>
+  </div>
+  <div class="table-responsive">
+    <table class="table mock table-hover align-middle mb-0">
+      <thead>
+        <tr>
+          <th>Bal Mandal</th>
+          <th>Meeting Day & Time</th>
+          <th>Sanchalak (Coordinator)</th>
+          <th>Children</th>
+          <th>Present This Week</th>
+          <th>Attendance Rate</th>
+          <th class="text-end">Dossier Action</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for r in mandals_data %}
+        {% set m = r.mandal %}
+        <tr>
+          <td>
+            <a href="/dossier/mandal/{{ m.id }}" class="fw-bold text-dark text-decoration-none hover-primary fs-6">
+              {{ m.name }}
+            </a>
+          </td>
+          <td>
+            <span class="badge bg-light text-dark border">
+              <i class="bi bi-calendar-event me-1 text-primary"></i>{{ m.weekday }}
+              {% if m.meeting_time %}({{ m.meeting_time.strftime('%I:%M %p') }}){% endif %}
+            </span>
+          </td>
+          <td>
+            {% if m.sanchalak %}
+            <div><b>{{ m.sanchalak.full_name }}</b></div>
+            {% if m.sanchalak.mobile %}
+            <small class="text-muted"><i class="bi bi-telephone text-primary me-1"></i>{{ m.sanchalak.mobile }}</small>
+            {% endif %}
+            {% else %}
+            <span class="badge bg-warning-subtle text-warning">Not Assigned</span>
+            {% endif %}
+          </td>
+          <td><b class="text-dark">{{ r.children_count }}</b></td>
+          <td><b class="text-success">{{ r.present_count }}</b></td>
+          <td>
+            <div class="d-flex align-items-center gap-2">
+              <div class="progress flex-grow-1" style="height: 6px; min-width: 60px;">
+                <div class="progress-bar {% if r.rate >= 75 %}bg-success{% elif r.rate >= 50 %}bg-warning{% else %}bg-danger{% endif %}"
+                     style="width: {{ r.rate }}%;"></div>
+              </div>
+              <span class="fw-bold" style="font-size:12px;">{{ r.rate }}%</span>
+            </div>
+          </td>
+          <td class="text-end">
+            <a href="/dossier/mandal/{{ m.id }}" class="btn btn-outline-primary btn-sm py-1 px-2 fw-semibold">
+              <i class="bi bi-file-earmark-text me-1"></i>View Dossier
+            </a>
+          </td>
+        </tr>
+        {% else %}
+        <tr>
+          <td colspan="7" class="text-center text-muted py-5">No Bal Mandals under this branch yet.</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

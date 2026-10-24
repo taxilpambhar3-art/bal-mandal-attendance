@@ -112,17 +112,21 @@
         {% for r in rows %}
         <tr>
           <td>
-            {% if r.child.face_photo %}
-            <img src="/static/uploads/{{ r.child.face_photo }}" class="rounded-circle shadow-sm" style="width:42px;height:42px;object-fit:cover;border:2px solid #3b82f6;" alt="">
-            {% else %}
-            <div class="rounded-circle bg-light text-secondary d-flex align-items-center justify-content-center border fw-bold" style="width:42px;height:42px;font-size:14px;">
-              {{ r.child.name[0] }}
-            </div>
-            {% endif %}
+            <a href="javascript:void(0)" onclick="openDossier('child', {{ r.child.id }})" title="Open Child Dossier">
+              {% if r.child.face_photo %}
+              <img src="/static/uploads/{{ r.child.face_photo }}" class="rounded-circle shadow-sm" style="width:42px;height:42px;object-fit:cover;border:2px solid #3b82f6;" alt="">
+              {% else %}
+              <div class="rounded-circle bg-light text-secondary d-flex align-items-center justify-content-center border fw-bold" style="width:42px;height:42px;font-size:14px;">
+                {{ r.child.name[0] }}
+              </div>
+              {% endif %}
+            </a>
           </td>
           <td>
             <div class="fw-bold text-dark d-flex align-items-center gap-1 flex-wrap">
-              <span>{{ r.child.name }}</span>
+              <a href="javascript:void(0)" onclick="openDossier('child', {{ r.child.id }})" class="dossier-link text-dark" title="Open Child Dossier">
+                {{ r.child.name }}
+              </a>
               {% if not r.child.is_active %}
               <span class="badge bg-secondary-subtle text-secondary border" style="font-size:10px;">Archived</span>
               {% endif %}
@@ -151,7 +155,7 @@
           </td>
           <td>
             {% if r.branch %}
-            <a href="/super-admin/branches/{{ r.branch.id }}/summary" class="fw-semibold text-primary text-decoration-none">
+            <a href="javascript:void(0)" onclick="openDossier('branch', {{ r.branch.id }})" class="fw-semibold text-primary text-decoration-none dossier-link" title="Open Branch Dossier">
               {{ r.branch.name }}
             </a>
             <small class="text-muted d-block">{{ r.branch.city }}</small>
@@ -161,9 +165,9 @@
           </td>
           <td>
             {% if r.mandal %}
-            <span class="badge bg-light text-dark border">
+            <a href="javascript:void(0)" onclick="openDossier('mandal', {{ r.mandal.id }})" class="badge bg-light text-dark border text-decoration-none dossier-badge-link" title="Open Bal Mandal Dossier">
               <i class="bi bi-diagram-3 text-success me-1"></i>{{ r.mandal.name }}
-            </span>
+            </a>
             {% else %}
             <span class="text-muted">—</span>
             {% endif %}
@@ -195,6 +199,9 @@
           </td>
           <td class="text-end text-nowrap">
             <div class="btn-group btn-group-sm">
+              <a href="javascript:void(0)" onclick="openDossier('child', {{ r.child.id }})" class="btn btn-outline-danger" title="Open Child Dossier">
+                <i class="bi bi-file-earmark-person me-1"></i>Dossier
+              </a>
               <a href="/super-admin/children/{{ r.child.id }}/edit" class="btn btn-outline-warning" title="Edit Child Details">
                 <i class="bi bi-pencil-square me-1"></i>Edit
               </a>

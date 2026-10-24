@@ -72,20 +72,36 @@
           <td>
             <div class="d-flex align-items-center gap-2">
               {% if a.child and a.child.face_photo %}
-              <img src="/static/uploads/{{ a.child.face_photo }}" class="rounded-circle shadow-sm" style="width:36px;height:36px;object-fit:cover;border:1.5px solid #3b82f6;" alt="">
+              <a href="javascript:void(0)" onclick="openDossier('child', {{ a.child.id }})" title="Open Child Dossier">
+                <img src="/static/uploads/{{ a.child.face_photo }}" class="rounded-circle shadow-sm" style="width:36px;height:36px;object-fit:cover;border:1.5px solid #3b82f6;" alt="">
+              </a>
               {% else %}
-              <div style="width:36px;height:36px;border-radius:50%;background:#e2e8f0;display:flex;align-items:center;justify-content:center;font-weight:700;color:#64748b;">
-                {{ a.child.name[0] if a.child else '?' }}
-              </div>
+              <a href="javascript:void(0)" onclick="openDossier('child', {{ a.child.id }})" title="Open Child Dossier" class="text-decoration-none">
+                <div style="width:36px;height:36px;border-radius:50%;background:#e2e8f0;display:flex;align-items:center;justify-content:center;font-weight:700;color:#64748b;">
+                  {{ a.child.name[0] if a.child else '?' }}
+                </div>
+              </a>
               {% endif %}
               <div>
-                <div class="fw-bold text-dark">{{ a.child.name if a.child else 'Child' }}</div>
-                <small class="text-muted font-monospace">{{ a.child.child_code if a.child else '—' }}</small>
+                {% if a.child %}
+                <a href="javascript:void(0)" onclick="openDossier('child', {{ a.child.id }})" class="fw-bold text-dark text-decoration-none dossier-link" title="Open Child Dossier">
+                  {{ a.child.name }}
+                </a>
+                <small class="text-muted d-block font-monospace">{{ a.child.child_code }}</small>
+                {% else %}
+                <div class="text-muted">Child</div>
+                {% endif %}
               </div>
             </div>
           </td>
           <td>
-            <span class="badge badge-soft-primary">{{ a.bal_mandal.name if a.bal_mandal else '—' }}</span>
+            {% if a.bal_mandal %}
+            <a href="javascript:void(0)" onclick="openDossier('mandal', {{ a.bal_mandal.id }})" class="badge badge-soft-primary text-decoration-none dossier-badge-link" title="Open Bal Mandal Dossier">
+              <i class="bi bi-diagram-3-fill me-1"></i>{{ a.bal_mandal.name }}
+            </a>
+            {% else %}
+            <span class="text-muted">—</span>
+            {% endif %}
           </td>
           <td>
             <span class="fw-semibold text-dark">{{ a.attendance_date.strftime('%d/%m/%Y') }}</span>

@@ -89,15 +89,17 @@
           </td>
           <td>
             {% if a.child %}
-            <b class="text-dark">{{ a.child.name }}</b>
-            <small class="text-muted d-block">{{ a.child.child_code }}</small>
+            <a href="javascript:void(0)" onclick="openDossier('child', {{ a.child.id }})" class="dossier-link text-dark" title="Open Child Dossier">
+              <b>{{ a.child.name }}</b>
+            </a>
+            <small class="text-muted d-block font-monospace">{{ a.child.child_code }}</small>
             {% else %}
             <span class="text-muted">Unknown</span>
             {% endif %}
           </td>
           <td>
             {% if a.bal_mandal and a.bal_mandal.branch %}
-            <a href="/super-admin/branches/{{ a.bal_mandal.branch.id }}/summary" class="fw-semibold text-primary text-decoration-none">
+            <a href="javascript:void(0)" onclick="openDossier('branch', {{ a.bal_mandal.branch.id }})" class="fw-semibold text-primary text-decoration-none dossier-link" title="Open Branch Dossier">
               <i class="bi bi-building me-1"></i>{{ a.bal_mandal.branch.name }}
             </a>
             <small class="text-muted d-block">{{ a.bal_mandal.branch.city }}</small>
@@ -107,9 +109,9 @@
           </td>
           <td>
             {% if a.bal_mandal %}
-            <span class="badge bg-light text-dark border">
+            <a href="javascript:void(0)" onclick="openDossier('mandal', {{ a.bal_mandal.id }})" class="badge bg-light text-dark border text-decoration-none dossier-badge-link" title="Open Bal Mandal Dossier">
               <i class="bi bi-diagram-3 text-success me-1"></i>{{ a.bal_mandal.name }}
-            </span>
+            </a>
             {% else %}
             <span class="text-muted">—</span>
             {% endif %}

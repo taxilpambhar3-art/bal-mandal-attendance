@@ -12,7 +12,11 @@
     <tbody>
     {% for r in rows %}
       <tr>
-        <td class="fw-semibold">{{ r.mandal.name }}</td>
+        <td class="fw-semibold">
+          <a href="javascript:void(0)" onclick="openDossier('mandal', {{ r.mandal.id }})" class="dossier-link text-dark" title="Open Bal Mandal Dossier">
+            <i class="bi bi-diagram-3-fill text-primary me-1"></i>{{ r.mandal.name }}
+          </a>
+        </td>
         <td>{{ r.mandal.weekday }}</td>
         <td>{{ r.mandal.meeting_time.strftime('%H:%M') if r.mandal.meeting_time else '—' }}</td>
         <td>{{ r.sanchalak.full_name if r.sanchalak else '—' }}</td>
@@ -20,6 +24,9 @@
         <td>{% if r.mandal.is_active %}<span class="badge badge-soft-success">Active</span>{% else %}<span class="badge badge-soft-secondary">Inactive</span>{% endif %}</td>
         <td class="text-end">
           <div class="d-flex gap-1 justify-content-end">
+            <a class="btn btn-outline-primary btn-sm" href="javascript:void(0)" onclick="openDossier('mandal', {{ r.mandal.id }})" title="View Dossier">
+              <i class="bi bi-file-earmark-person me-1"></i>Dossier
+            </a>
             <a class="btn btn-outline-success btn-sm" href="/branch-admin/bal-mandals/{{ r.mandal.id }}/edit">Edit</a>
             <form method="post" action="/branch-admin/bal-mandals/{{ r.mandal.id }}/delete" onsubmit="return confirm('Are you sure you want to delete \'{{ r.mandal.name }}\'? Children and attendance data for this mandal will also be deleted.');" style="display:inline;">
               <button type="submit" class="btn btn-outline-danger btn-sm" title="Delete Mandal">

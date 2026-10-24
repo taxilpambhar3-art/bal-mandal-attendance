@@ -26,7 +26,11 @@
            style="width:56px;height:56px;border-radius:50%;background:#fef3c7;color:#92400e;font-size:24px;">
         <i class="bi bi-trophy-fill"></i>
       </div>
-      <div class="fw-bold" style="font-size:14px;">{{ ranking[0].child.name }}</div>
+      <div class="fw-bold" style="font-size:14px;">
+        <a href="javascript:void(0)" onclick="openDossier('child', {{ ranking[0].child.id }})" class="dossier-link text-dark" title="Open Child Dossier">
+          {{ ranking[0].child.name }}
+        </a>
+      </div>
       <small class="text-muted d-block">{{ ranking[0].count }} Present</small>
       <span class="badge badge-soft-success mt-2">Rank #1</span>
     </div>
@@ -40,7 +44,11 @@
            style="width:56px;height:56px;border-radius:50%;background:#e2e8f0;color:#475569;font-size:24px;">
         <i class="bi bi-award-fill"></i>
       </div>
-      <div class="fw-bold" style="font-size:14px;">{{ ranking[1].child.name }}</div>
+      <div class="fw-bold" style="font-size:14px;">
+        <a href="javascript:void(0)" onclick="openDossier('child', {{ ranking[1].child.id }})" class="dossier-link text-dark" title="Open Child Dossier">
+          {{ ranking[1].child.name }}
+        </a>
+      </div>
       <small class="text-muted d-block">{{ ranking[1].count }} Present</small>
       <span class="badge badge-soft-success mt-2">Rank #2</span>
     </div>
@@ -54,7 +62,11 @@
            style="width:56px;height:56px;border-radius:50%;background:#fde8d0;color:#9a3412;font-size:24px;">
         <i class="bi bi-star-fill"></i>
       </div>
-      <div class="fw-bold" style="font-size:14px;">{{ ranking[2].child.name }}</div>
+      <div class="fw-bold" style="font-size:14px;">
+        <a href="javascript:void(0)" onclick="openDossier('child', {{ ranking[2].child.id }})" class="dossier-link text-dark" title="Open Child Dossier">
+          {{ ranking[2].child.name }}
+        </a>
+      </div>
       <small class="text-muted d-block">{{ ranking[2].count }} Present</small>
       <span class="badge badge-soft-success mt-2">Rank #3</span>
     </div>
@@ -87,7 +99,12 @@
         {% for r in ranking %}
         <tr>
           <td>{{ loop.index }}</td>
-          <td class="fw-semibold">{{ r.child.name }} ({{ r.child.child_code }})</td>
+          <td class="fw-semibold">
+            <a href="javascript:void(0)" onclick="openDossier('child', {{ r.child.id }})" class="dossier-link text-dark" title="Open Child Dossier">
+              {{ r.child.name }}
+            </a>
+            <small class="text-muted font-monospace">({{ r.child.child_code }})</small>
+          </td>
           <td>{{ r.child.guardian_name or '—' }}</td>
           <td><span class="badge badge-soft-primary px-3 py-1">{{ r.count }} Present</span></td>
           <td>

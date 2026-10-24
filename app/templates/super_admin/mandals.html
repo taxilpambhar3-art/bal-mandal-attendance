@@ -78,10 +78,12 @@
         {% for r in rows %}
         <tr>
           <td>
-            <b class="text-dark fs-6">{{ r.mandal.name }}</b>
+            <a href="javascript:void(0)" onclick="openDossier('mandal', {{ r.mandal.id }})" class="dossier-link text-dark fs-6" title="Open Bal Mandal Dossier">
+              <i class="bi bi-diagram-3-fill text-primary me-1"></i>{{ r.mandal.name }}
+            </a>
           </td>
           <td>
-            <a href="/super-admin/branches/{{ r.branch.id }}/summary" class="fw-semibold text-primary text-decoration-none">
+            <a href="javascript:void(0)" onclick="openDossier('branch', {{ r.branch.id }})" class="fw-semibold text-primary text-decoration-none dossier-link" title="Open Branch Dossier">
               <i class="bi bi-building me-1"></i>{{ r.branch.name }}
             </a>
             <small class="text-muted d-block">{{ r.branch.city }}</small>
@@ -120,6 +122,9 @@
           </td>
           <td class="text-end">
             <div class="d-flex gap-1 justify-content-end">
+              <a href="javascript:void(0)" onclick="openDossier('mandal', {{ r.mandal.id }})" class="btn btn-outline-primary btn-sm py-1 px-2 fw-semibold" title="View Bal Mandal Dossier">
+                <i class="bi bi-file-earmark-person me-1"></i>Dossier
+              </a>
               <form method="post" action="/super-admin/mandals/{{ r.mandal.id }}/delete" onsubmit="return confirm('Are you sure you want to delete \'{{ r.mandal.name }}\' mandal? All children and attendance records will also be deleted.');" style="display:inline;">
                 <button type="submit" class="btn btn-outline-danger btn-sm py-1 px-2" title="Delete Mandal">
                   <i class="bi bi-trash"></i>

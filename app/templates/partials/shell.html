@@ -209,7 +209,67 @@
   </div>
 </div>
 
+<!-- ================= GLOBAL DOSSIER MODAL ================= -->
+<div class="modal fade" id="dossierModal" tabindex="-1" aria-labelledby="dossierModalTitle" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-lg modal-dialog-scrollable">
+    <div class="modal-content shadow-lg border-0 rounded-4 overflow-hidden" style="background: #ffffff;">
+      <!-- Modal Header -->
+      <div class="p-3 px-4 border-bottom d-flex align-items-center justify-content-between bg-light-subtle">
+        <div class="d-flex align-items-center gap-2 flex-grow-1 overflow-hidden me-2">
+          <button type="button" id="dossierBackBtn" class="btn btn-sm btn-outline-secondary py-1 px-2 d-none" onclick="dossierBack()" title="Back to previous dossier">
+            <i class="bi bi-arrow-left me-1"></i>Back
+          </button>
+          <span id="dossierBadge" class="badge bg-danger-subtle text-danger border border-danger-subtle px-2 py-1 font-monospace" style="font-size: 11px;">
+            DOSSIER
+          </span>
+          <h6 class="modal-title fw-bold text-dark text-truncate mb-0" id="dossierModalTitle">
+            Loading Dossier...
+          </h6>
+        </div>
+        <div class="d-flex align-items-center gap-2 flex-shrink-0">
+          <button type="button" class="btn btn-outline-dark btn-sm py-1 px-2" onclick="printDossierModal()" title="Print Dossier">
+            <i class="bi bi-printer"></i>
+          </button>
+          <a id="dossierNewTabLink" href="#" target="_blank" class="btn btn-outline-secondary btn-sm py-1 px-2" title="Open full dossier in new tab">
+            <i class="bi bi-box-arrow-up-right"></i>
+          </a>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+      </div>
+
+      <!-- Modal Body -->
+      <div class="modal-body p-4" id="dossierModalBody" style="min-height: 340px;">
+        <div class="d-flex flex-column align-items-center justify-content-center py-5 text-muted">
+          <div class="spinner-border text-danger mb-2" role="status" style="color: #AC2B31 !important;"></div>
+          <span class="small fw-semibold">Loading dossier records...</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
 <style>
+/* Dossier Clickable Links Styling */
+.dossier-link {
+  color: #0f172a;
+  text-decoration: none;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  position: relative;
+}
+.dossier-link:hover {
+  color: #AC2B31 !important;
+  text-decoration: underline !important;
+}
+.dossier-badge-link {
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+.dossier-badge-link:hover {
+  transform: translateY(-1.5px);
+  box-shadow: 0 4px 10px rgba(172, 43, 49, 0.18);
+}
 .spotlight-group-title {
   font-size: 11px;
   font-weight: 700;
@@ -372,8 +432,12 @@ function renderSpotlightResults(categories, query) {
           </div>`;
       }
 
+      const onclickAttr = (item.dossier_type && item.dossier_id)
+        ? `onclick="openDossier('${item.dossier_type}', ${item.dossier_id}); return false;"`
+        : '';
+
       html += `
-        <a href="${item.url}" class="spotlight-item ${isFirst ? 'active' : ''}" data-index="${idx}" data-url="${item.url}">
+        <a href="${item.url}" ${onclickAttr} class="spotlight-item ${isFirst ? 'active' : ''}" data-index="${idx}" data-url="${item.url}" data-dossier-type="${item.dossier_type || ''}" data-dossier-id="${item.dossier_id || ''}">
           <div class="d-flex align-items-center gap-3 overflow-hidden me-2">
             ${visualEl}
             <div class="text-truncate">
@@ -383,6 +447,7 @@ function renderSpotlightResults(categories, query) {
             </div>
           </div>
           <div class="d-flex align-items-center gap-2 flex-shrink-0">
+            ${item.dossier_type ? `<span class="badge bg-danger-subtle text-danger border border-danger-subtle" style="font-size: 10px;"><i class="bi bi-file-earmark-person me-1"></i>Dossier</span>` : ''}
             ${item.badge ? `<span class="badge ${item.badge_class || 'bg-light text-secondary border'}" style="font-size: 10.5px;">${escapeHtml(item.badge)}</span>` : ''}
             <i class="bi bi-chevron-right text-muted small"></i>
           </div>
@@ -487,8 +552,12 @@ function renderDashboardResults(categories, query) {
           </div>`;
       }
 
+      const onclickAttr = (item.dossier_type && item.dossier_id)
+        ? `onclick="openDossier('${item.dossier_type}', ${item.dossier_id}); return false;"`
+        : '';
+
       html += `
-        <a href="${item.url}" class="spotlight-item dashboard-spotlight-item ${isFirst ? 'active' : ''}" data-index="${idx}" data-url="${item.url}" style="padding:6px 10px; margin-bottom:2px; border-radius:8px; text-decoration:none; display:flex; align-items:center; justify-content:space-between; color:#1e293b;">
+        <a href="${item.url}" ${onclickAttr} class="spotlight-item dashboard-spotlight-item ${isFirst ? 'active' : ''}" data-index="${idx}" data-url="${item.url}" data-dossier-type="${item.dossier_type || ''}" data-dossier-id="${item.dossier_id || ''}" style="padding:6px 10px; margin-bottom:2px; border-radius:8px; text-decoration:none; display:flex; align-items:center; justify-content:space-between; color:#1e293b;">
           <div class="d-flex align-items-center gap-2 overflow-hidden me-2">
             ${visualEl}
             <div class="text-truncate">
@@ -498,6 +567,7 @@ function renderDashboardResults(categories, query) {
             </div>
           </div>
           <div class="d-flex align-items-center gap-1 flex-shrink-0">
+            ${item.dossier_type ? `<span class="badge bg-danger-subtle text-danger border border-danger-subtle" style="font-size: 9.5px;"><i class="bi bi-file-earmark-person me-1"></i>Dossier</span>` : ''}
             ${item.badge ? `<span class="badge ${item.badge_class || 'bg-light text-secondary border'}" style="font-size: 10px;">${escapeHtml(item.badge)}</span>` : ''}
             <i class="bi bi-chevron-right text-muted" style="font-size:11px;"></i>
           </div>
@@ -624,6 +694,522 @@ function updateActiveSpotlightItem(items) {
       item.classList.remove('active');
     }
   });
+}
+
+// ============================================================================
+// GLOBAL DOSSIER SYSTEM
+// ============================================================================
+let dossierHistory = [];
+
+async function openDossier(type, id, pushHistory = true) {
+  if (!type || !id) return;
+
+  const modalEl = document.getElementById('dossierModal');
+  if (!modalEl) return;
+
+  const bsModal = bootstrap.Modal.getOrCreateInstance(modalEl);
+  bsModal.show();
+
+  // Close spotlight search modal if open
+  const spotlightEl = document.getElementById('spotlightModal');
+  if (spotlightEl) {
+    const spModal = bootstrap.Modal.getInstance(spotlightEl);
+    if (spModal) spModal.hide();
+  }
+
+  if (pushHistory) {
+    const last = dossierHistory[dossierHistory.length - 1];
+    if (!last || last.type !== type || last.id !== id) {
+      dossierHistory.push({ type: type, id: id });
+    }
+  }
+
+  const backBtn = document.getElementById('dossierBackBtn');
+  if (backBtn) {
+    if (dossierHistory.length > 1) backBtn.classList.remove('d-none');
+    else backBtn.classList.add('d-none');
+  }
+
+  const titleEl = document.getElementById('dossierModalTitle');
+  const badgeEl = document.getElementById('dossierBadge');
+  const bodyEl = document.getElementById('dossierModalBody');
+  const newTabLink = document.getElementById('dossierNewTabLink');
+
+  if (badgeEl) badgeEl.innerText = `${type.toUpperCase()} DOSSIER`;
+  if (titleEl) titleEl.innerText = `Loading ${type}...`;
+  if (bodyEl) {
+    bodyEl.innerHTML = `
+      <div class="d-flex flex-column align-items-center justify-content-center py-5 text-muted">
+        <div class="spinner-border mb-3" style="color: #AC2B31; width: 2.5rem; height: 2.5rem;" role="status"></div>
+        <div class="fw-bold fs-6 text-dark">Fetching Complete Dossier...</div>
+        <small class="text-muted mt-1">Retrieving official profile, metrics, and logs</small>
+      </div>`;
+  }
+
+  try {
+    const res = await fetch(`/api/dossier/${type}/${id}`);
+    if (!res.ok) {
+      const errData = await res.json().catch(() => ({}));
+      throw new Error(errData.detail || 'Failed to load dossier');
+    }
+    const json = await res.json();
+    const data = json.data;
+
+    if (newTabLink) newTabLink.href = data.view_url || `/dossier/${type}/${id}`;
+
+    if (type === 'child') {
+      renderChildDossierModal(data);
+    } else if (type === 'mandal') {
+      renderMandalDossierModal(data);
+    } else if (type === 'branch') {
+      renderBranchDossierModal(data);
+    }
+  } catch (err) {
+    if (bodyEl) {
+      bodyEl.innerHTML = `
+        <div class="text-center py-5">
+          <i class="bi bi-exclamation-triangle-fill text-danger fs-1 d-block mb-2"></i>
+          <h6 class="fw-bold text-dark mb-1">Dossier Unavailable</h6>
+          <p class="text-muted small mb-3">${escapeHtml(err.message)}</p>
+          <button type="button" class="btn btn-sm btn-outline-primary" onclick="openDossier('${type}', ${id}, false)">
+            <i class="bi bi-arrow-clockwise me-1"></i>Try Again
+          </button>
+        </div>`;
+    }
+    if (titleEl) titleEl.innerText = 'Error Loading Dossier';
+  }
+}
+
+function dossierBack() {
+  if (dossierHistory.length > 1) {
+    dossierHistory.pop(); // Remove current
+    const prev = dossierHistory[dossierHistory.length - 1];
+    if (prev) {
+      openDossier(prev.type, prev.id, false);
+    }
+  }
+}
+
+function printDossierModal() {
+  const newTabLink = document.getElementById('dossierNewTabLink');
+  if (newTabLink && newTabLink.href && newTabLink.href !== '#') {
+    const printWindow = window.open(newTabLink.href, '_blank');
+    if (printWindow) {
+      printWindow.onload = () => { printWindow.print(); };
+    }
+  } else {
+    window.print();
+  }
+}
+
+function renderChildDossierModal(c) {
+  const titleEl = document.getElementById('dossierModalTitle');
+  const badgeEl = document.getElementById('dossierBadge');
+  const bodyEl = document.getElementById('dossierModalBody');
+
+  if (titleEl) titleEl.innerText = `${c.name} (${c.child_code})`;
+  if (badgeEl) badgeEl.innerText = 'CHILD DOSSIER';
+
+  let photoHtml = c.face_photo
+    ? `<img src="${c.face_photo}" class="rounded-4 shadow-sm" style="width: 86px; height: 86px; object-fit: cover; border: 3px solid #AC2B31;" alt="${escapeHtml(c.name)}">`
+    : `<div class="rounded-4 bg-light text-secondary d-flex flex-column align-items-center justify-content-center border" style="width: 86px; height: 86px;">
+        <i class="bi bi-person-fill fs-2 text-muted"></i>
+        <small style="font-size: 9px;" class="text-muted">No Photo</small>
+       </div>`;
+
+  let historyRows = '';
+  if (c.history && c.history.length > 0) {
+    c.history.forEach(h => {
+      historyRows += `
+        <tr>
+          <td><b>${escapeHtml(h.date)}</b> <small class="text-muted d-block">${escapeHtml(h.weekday)}</small></td>
+          <td><span class="badge bg-light text-dark border">W${h.week_number}</span></td>
+          <td><span class="badge badge-soft-success"><i class="bi bi-check-circle-fill me-1"></i>Present</span></td>
+          <td><small class="text-muted">${escapeHtml(h.scan_time)}</small></td>
+          <td>
+            ${h.scan_photo ? `<a href="${h.scan_photo}" target="_blank"><img src="${h.scan_photo}" class="rounded" style="width:30px;height:30px;object-fit:cover;border:1px solid #10b981;" alt=""></a>` : '<span class="text-muted small">—</span>'}
+          </td>
+        </tr>`;
+    });
+  } else {
+    historyRows = `<tr><td colspan="5" class="text-center text-muted py-3">No attendance records found yet.</td></tr>`;
+  }
+
+  bodyEl.innerHTML = `
+    <!-- Child Header Banner -->
+    <div class="p-3 bg-light rounded-4 mb-3 border">
+      <div class="d-flex align-items-center gap-3">
+        ${photoHtml}
+        <div class="flex-grow-1 overflow-hidden">
+          <div class="d-flex align-items-center gap-2 flex-wrap mb-1">
+            <h5 class="fw-bold text-dark mb-0">${escapeHtml(c.name)}</h5>
+            <span class="badge bg-primary-subtle text-primary border border-primary-subtle font-monospace">${escapeHtml(c.child_code)}</span>
+            ${c.is_active ? '<span class="badge badge-soft-success">Active</span>' : '<span class="badge badge-soft-secondary">Archived</span>'}
+          </div>
+          <div class="text-muted small mb-2">
+            Grade: <b class="text-dark">${escapeHtml(c.standard)}</b> ·
+            DOB: <b class="text-dark">${escapeHtml(c.dob)}</b> (${escapeHtml(c.age)} yrs) ·
+            Gender: <b>${escapeHtml(c.gender)}</b>
+          </div>
+          <div class="d-flex gap-2 flex-wrap">
+            ${c.call_url ? `<a href="${c.call_url}" class="btn btn-sm btn-outline-primary py-1 px-2 fw-semibold" style="font-size:11px;"><i class="bi bi-telephone-fill me-1"></i>Call (${escapeHtml(c.mobile_number)})</a>` : ''}
+            ${c.whatsapp_url ? `<a href="${c.whatsapp_url}" target="_blank" class="btn btn-sm btn-success py-1 px-2 fw-semibold" style="font-size:11px;"><i class="bi bi-whatsapp me-1"></i>WhatsApp</a>` : ''}
+            ${c.edit_url ? `<a href="${c.edit_url}" class="btn btn-sm btn-outline-secondary py-1 px-2 fw-semibold" style="font-size:11px;"><i class="bi bi-pencil-square me-1"></i>Edit Profile</a>` : ''}
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 4 KPI Metrics -->
+    <div class="row g-2 text-center mb-3">
+      <div class="col-3">
+        <div class="p-2 bg-light rounded-3 border">
+          <small class="text-muted d-block" style="font-size:10px;">ATTENDED</small>
+          <b class="text-success fs-5">${c.stats.present_count}</b>
+        </div>
+      </div>
+      <div class="col-3">
+        <div class="p-2 bg-light rounded-3 border">
+          <small class="text-muted d-block" style="font-size:10px;">TOTAL SESSIONS</small>
+          <b class="text-primary fs-5">${c.stats.total_sessions || c.stats.total_records}</b>
+        </div>
+      </div>
+      <div class="col-3">
+        <div class="p-2 bg-light rounded-3 border">
+          <small class="text-muted d-block" style="font-size:10px;">ATTENDANCE RATE</small>
+          <b class="text-info fs-5">${c.stats.attendance_rate}%</b>
+        </div>
+      </div>
+      <div class="col-3">
+        <div class="p-2 bg-light rounded-3 border">
+          <small class="text-muted d-block" style="font-size:10px;">FACE RECOGNITION</small>
+          <b class="${c.face_registered ? 'text-success' : 'text-warning'} fs-6">${c.face_registered ? 'Ready' : 'Pending'}</b>
+        </div>
+      </div>
+    </div>
+
+    <!-- Affiliations & Family -->
+    <div class="row g-3 mb-3">
+      <div class="col-md-6">
+        <div class="p-3 bg-light rounded-3 border h-100">
+          <small class="text-muted fw-bold d-block mb-1" style="font-size: 10.5px;">MANDAL & BRANCH AFFILIATION</small>
+          <div class="mb-2">
+            <small class="text-muted" style="font-size:11px;">Bal Mandal:</small>
+            ${c.bal_mandal && c.bal_mandal.id ? `
+              <div class="mt-1">
+                <a href="javascript:void(0)" onclick="openDossier('mandal', ${c.bal_mandal.id})" class="fw-bold text-primary text-decoration-none" title="Open Bal Mandal Dossier">
+                  <i class="bi bi-diagram-3-fill me-1"></i>${escapeHtml(c.bal_mandal.name)} <i class="bi bi-box-arrow-up-right ms-1" style="font-size:10px;"></i>
+                </a>
+                <span class="badge bg-white text-dark border ms-1" style="font-size:10px;">${escapeHtml(c.bal_mandal.weekday)}</span>
+              </div>
+            ` : '<div class="text-muted small">Not assigned</div>'}
+          </div>
+          <div>
+            <small class="text-muted" style="font-size:11px;">Parent Branch:</small>
+            ${c.branch && c.branch.id ? `
+              <div class="mt-1">
+                <a href="javascript:void(0)" onclick="openDossier('branch', ${c.branch.id})" class="fw-bold text-primary text-decoration-none" title="Open Branch Dossier">
+                  <i class="bi bi-building-fill me-1"></i>${escapeHtml(c.branch.name)} (${escapeHtml(c.branch.city)}) <i class="bi bi-box-arrow-up-right ms-1" style="font-size:10px;"></i>
+                </a>
+              </div>
+            ` : '<div class="text-muted small">Not assigned</div>'}
+          </div>
+        </div>
+      </div>
+
+      <div class="col-md-6">
+        <div class="p-3 bg-light rounded-3 border h-100">
+          <small class="text-muted fw-bold d-block mb-1" style="font-size: 10.5px;">GUARDIAN & LOGISTICS</small>
+          <div class="mb-1">
+            <span class="text-muted small">Guardian:</span>
+            <b class="text-dark small">${escapeHtml(c.guardian_name)}</b>
+          </div>
+          <div class="mb-1">
+            <span class="text-muted small">Transit:</span>
+            <span class="badge ${c.uses_bus ? 'bg-warning-subtle text-warning border' : 'bg-light text-secondary border'}" style="font-size:10px;">
+              ${c.uses_bus ? `<i class="bi bi-bus-front-fill me-1"></i>${escapeHtml(c.bus_route || 'Bus')}` : 'Self / Walking'}
+            </span>
+          </div>
+          <div>
+            <span class="text-muted small">Address:</span>
+            <div class="text-dark small text-truncate" title="${escapeHtml(c.address)}">${escapeHtml(c.address || '—')}</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Attendance History Table -->
+    <div class="border rounded-3 overflow-hidden">
+      <div class="p-2 px-3 bg-white border-bottom d-flex justify-content-between align-items-center">
+        <span class="fw-bold small text-dark"><i class="bi bi-clock-history text-success me-1"></i>Recent Attendance Sessions</span>
+        <span class="badge bg-light text-secondary border">${c.history ? c.history.length : 0} Logged</span>
+      </div>
+      <div class="table-responsive" style="max-height: 220px;">
+        <table class="table table-sm table-hover align-middle mb-0" style="font-size: 12px;">
+          <thead class="table-light sticky-top">
+            <tr><th>Date</th><th>Week</th><th>Status</th><th>Scan Time</th><th>Photo</th></tr>
+          </thead>
+          <tbody>
+            ${historyRows}
+          </tbody>
+        </table>
+      </div>
+    </div>`;
+}
+
+function renderMandalDossierModal(m) {
+  const titleEl = document.getElementById('dossierModalTitle');
+  const badgeEl = document.getElementById('dossierBadge');
+  const bodyEl = document.getElementById('dossierModalBody');
+
+  if (titleEl) titleEl.innerText = `${m.name} — Bal Mandal`;
+  if (badgeEl) badgeEl.innerText = 'BAL MANDAL DOSSIER';
+
+  let childrenRows = '';
+  if (m.children && m.children.length > 0) {
+    m.children.forEach(c => {
+      childrenRows += `
+        <tr>
+          <td>
+            ${c.face_photo ? `<img src="${c.face_photo}" class="rounded-circle" style="width:28px;height:28px;object-fit:cover;" alt="">` : `<span class="badge bg-light text-secondary border font-monospace">${c.child_code}</span>`}
+          </td>
+          <td>
+            <a href="javascript:void(0)" onclick="openDossier('child', ${c.id})" class="fw-bold text-dark text-decoration-none hover-primary">
+              ${escapeHtml(c.name)} <i class="bi bi-box-arrow-up-right text-muted ms-1" style="font-size:9.5px;"></i>
+            </a>
+            ${!c.is_active ? '<span class="badge bg-secondary-subtle text-secondary border ms-1" style="font-size:9px;">Archived</span>' : ''}
+          </td>
+          <td><span class="badge bg-light text-dark border">${escapeHtml(c.standard)}</span></td>
+          <td><small class="text-muted">${escapeHtml(c.age)} yrs</small></td>
+          <td><small class="text-muted">${escapeHtml(c.guardian_name)} (${escapeHtml(c.mobile_number)})</small></td>
+          <td><b class="text-success">${c.present_count}</b></td>
+        </tr>`;
+    });
+  } else {
+    childrenRows = `<tr><td colspan="6" class="text-center text-muted py-3">No children enrolled yet.</td></tr>`;
+  }
+
+  let recentRows = '';
+  if (m.recent_sessions && m.recent_sessions.length > 0) {
+    m.recent_sessions.forEach(s => {
+      recentRows += `
+        <tr>
+          <td><b>${escapeHtml(s.date)}</b> <small class="text-muted">(${escapeHtml(s.weekday)})</small></td>
+          <td><span class="badge bg-light text-dark border">Week ${s.week_number}</span></td>
+          <td><b class="text-success">${s.present_count}</b> / ${m.stats.active_children}</td>
+          <td><b class="text-primary">${s.attendance_rate}%</b></td>
+        </tr>`;
+    });
+  } else {
+    recentRows = `<tr><td colspan="4" class="text-center text-muted py-2">No recent sessions recorded.</td></tr>`;
+  }
+
+  bodyEl.innerHTML = `
+    <!-- Mandal Header -->
+    <div class="p-3 bg-light rounded-4 mb-3 border">
+      <div class="d-flex justify-content-between align-items-start flex-wrap gap-2">
+        <div>
+          <div class="d-flex align-items-center gap-2 flex-wrap mb-1">
+            <h5 class="fw-bold text-dark mb-0">${escapeHtml(m.name)}</h5>
+            <span class="badge bg-light text-dark border">
+              <i class="bi bi-calendar-event me-1 text-primary"></i>${escapeHtml(m.weekday)}
+            </span>
+            <span class="badge bg-light text-dark border">
+              <i class="bi bi-clock me-1 text-secondary"></i>${escapeHtml(m.meeting_time)}
+            </span>
+            ${m.is_active ? '<span class="badge badge-soft-success">Active</span>' : '<span class="badge badge-soft-secondary">Inactive</span>'}
+          </div>
+          <div class="text-muted small">
+            Parent Branch: ${m.branch && m.branch.id ? `
+              <a href="javascript:void(0)" onclick="openDossier('branch', ${m.branch.id})" class="fw-bold text-primary text-decoration-none">
+                <i class="bi bi-building me-1"></i>${escapeHtml(m.branch.name)} (${escapeHtml(m.branch.city)}) <i class="bi bi-box-arrow-up-right ms-1" style="font-size:10px;"></i>
+              </a>
+            ` : 'Unassigned'}
+          </div>
+        </div>
+        <div>
+          ${m.edit_url ? `<a href="${m.edit_url}" class="btn btn-sm btn-outline-secondary fw-semibold py-1 px-2" style="font-size:11.5px;"><i class="bi bi-pencil-square me-1"></i>Edit Mandal</a>` : ''}
+        </div>
+      </div>
+
+      <!-- Sanchalak Card -->
+      <div class="mt-3 pt-2 border-top d-flex align-items-center justify-content-between flex-wrap gap-2">
+        <div class="d-flex align-items-center gap-2">
+          <div class="rounded-circle d-flex align-items-center justify-content-center text-white fw-bold shadow-sm" style="width:34px;height:34px;background:#10b981;font-size:13px;">
+            ${m.sanchalak && m.sanchalak.name ? m.sanchalak.name[0] : 'S'}
+          </div>
+          <div>
+            <div class="fw-bold text-dark" style="font-size:13px;">${m.sanchalak && m.sanchalak.name ? escapeHtml(m.sanchalak.name) : 'Sanchalak Not Assigned'}</div>
+            <small class="text-muted">Coordinator ${m.sanchalak && m.sanchalak.mobile ? `· ${escapeHtml(m.sanchalak.mobile)}` : ''}</small>
+          </div>
+        </div>
+        <div class="d-flex gap-2">
+          ${m.sanchalak && m.sanchalak.call_url ? `<a href="${m.sanchalak.call_url}" class="btn btn-sm btn-outline-primary py-1 px-2 fw-semibold" style="font-size:11px;"><i class="bi bi-telephone-fill me-1"></i>Call</a>` : ''}
+          ${m.sanchalak && m.sanchalak.whatsapp_url ? `<a href="${m.sanchalak.whatsapp_url}" target="_blank" class="btn btn-sm btn-success py-1 px-2 fw-semibold" style="font-size:11px;"><i class="bi bi-whatsapp me-1"></i>WhatsApp</a>` : ''}
+        </div>
+      </div>
+    </div>
+
+    <!-- 4 KPI Metrics -->
+    <div class="row g-2 text-center mb-3">
+      <div class="col-3">
+        <div class="p-2 bg-light rounded-3 border">
+          <small class="text-muted d-block" style="font-size:10px;">ENROLLED CHILDREN</small>
+          <b class="text-primary fs-5">${m.stats.total_children}</b>
+        </div>
+      </div>
+      <div class="col-3">
+        <div class="p-2 bg-light rounded-3 border">
+          <small class="text-muted d-block" style="font-size:10px;">PRESENT THIS WEEK</small>
+          <b class="text-success fs-5">${m.stats.present_this_week}</b>
+        </div>
+      </div>
+      <div class="col-3">
+        <div class="p-2 bg-light rounded-3 border">
+          <small class="text-muted d-block" style="font-size:10px;">ATTENDANCE RATE</small>
+          <b class="text-info fs-5">${m.stats.attendance_rate}%</b>
+        </div>
+      </div>
+      <div class="col-3">
+        <div class="p-2 bg-light rounded-3 border">
+          <small class="text-muted d-block" style="font-size:10px;">FACE REGISTERED</small>
+          <b class="text-dark fs-5">${m.stats.face_registered} / ${m.stats.active_children}</b>
+        </div>
+      </div>
+    </div>
+
+    <!-- Enrolled Children Table -->
+    <div class="border rounded-3 overflow-hidden mb-3">
+      <div class="p-2 px-3 bg-white border-bottom d-flex justify-content-between align-items-center">
+        <span class="fw-bold small text-dark"><i class="bi bi-people-fill text-primary me-1"></i>Enrolled Children (${m.children ? m.children.length : 0})</span>
+        <small class="text-muted" style="font-size:11px;">Click name to open child dossier</small>
+      </div>
+      <div class="table-responsive" style="max-height: 240px;">
+        <table class="table table-sm table-hover align-middle mb-0" style="font-size: 12px;">
+          <thead class="table-light sticky-top">
+            <tr><th>Photo/ID</th><th>Child Name</th><th>Standard</th><th>Age</th><th>Guardian</th><th>Present</th></tr>
+          </thead>
+          <tbody>
+            ${childrenRows}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Recent Sessions -->
+    ${m.recent_sessions && m.recent_sessions.length > 0 ? `
+    <div class="border rounded-3 overflow-hidden">
+      <div class="p-2 px-3 bg-white border-bottom d-flex justify-content-between align-items-center">
+        <span class="fw-bold small text-dark"><i class="bi bi-clock-history text-success me-1"></i>Recent Attendance Sessions</span>
+      </div>
+      <div class="table-responsive" style="max-height: 180px;">
+        <table class="table table-sm table-hover align-middle mb-0" style="font-size: 12px;">
+          <thead class="table-light sticky-top">
+            <tr><th>Date</th><th>Week</th><th>Present</th><th>Rate %</th></tr>
+          </thead>
+          <tbody>
+            ${recentRows}
+          </tbody>
+        </table>
+      </div>
+    </div>` : ''}`;
+}
+
+function renderBranchDossierModal(b) {
+  const titleEl = document.getElementById('dossierModalTitle');
+  const badgeEl = document.getElementById('dossierBadge');
+  const bodyEl = document.getElementById('dossierModalBody');
+
+  if (titleEl) titleEl.innerText = `${b.name} (${b.code}) — Branch`;
+  if (badgeEl) badgeEl.innerText = 'BRANCH DOSSIER';
+
+  let mandalsRows = '';
+  if (b.mandals && b.mandals.length > 0) {
+    b.mandals.forEach(m => {
+      mandalsRows += `
+        <tr>
+          <td>
+            <a href="javascript:void(0)" onclick="openDossier('mandal', ${m.id})" class="fw-bold text-dark text-decoration-none hover-primary">
+              <i class="bi bi-diagram-3-fill text-primary me-1"></i>${escapeHtml(m.name)} <i class="bi bi-box-arrow-up-right text-muted ms-1" style="font-size:9.5px;"></i>
+            </a>
+          </td>
+          <td><span class="badge bg-light text-dark border">${escapeHtml(m.weekday)} (${escapeHtml(m.meeting_time)})</span></td>
+          <td><small class="text-muted">${escapeHtml(m.sanchalak_name)}</small></td>
+          <td><b class="text-dark">${m.children_count}</b></td>
+          <td><b class="text-success">${m.present_count}</b></td>
+          <td><b class="text-info">${m.attendance_rate}%</b></td>
+        </tr>`;
+    });
+  } else {
+    mandalsRows = `<tr><td colspan="6" class="text-center text-muted py-3">No Bal Mandals under this branch yet.</td></tr>`;
+  }
+
+  bodyEl.innerHTML = `
+    <!-- Branch Header -->
+    <div class="p-3 bg-light rounded-4 mb-3 border">
+      <div class="d-flex justify-content-between align-items-start flex-wrap gap-2">
+        <div>
+          <div class="d-flex align-items-center gap-2 flex-wrap mb-1">
+            <h5 class="fw-bold text-dark mb-0">${escapeHtml(b.name)}</h5>
+            <span class="badge bg-primary-subtle text-primary border border-primary-subtle font-monospace">${escapeHtml(b.code)}</span>
+            <span class="badge bg-light text-dark border"><i class="bi bi-geo-alt-fill text-danger me-1"></i>${escapeHtml(b.city)}</span>
+            ${b.is_active ? '<span class="badge badge-soft-success">Active</span>' : '<span class="badge badge-soft-secondary">Inactive</span>'}
+          </div>
+          <p class="text-muted small mb-0">
+            Address: <b>${escapeHtml(b.address || '—')}</b> · Phone: <b>${escapeHtml(b.phone || '—')}</b>
+          </p>
+        </div>
+        <div>
+          ${b.edit_url ? `<a href="${b.edit_url}" class="btn btn-sm btn-outline-secondary fw-semibold py-1 px-2" style="font-size:11.5px;"><i class="bi bi-pencil-square me-1"></i>Edit Branch</a>` : ''}
+        </div>
+      </div>
+    </div>
+
+    <!-- 4 KPI Metrics -->
+    <div class="row g-2 text-center mb-3">
+      <div class="col-3">
+        <div class="p-2 bg-light rounded-3 border">
+          <small class="text-muted d-block" style="font-size:10px;">BAL MANDALS</small>
+          <b class="text-primary fs-5">${b.stats.total_mandals}</b>
+        </div>
+      </div>
+      <div class="col-3">
+        <div class="p-2 bg-light rounded-3 border">
+          <small class="text-muted d-block" style="font-size:10px;">TOTAL CHILDREN</small>
+          <b class="text-dark fs-5">${b.stats.total_children}</b>
+        </div>
+      </div>
+      <div class="col-3">
+        <div class="p-2 bg-light rounded-3 border">
+          <small class="text-muted d-block" style="font-size:10px;">PRESENT THIS WEEK</small>
+          <b class="text-success fs-5">${b.stats.present_this_week}</b>
+        </div>
+      </div>
+      <div class="col-3">
+        <div class="p-2 bg-light rounded-3 border">
+          <small class="text-muted d-block" style="font-size:10px;">ATTENDANCE RATE</small>
+          <b class="text-info fs-5">${b.stats.attendance_rate}%</b>
+        </div>
+      </div>
+    </div>
+
+    <!-- Bal Mandals Breakdown Table -->
+    <div class="border rounded-3 overflow-hidden">
+      <div class="p-2 px-3 bg-white border-bottom d-flex justify-content-between align-items-center">
+        <span class="fw-bold small text-dark"><i class="bi bi-diagram-3-fill text-primary me-1"></i>Bal Mandals Breakdown (${b.mandals ? b.mandals.length : 0})</span>
+        <small class="text-muted" style="font-size:11px;">Click name to open Bal Mandal dossier</small>
+      </div>
+      <div class="table-responsive" style="max-height: 280px;">
+        <table class="table table-sm table-hover align-middle mb-0" style="font-size: 12px;">
+          <thead class="table-light sticky-top">
+            <tr><th>Bal Mandal</th><th>Day & Time</th><th>Sanchalak</th><th>Children</th><th>Present</th><th>Rate %</th></tr>
+          </thead>
+          <tbody>
+            ${mandalsRows}
+          </tbody>
+        </table>
+      </div>
+    </div>`;
 }
 </script>
 {% endblock %}

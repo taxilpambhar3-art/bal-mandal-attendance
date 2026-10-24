@@ -80,17 +80,43 @@
         </h6>
 
         <div class="row g-3 mb-3" style="font-size:13.5px;">
-          <div class="col-6"><span class="text-muted">Name:</span> <b>{{ child.name }}</b></div>
-          <div class="col-6"><span class="text-muted">Child ID:</span> <b>{{ child.child_code }}</b></div>
+          <div class="col-6">
+            <span class="text-muted">Name:</span>
+            <b>
+              <a href="javascript:void(0)" onclick="openDossier('child', {{ child.id }})" class="dossier-link text-dark" title="Open Child Dossier">
+                {{ child.name }}
+              </a>
+            </b>
+          </div>
+          <div class="col-6"><span class="text-muted">Child ID:</span> <b class="font-monospace">{{ child.child_code }}</b></div>
           <div class="col-6"><span class="text-muted">Guardian:</span> <b>{{ child.guardian_name or '—' }}</b></div>
           <div class="col-6"><span class="text-muted">Age:</span> <b>{{ child.age }} yrs</b></div>
-          <div class="col-6"><span class="text-muted">Bal Mandal:</span> <b>{{ mandal.name if mandal else '—' }}</b></div>
-          <div class="col-6"><span class="text-muted">Branch:</span> <b>{{ mandal.branch.name if mandal and mandal.branch else '—' }}</b></div>
+          <div class="col-6">
+            <span class="text-muted">Bal Mandal:</span>
+            {% if mandal %}
+            <b><a href="javascript:void(0)" onclick="openDossier('mandal', {{ mandal.id }})" class="dossier-link text-primary" title="Open Bal Mandal Dossier">{{ mandal.name }}</a></b>
+            {% else %}
+            <b>—</b>
+            {% endif %}
+          </div>
+          <div class="col-6">
+            <span class="text-muted">Branch:</span>
+            {% if mandal and mandal.branch %}
+            <b><a href="javascript:void(0)" onclick="openDossier('branch', {{ mandal.branch.id }})" class="dossier-link text-primary" title="Open Branch Dossier">{{ mandal.branch.name }}</a></b>
+            {% else %}
+            <b>—</b>
+            {% endif %}
+          </div>
           <div class="col-6"><span class="text-muted">Date:</span> <b>{{ att.attendance_date.strftime('%d %B %Y') }}</b></div>
           <div class="col-6"><span class="text-muted">Week:</span> <b>Week {{ att.week_number }}</b></div>
           <div class="col-12">
             <span class="text-muted">Scan Time:</span> <b>{{ format_dt(att.scanned_at) }}</b>
           </div>
+        </div>
+        <div>
+          <button type="button" class="btn btn-outline-danger btn-sm w-100 fw-bold shadow-sm mb-2" onclick="openDossier('child', {{ child.id }})">
+            <i class="bi bi-file-earmark-person me-1"></i>Open {{ child.name }}'s Complete Dossier
+          </button>
         </div>
       </div>
 

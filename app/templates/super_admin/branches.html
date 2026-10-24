@@ -27,7 +27,7 @@
             <span class="badge bg-primary-subtle text-primary border border-primary-subtle">{{ r.branch.code }}</span>
           </td>
           <td style="min-width: 240px;">
-            <a href="/super-admin/branches/{{ r.branch.id }}/summary" class="fw-bold text-dark text-decoration-none hover-primary">
+            <a href="javascript:void(0)" onclick="openDossier('branch', {{ r.branch.id }})" class="fw-bold text-dark text-decoration-none dossier-link" title="Open Branch Dossier">
               {{ r.branch.name }}
             </a>
             <!-- Particular Branch Summary directly below the branch name -->
@@ -37,9 +37,9 @@
               {% if r.mandals_detail %}
               <div class="d-flex flex-wrap gap-1 mt-1">
                 {% for m in r.mandals_detail %}
-                <span class="badge bg-light text-dark border" style="font-size:9.5px;">
+                <a href="javascript:void(0)" onclick="openDossier('mandal', {{ m.id }})" class="badge bg-light text-dark border dossier-badge-link text-decoration-none" style="font-size:9.5px;" title="Open Bal Mandal Dossier">
                   <i class="bi bi-diagram-3 text-primary me-1"></i>{{ m.name }} ({{ m.children_count }})
-                </span>
+                </a>
                 {% endfor %}
               </div>
               {% endif %}
@@ -84,6 +84,9 @@
           </td>
           <td>
             <div class="d-flex gap-1">
+              <a class="btn btn-outline-danger btn-sm py-1 px-2 fw-semibold" href="javascript:void(0)" onclick="openDossier('branch', {{ r.branch.id }})" title="Open Branch Dossier">
+                <i class="bi bi-file-earmark-person me-1"></i>Dossier
+              </a>
               <a class="btn btn-outline-primary btn-sm py-1 px-2" href="/super-admin/branches/{{ r.branch.id }}/summary" title="View Branch Summary">
                 <i class="bi bi-card-checklist me-1"></i>Summary
               </a>

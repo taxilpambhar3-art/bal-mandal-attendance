@@ -1,0 +1,276 @@
+{% extends "partials/shell.html" %}
+{% block title %}{{ child.name }} — Child Dossier{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+  <div>
+    <nav aria-label="breadcrumb">
+      <ol class="breadcrumb mb-1" style="font-size:12px;">
+        <li class="breadcrumb-item"><a href="/" class="text-decoration-none">Home</a></li>
+        {% if branch %}
+        <li class="breadcrumb-item">
+          <a href="/dossier/branch/{{ branch.id }}" class="text-decoration-none">{{ branch.name }}</a>
+        </li>
+        {% endif %}
+        {% if mandal %}
+        <li class="breadcrumb-item">
+          <a href="/dossier/mandal/{{ mandal.id }}" class="text-decoration-none">{{ mandal.name }}</a>
+        </li>
+        {% endif %}
+        <li class="breadcrumb-item active">{{ child.name }}</li>
+      </ol>
+    </nav>
+    <div class="d-flex align-items-center gap-2">
+      <span class="badge bg-danger-subtle text-danger border border-danger-subtle px-2 py-1 font-monospace">
+        <i class="bi bi-person-vcard-fill me-1"></i>CHILD DOSSIER
+      </span>
+      <h5 class="fw-bold mb-0 text-dark">{{ child.name }}</h5>
+      <span class="badge bg-primary-subtle text-primary border border-primary-subtle font-monospace">{{ child.child_code }}</span>
+      {% if child.is_active %}
+      <span class="badge badge-soft-success">Active</span>
+      {% else %}
+      <span class="badge badge-soft-secondary">Archived</span>
+      {% endif %}
+    </div>
+  </div>
+  <div class="d-flex gap-2 flex-wrap">
+    {% if child.mobile_number %}
+    <a href="tel:{{ child.mobile_number }}" class="btn btn-outline-primary btn-sm fw-semibold shadow-sm">
+      <i class="bi bi-telephone-fill me-1"></i>Call Guardian
+    </a>
+    {% set clean_phone = child.mobile_number|replace(' ', '')|replace('-', '') %}
+    {% if clean_phone|length == 10 %}{% set clean_phone = '91' ~ clean_phone %}{% endif %}
+    <a href="https://wa.me/{{ clean_phone }}?text=Jay%20Swaminarayan,%20regarding%20{{ child.name }}%20attendance" target="_blank" class="btn btn-success btn-sm fw-semibold shadow-sm">
+      <i class="bi bi-whatsapp me-1"></i>WhatsApp
+    </a>
+    {% endif %}
+    {% if user.role == 'super_admin' %}
+    <a href="/super-admin/children/{{ child.id }}/edit" class="btn btn-outline-secondary btn-sm fw-semibold shadow-sm">
+      <i class="bi bi-pencil-square me-1"></i>Edit
+    </a>
+    {% elif user.role == 'branch_admin' %}
+    <a href="/branch-admin/children/{{ child.id }}/edit" class="btn btn-outline-secondary btn-sm fw-semibold shadow-sm">
+      <i class="bi bi-pencil-square me-1"></i>Edit
+    </a>
+    {% elif user.role == 'sanchalak' %}
+    <a href="/sanchalak/children/{{ child.id }}/edit" class="btn btn-outline-secondary btn-sm fw-semibold shadow-sm">
+      <i class="bi bi-pencil-square me-1"></i>Edit
+    </a>
+    {% endif %}
+    <button type="button" class="btn btn-outline-dark btn-sm fw-semibold shadow-sm" onclick="window.print()">
+      <i class="bi bi-printer me-1"></i>Print Dossier
+    </button>
+    <a href="javascript:history.back()" class="btn btn-light btn-sm fw-semibold border shadow-sm">
+      <i class="bi bi-arrow-left me-1"></i>Back
+    </a>
+  </div>
+</div>
+
+<!-- Primary Profile Overview Card -->
+<div class="panel mb-4 p-4 border-0 shadow-sm" style="background: linear-gradient(135deg, #ffffff 0%, #fffbf8 100%); border-top: 4px solid #AC2B31 !important;">
+  <div class="row g-4 align-items-center">
+    <div class="col-auto text-center">
+      <div class="position-relative d-inline-block">
+        {% if child.face_photo %}
+        <img src="/static/uploads/{{ child.face_photo }}" alt="{{ child.name }}" class="rounded-4 shadow" style="width: 120px; height: 120px; object-fit: cover; border: 3px solid #ffffff; box-shadow: 0 8px 24px rgba(172,43,49,0.2) !important;">
+        <span class="position-absolute bottom-0 end-0 bg-success border border-white rounded-circle p-1" title="Face Scan Registered" style="width: 22px; height: 22px; display: flex; align-items: center; justify-content: center;">
+          <i class="bi bi-check text-white" style="font-size: 14px;"></i>
+        </span>
+        {% else %}
+        <div class="rounded-4 shadow-sm bg-light text-secondary d-flex flex-column align-items-center justify-content-center border" style="width: 120px; height: 120px;">
+          <i class="bi bi-person-bounding-box fs-1 text-muted"></i>
+          <small class="text-muted mt-1" style="font-size: 10px;">No Photo</small>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+    <div class="col">
+      <div class="d-flex align-items-center gap-2 flex-wrap mb-1">
+        <h4 class="fw-bold text-dark mb-0">{{ child.name }}</h4>
+        <span class="badge bg-light text-secondary border">{{ child.gender or 'Male' }}</span>
+        {% if child.standard %}
+        <span class="badge badge-soft-info fs-6">{{ child.standard }}</span>
+        {% endif %}
+      </div>
+      <p class="text-muted small mb-2">
+        First: <b>{{ child.first_name or '—' }}</b> · Father: <b>{{ child.father_name or '—' }}</b> · Surname: <b>{{ child.surname or '—' }}</b>
+      </p>
+      <div class="row g-2 pt-2 border-top">
+        <div class="col-sm-4">
+          <small class="text-muted d-block" style="font-size: 11px;">DATE OF BIRTH / AGE</small>
+          <span class="fw-bold text-dark">{{ child.dob_str or (child.dob.strftime('%d/%m/%Y') if child.dob else '—') }}</span>
+          <small class="text-muted">({{ child.age }} yrs)</small>
+        </div>
+        <div class="col-sm-4">
+          <small class="text-muted d-block" style="font-size: 11px;">GUARDIAN & PHONE</small>
+          <span class="fw-bold text-dark">{{ child.guardian_name or '—' }}</span>
+          {% if child.mobile_number %}
+          <small class="text-muted d-block"><i class="bi bi-telephone text-primary me-1"></i>{{ child.mobile_number }}</small>
+          {% endif %}
+        </div>
+        <div class="col-sm-4">
+          <small class="text-muted d-block" style="font-size: 11px;">TRANSIT / BUS ROUTE</small>
+          {% if child.uses_bus %}
+          <span class="badge bg-warning-subtle text-warning border border-warning-subtle">
+            <i class="bi bi-bus-front-fill me-1"></i>{{ child.bus_route or 'Comes by bus' }}
+          </span>
+          {% else %}
+          <span class="text-muted small">Self / Walking</span>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- KPI Cards -->
+<div class="row g-3 mb-4">
+  <div class="col-6 col-lg-3">
+    <div class="stat-card">
+      <div class="ico bg-primary-subtle text-primary"><i class="bi bi-calendar2-check-fill"></i></div>
+      <h3>{{ stats.present_count }}</h3>
+      <p>Sessions Attended</p>
+    </div>
+  </div>
+  <div class="col-6 col-lg-3">
+    <div class="stat-card">
+      <div class="ico bg-info-subtle text-info"><i class="bi bi-graph-up-arrow"></i></div>
+      <h3>{{ stats.attendance_rate }}%</h3>
+      <p>Overall Attendance Rate</p>
+    </div>
+  </div>
+  <div class="col-6 col-lg-3">
+    <div class="stat-card">
+      <div class="ico bg-success-subtle text-success"><i class="bi bi-camera-fill"></i></div>
+      <h3>{{ 'Registered' if child.face_photo else 'Pending' }}</h3>
+      <p>Face Scan Recognition</p>
+    </div>
+  </div>
+  <div class="col-6 col-lg-3">
+    <div class="stat-card">
+      <div class="ico bg-warning-subtle text-warning"><i class="bi bi-clock-history"></i></div>
+      <h3>{{ stats.total_records }}</h3>
+      <p>Total Logged Sessions</p>
+    </div>
+  </div>
+</div>
+
+<div class="row g-4 mb-4">
+  <!-- Affiliation Details -->
+  <div class="col-lg-5">
+    <div class="panel h-100">
+      <h6 class="fw-bold mb-3 text-dark">
+        <i class="bi bi-diagram-3-fill text-primary me-2"></i>Mandal & Branch Details
+      </h6>
+      <div class="p-3 bg-light rounded-3 mb-3 border">
+        <small class="text-muted d-block" style="font-size:11px;">BAL MANDAL</small>
+        {% if mandal %}
+        <div class="d-flex justify-content-between align-items-center mt-1">
+          <a href="/dossier/mandal/{{ mandal.id }}" class="fw-bold fs-6 text-primary text-decoration-none">
+            {{ mandal.name }} <i class="bi bi-box-arrow-up-right ms-1" style="font-size:11px;"></i>
+          </a>
+          <span class="badge bg-white text-dark border">{{ mandal.weekday }}</span>
+        </div>
+        <small class="text-muted d-block mt-1">
+          <i class="bi bi-clock me-1"></i>Meeting Time: {{ mandal.meeting_time.strftime('%I:%M %p') if mandal.meeting_time else '—' }}
+        </small>
+        {% else %}
+        <span class="text-muted">Not assigned</span>
+        {% endif %}
+      </div>
+
+      <div class="p-3 bg-light rounded-3 mb-3 border">
+        <small class="text-muted d-block" style="font-size:11px;">PARENT BRANCH</small>
+        {% if branch %}
+        <div class="d-flex justify-content-between align-items-center mt-1">
+          <a href="/dossier/branch/{{ branch.id }}" class="fw-bold fs-6 text-primary text-decoration-none">
+            {{ branch.name }} <i class="bi bi-box-arrow-up-right ms-1" style="font-size:11px;"></i>
+          </a>
+          <span class="badge bg-primary-subtle text-primary border border-primary-subtle">{{ branch.code }}</span>
+        </div>
+        <small class="text-muted d-block mt-1">
+          <i class="bi bi-geo-alt-fill text-danger me-1"></i>City: <b>{{ branch.city }}</b>
+        </small>
+        {% else %}
+        <span class="text-muted">Not assigned</span>
+        {% endif %}
+      </div>
+
+      <div class="p-3 bg-light rounded-3 border">
+        <small class="text-muted d-block" style="font-size:11px;">SANCHALAK (COORDINATOR)</small>
+        {% if sanchalak %}
+        <div class="fw-bold text-dark mt-1">{{ sanchalak.full_name }}</div>
+        {% if sanchalak.mobile %}
+        <small class="text-muted d-block mt-1">
+          <i class="bi bi-telephone text-primary me-1"></i>{{ sanchalak.mobile }}
+        </small>
+        {% endif %}
+        {% else %}
+        <span class="badge bg-warning-subtle text-warning mt-1">Not Assigned</span>
+        {% endif %}
+      </div>
+
+      <div class="mt-3">
+        <small class="text-muted d-block" style="font-size:11px;">RESIDENTIAL ADDRESS</small>
+        <p class="small text-dark mb-0 mt-1 p-2 bg-light rounded border">
+          {{ child.address or 'No address recorded' }}
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Attendance History Table -->
+  <div class="col-lg-7">
+    <div class="panel h-100 p-0 overflow-hidden">
+      <div class="p-3 border-bottom d-flex justify-content-between align-items-center bg-white">
+        <h6 class="fw-bold mb-0 text-dark">
+          <i class="bi bi-clock-history text-success me-2"></i>Attendance Log History
+        </h6>
+        <span class="badge badge-soft-primary">{{ history|length }} Records</span>
+      </div>
+      <div class="table-responsive" style="max-height: 480px;">
+        <table class="table mock table-hover align-middle mb-0">
+          <thead class="sticky-top bg-white">
+            <tr>
+              <th>Date</th>
+              <th>Week Cycle</th>
+              <th>Status</th>
+              <th>Scan Time</th>
+              <th>Live Photo</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for a in history %}
+            <tr>
+              <td>
+                <b>{{ a.attendance_date.strftime('%d %b %Y') }}</b>
+                <small class="text-muted d-block">{{ a.attendance_date.strftime('%A') }}</small>
+              </td>
+              <td><span class="badge bg-light text-dark border">Week {{ a.week_number }}</span></td>
+              <td>
+                <span class="badge badge-soft-success">
+                  <i class="bi bi-check-circle-fill me-1"></i>Present
+                </span>
+              </td>
+              <td>{{ format_dt(a.scanned_at) }}</td>
+              <td>
+                {% if a.scan_photo %}
+                <a href="/static/uploads/{{ a.scan_photo }}" target="_blank">
+                  <img src="/static/uploads/{{ a.scan_photo }}" class="rounded shadow-sm" style="width: 36px; height: 36px; object-fit: cover; border: 1.5px solid #10b981;" alt="Scan">
+                </a>
+                {% else %}
+                <span class="text-muted small">—</span>
+                {% endif %}
+              </td>
+            </tr>
+            {% else %}
+            <tr>
+              <td colspan="5" class="text-center text-muted py-4">No attendance records found yet.</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

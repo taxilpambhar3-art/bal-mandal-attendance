@@ -81,6 +81,8 @@ def spotlight_search(
                 "badge_class": "bg-success-subtle text-success border border-success-subtle" if c.is_active else "bg-secondary-subtle text-secondary border",
                 "meta": meta_str,
                 "url": target_url,
+                "dossier_type": "child",
+                "dossier_id": c.id,
                 "photo": f"/static/uploads/{c.face_photo}" if c.face_photo else None,
                 "icon": "bi-person-heart",
             })
@@ -115,6 +117,8 @@ def spotlight_search(
                     "badge_class": "bg-info-subtle text-info border border-info-subtle",
                     "meta": f"Meeting Time: {time_str}",
                     "url": url,
+                    "dossier_type": "mandal",
+                    "dossier_id": m.id,
                     "icon": "bi-diagram-3-fill",
                 })
             categories.append({
@@ -142,6 +146,8 @@ def spotlight_search(
                     "badge_class": "bg-primary-subtle text-primary border border-primary-subtle",
                     "meta": f"Statewide Branch · ID: {b.id}",
                     "url": f"/super-admin/branches/{b.id}/summary",
+                    "dossier_type": "branch",
+                    "dossier_id": b.id,
                     "icon": "bi-building-fill",
                 })
             categories.append({

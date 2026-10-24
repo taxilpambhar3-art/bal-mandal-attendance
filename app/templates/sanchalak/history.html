@@ -36,7 +36,12 @@
           <td>{{ a.attendance_date.strftime('%d %b %Y') }}</td>
           <td><span class="badge badge-soft-secondary">W{{ a.week_number }}</span></td>
           <td>{{ format_dt(a.scanned_at) }}</td>
-          <td class="fw-semibold">{{ a.child.name }} ({{ a.child.child_code }})</td>
+          <td class="fw-semibold">
+            <a href="javascript:void(0)" onclick="openDossier('child', {{ a.child.id }})" class="dossier-link text-dark" title="Open Child Dossier">
+              {{ a.child.name }}
+            </a>
+            <small class="text-muted font-monospace">({{ a.child.child_code }})</small>
+          </td>
           <td>
             {% if a.scan_photo %}
             <span class="badge badge-soft-info"><i class="bi bi-image me-1"></i>1 Photo</span>

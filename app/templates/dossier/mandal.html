@@ -1,0 +1,289 @@
+{% extends "partials/shell.html" %}
+{% block title %}{{ mandal.name }} — Bal Mandal Dossier{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+  <div>
+    <nav aria-label="breadcrumb">
+      <ol class="breadcrumb mb-1" style="font-size:12px;">
+        <li class="breadcrumb-item"><a href="/" class="text-decoration-none">Home</a></li>
+        {% if branch %}
+        <li class="breadcrumb-item">
+          <a href="/dossier/branch/{{ branch.id }}" class="text-decoration-none">{{ branch.name }}</a>
+        </li>
+        {% endif %}
+        <li class="breadcrumb-item active">{{ mandal.name }}</li>
+      </ol>
+    </nav>
+    <div class="d-flex align-items-center gap-2">
+      <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-2 py-1 font-monospace">
+        <i class="bi bi-diagram-3-fill me-1"></i>BAL MANDAL DOSSIER
+      </span>
+      <h5 class="fw-bold mb-0 text-dark">{{ mandal.name }}</h5>
+      {% if mandal.is_active %}
+      <span class="badge badge-soft-success">Active</span>
+      {% else %}
+      <span class="badge badge-soft-secondary">Inactive</span>
+      {% endif %}
+    </div>
+  </div>
+  <div class="d-flex gap-2 flex-wrap">
+    {% if sanchalak and sanchalak.mobile %}
+    <a href="tel:{{ sanchalak.mobile }}" class="btn btn-outline-primary btn-sm fw-semibold shadow-sm">
+      <i class="bi bi-telephone-fill me-1"></i>Call Sanchalak
+    </a>
+    {% set clean_phone = sanchalak.mobile|replace(' ', '')|replace('-', '') %}
+    {% if clean_phone|length == 10 %}{% set clean_phone = '91' ~ clean_phone %}{% endif %}
+    <a href="https://wa.me/{{ clean_phone }}?text=Jay%20Swaminarayan" target="_blank" class="btn btn-success btn-sm fw-semibold shadow-sm">
+      <i class="bi bi-whatsapp me-1"></i>WhatsApp Sanchalak
+    </a>
+    {% endif %}
+    {% if user.role == 'branch_admin' %}
+    <a href="/branch-admin/bal-mandals/{{ mandal.id }}/edit" class="btn btn-outline-secondary btn-sm fw-semibold shadow-sm">
+      <i class="bi bi-pencil-square me-1"></i>Edit
+    </a>
+    {% endif %}
+    <button type="button" class="btn btn-outline-dark btn-sm fw-semibold shadow-sm" onclick="window.print()">
+      <i class="bi bi-printer me-1"></i>Print Dossier
+    </button>
+    <a href="javascript:history.back()" class="btn btn-light btn-sm fw-semibold border shadow-sm">
+      <i class="bi bi-arrow-left me-1"></i>Back
+    </a>
+  </div>
+</div>
+
+<!-- Header Overview Panel -->
+<div class="panel mb-4 p-4 border-0 shadow-sm" style="background: linear-gradient(135deg, #ffffff 0%, #fcfbf9 100%); border-top: 4px solid #AC2B31 !important;">
+  <div class="row g-4 align-items-center">
+    <div class="col-md-7">
+      <div class="d-flex align-items-center gap-2 mb-2">
+        <h4 class="fw-bold text-dark mb-0">{{ mandal.name }}</h4>
+        <span class="badge bg-light text-dark border">
+          <i class="bi bi-calendar-event me-1 text-primary"></i>{{ mandal.weekday }}
+        </span>
+        {% if mandal.meeting_time %}
+        <span class="badge bg-light text-dark border">
+          <i class="bi bi-clock me-1 text-secondary"></i>{{ mandal.meeting_time.strftime('%I:%M %p') }}
+        </span>
+        {% endif %}
+      </div>
+      <p class="text-muted small mb-3">
+        Branch: {% if branch %}<a href="/dossier/branch/{{ branch.id }}" class="fw-bold text-primary text-decoration-none">{{ branch.name }} ({{ branch.city }})</a>{% else %}Unassigned{% endif %}
+      </p>
+      <div class="d-flex align-items-center gap-3 flex-wrap">
+        <div>
+          <small class="text-muted d-block" style="font-size:11px;">SANCHALAK (COORDINATOR)</small>
+          {% if sanchalak %}
+          <b class="text-dark">{{ sanchalak.full_name }}</b>
+          <small class="text-muted">(@{{ sanchalak.username }})</small>
+          {% else %}
+          <span class="badge bg-warning-subtle text-warning">Not Assigned</span>
+          {% endif %}
+        </div>
+        {% if sanchalak and sanchalak.mobile %}
+        <div class="border-start ps-3">
+          <small class="text-muted d-block" style="font-size:11px;">CONTACT NUMBER</small>
+          <a href="tel:{{ sanchalak.mobile }}" class="fw-bold text-primary text-decoration-none">
+            <i class="bi bi-telephone me-1"></i>{{ sanchalak.mobile }}
+          </a>
+        </div>
+        {% endif %}
+        <div class="border-start ps-3">
+          <small class="text-muted d-block" style="font-size:11px;">REGISTRATION DATE</small>
+          <span class="fw-bold text-dark">{{ mandal.created_at.strftime('%d %b %Y') if mandal.created_at else '—' }}</span>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-5">
+      <div class="p-3 bg-light rounded-3 border">
+        <div class="d-flex justify-content-between align-items-center mb-1">
+          <span class="small fw-bold text-secondary">Current Attendance Performance</span>
+          <span class="badge badge-soft-success fw-bold">{{ stats.attendance_rate }}%</span>
+        </div>
+        <div class="progress mb-2" style="height: 8px;">
+          <div class="progress-bar {% if stats.attendance_rate >= 75 %}bg-success{% elif stats.attendance_rate >= 50 %}bg-warning{% else %}bg-danger{% endif %}"
+               style="width: {{ stats.attendance_rate }}%;"></div>
+        </div>
+        <div class="d-flex justify-content-between text-muted" style="font-size: 11px;">
+          <span>{{ stats.present_this_week }} Present This Week</span>
+          <span>{{ stats.active_children }} Enrolled Active</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- KPI Stat Cards -->
+<div class="row g-3 mb-4">
+  <div class="col-6 col-lg-3">
+    <div class="stat-card">
+      <div class="ico bg-primary-subtle text-primary"><i class="bi bi-people-fill"></i></div>
+      <h3>{{ stats.total_children }}</h3>
+      <p>Total Enrolled Children</p>
+    </div>
+  </div>
+  <div class="col-6 col-lg-3">
+    <div class="stat-card">
+      <div class="ico bg-success-subtle text-success"><i class="bi bi-check-circle-fill"></i></div>
+      <h3>{{ stats.present_this_week }}</h3>
+      <p>Present This Week</p>
+    </div>
+  </div>
+  <div class="col-6 col-lg-3">
+    <div class="stat-card">
+      <div class="ico bg-info-subtle text-info"><i class="bi bi-camera-fill"></i></div>
+      <h3>{{ stats.face_registered }}</h3>
+      <p>Face Scan Registered</p>
+    </div>
+  </div>
+  <div class="col-6 col-lg-3">
+    <div class="stat-card">
+      <div class="ico bg-warning-subtle text-warning"><i class="bi bi-bus-front-fill"></i></div>
+      <h3>{{ stats.bus_count }}</h3>
+      <p>Comes by Bus</p>
+    </div>
+  </div>
+</div>
+
+<!-- Enrolled Children Directory Table -->
+<div class="panel mb-4 p-0 overflow-hidden">
+  <div class="p-3 border-bottom d-flex justify-content-between align-items-center bg-white flex-wrap gap-2">
+    <div>
+      <h6 class="fw-bold mb-0 text-dark">
+        <i class="bi bi-person-hearts text-danger me-2"></i>Enrolled Children in {{ mandal.name }}
+      </h6>
+      <small class="text-muted">Click any child's name to view their complete dossier</small>
+    </div>
+    <span class="badge badge-soft-primary fw-bold">{{ children|length }} Children</span>
+  </div>
+  <div class="table-responsive">
+    <table class="table mock table-hover align-middle mb-0">
+      <thead>
+        <tr>
+          <th>Photo</th>
+          <th>Child Code</th>
+          <th>Child Name</th>
+          <th>Standard / Grade</th>
+          <th>DOB & Age</th>
+          <th>Guardian Contact</th>
+          <th>Bus</th>
+          <th>Face Status</th>
+          <th class="text-end">Dossier Action</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for c in children %}
+        <tr>
+          <td>
+            {% if c.face_photo %}
+            <img src="/static/uploads/{{ c.face_photo }}" class="rounded-circle shadow-sm" style="width:38px;height:38px;object-fit:cover;border:2px solid #3b82f6;" alt="{{ c.name }}">
+            {% else %}
+            <div class="rounded-circle bg-light text-secondary d-flex align-items-center justify-content-center border fw-bold" style="width:38px;height:38px;font-size:13px;">
+              {{ c.name[0] }}
+            </div>
+            {% endif %}
+          </td>
+          <td>
+            <span class="badge bg-light text-dark font-monospace border">{{ c.child_code }}</span>
+          </td>
+          <td>
+            <a href="/dossier/child/{{ c.id }}" class="fw-bold text-dark text-decoration-none hover-primary">
+              {{ c.name }}
+            </a>
+            {% if not c.is_active %}
+            <span class="badge bg-secondary-subtle text-secondary border ms-1" style="font-size:9.5px;">Archived</span>
+            {% endif %}
+          </td>
+          <td>
+            {% if c.standard %}
+            <span class="badge badge-soft-info">{{ c.standard }}</span>
+            {% else %}
+            <span class="text-muted">—</span>
+            {% endif %}
+          </td>
+          <td>
+            <div>{{ c.dob_str or (c.dob.strftime('%d/%m/%Y') if c.dob else '—') }}</div>
+            <small class="text-muted">{{ c.age }} yrs</small>
+          </td>
+          <td>
+            <div>{{ c.guardian_name or '—' }}</div>
+            {% if c.mobile_number %}
+            <small class="text-muted"><i class="bi bi-telephone text-primary me-1"></i>{{ c.mobile_number }}</small>
+            {% endif %}
+          </td>
+          <td>
+            {% if c.uses_bus %}
+            <span class="badge bg-warning-subtle text-warning border border-warning-subtle" title="{{ c.bus_route }}">
+              <i class="bi bi-bus-front-fill me-1"></i>Bus
+            </span>
+            {% else %}
+            <span class="text-muted small">—</span>
+            {% endif %}
+          </td>
+          <td>
+            {% if c.face_photo %}
+            <span class="badge badge-soft-success"><i class="bi bi-check-circle me-1"></i>Ready</span>
+            {% else %}
+            <span class="badge badge-soft-warning">Pending</span>
+            {% endif %}
+          </td>
+          <td class="text-end">
+            <a href="/dossier/child/{{ c.id }}" class="btn btn-outline-primary btn-sm py-1 px-2 fw-semibold">
+              <i class="bi bi-file-earmark-person me-1"></i>View Dossier
+            </a>
+          </td>
+        </tr>
+        {% else %}
+        <tr>
+          <td colspan="9" class="text-center text-muted py-5">No children enrolled in this Bal Mandal yet.</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Recent Sessions Table -->
+{% if recent_sessions %}
+<div class="panel p-0 overflow-hidden">
+  <div class="p-3 border-bottom d-flex justify-content-between align-items-center bg-white">
+    <h6 class="fw-bold mb-0 text-dark">
+      <i class="bi bi-clock-history text-success me-2"></i>Recent Attendance Sessions
+    </h6>
+    <span class="badge badge-soft-success">{{ recent_sessions|length }} Sessions</span>
+  </div>
+  <div class="table-responsive">
+    <table class="table mock table-hover align-middle mb-0">
+      <thead>
+        <tr>
+          <th>Session Date</th>
+          <th>Day</th>
+          <th>Week Cycle</th>
+          <th>Present Children</th>
+          <th>Attendance %</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for dt, wk, cnt in recent_sessions %}
+        {% set s_rate = (cnt / stats.active_children * 100)|round(1) if stats.active_children else 0 %}
+        <tr>
+          <td><b>{{ dt.strftime('%d %b %Y') }}</b></td>
+          <td>{{ dt.strftime('%A') }}</td>
+          <td><span class="badge bg-light text-dark border">Week {{ wk }}</span></td>
+          <td><b class="text-success">{{ cnt }}</b> / {{ stats.active_children }}</td>
+          <td>
+            <div class="d-flex align-items-center gap-2">
+              <div class="progress flex-grow-1" style="height: 6px; max-width: 100px;">
+                <div class="progress-bar {% if s_rate >= 75 %}bg-success{% elif s_rate >= 50 %}bg-warning{% else %}bg-danger{% endif %}"
+                     style="width: {{ s_rate }}%;"></div>
+              </div>
+              <span class="fw-bold" style="font-size:12px;">{{ s_rate }}%</span>
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endif %}
+{% endblock %}

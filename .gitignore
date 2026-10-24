@@ -24,8 +24,7 @@ Thumbs.db
 !.env.example
 
 # Local SQLite Database & Uploads
-data/*.db
-data/*.sqlite3
+data/
 attendance.db
 app/static/uploads/*
 !app/static/uploads/.gitkeep

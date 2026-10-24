@@ -141,8 +141,10 @@
         {% set s = r.sanchalak %}
         <tr>
           <td>
-            <div class="fw-bold text-primary">{{ r.mandal.name }}</div>
-            <small class="text-muted">ID: #{{ r.mandal.id }}</small>
+            <a href="javascript:void(0)" onclick="openDossier('mandal', {{ r.mandal.id }})" class="fw-bold text-primary text-decoration-none dossier-link" title="Open Bal Mandal Dossier">
+              <i class="bi bi-diagram-3-fill me-1"></i>{{ r.mandal.name }}
+            </a>
+            <small class="text-muted d-block font-monospace">ID: #{{ r.mandal.id }}</small>
           </td>
           <td>
             {% if s %}
@@ -177,6 +179,9 @@
           </td>
           <td class="text-end">
             <div class="btn-group btn-group-sm">
+              <a href="javascript:void(0)" onclick="openDossier('mandal', {{ r.mandal.id }})" class="btn btn-outline-danger" title="Open Bal Mandal Dossier">
+                <i class="bi bi-file-earmark-person me-1"></i>Dossier
+              </a>
               <a href="/branch-admin/children?mandal_id={{ r.mandal.id }}" class="btn btn-outline-secondary" title="View Children">
                 <i class="bi bi-people me-1"></i>Children
               </a>

@@ -111,18 +111,22 @@
         <tr>
           <td>{{ loop.index }}</td>
           <td>
-            {% if c.face_photo %}
-            <img src="/static/uploads/{{ c.face_photo }}" class="rounded-circle shadow-sm" style="width:40px;height:40px;object-fit:cover;border:2px solid #10b981;" alt="{{ c.name }}">
-            {% else %}
-            <div style="width:40px;height:40px;border-radius:50%;background:#e2e8f0;display:flex;align-items:center;justify-content:center;color:#64748b;font-weight:700;font-size:15px;border:2px dashed #cbd5e1;">
-              {{ c.name[0] }}
-            </div>
-            {% endif %}
+            <a href="javascript:void(0)" onclick="openDossier('child', {{ c.id }})" title="Open Child Dossier">
+              {% if c.face_photo %}
+              <img src="/static/uploads/{{ c.face_photo }}" class="rounded-circle shadow-sm" style="width:40px;height:40px;object-fit:cover;border:2px solid #10b981;" alt="{{ c.name }}">
+              {% else %}
+              <div style="width:40px;height:40px;border-radius:50%;background:#e2e8f0;display:flex;align-items:center;justify-content:center;color:#64748b;font-weight:700;font-size:15px;border:2px dashed #cbd5e1;">
+                {{ c.name[0] }}
+              </div>
+              {% endif %}
+            </a>
           </td>
           <td><span class="badge bg-light text-dark font-monospace border">{{ c.child_code }}</span></td>
           <td>
             <div class="fw-bold text-dark d-flex align-items-center gap-1 flex-wrap">
-              <span>{{ c.name }}</span>
+              <a href="javascript:void(0)" onclick="openDossier('child', {{ c.id }})" class="dossier-link text-dark" title="Open Child Dossier">
+                {{ c.name }}
+              </a>
               {% if not c.is_active %}
               <span class="badge bg-secondary-subtle text-secondary border" style="font-size:10px;">Archived</span>
               {% endif %}
@@ -168,6 +172,9 @@
           </td>
           <td class="text-end text-nowrap">
             <div class="btn-group btn-group-sm">
+              <a href="javascript:void(0)" onclick="openDossier('child', {{ c.id }})" class="btn btn-outline-danger" title="Open Child Dossier">
+                <i class="bi bi-file-earmark-person me-1"></i>Dossier
+              </a>
               <a href="/sanchalak/children/{{ c.id }}/edit" class="btn btn-outline-warning" title="Edit Child Details">
                 <i class="bi bi-pencil-square me-1"></i>Edit
               </a>
