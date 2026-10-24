@@ -91,21 +91,6 @@ def on_startup():
         except Exception as e:
             print("Migration warning:", e)
     db = SessionLocal()
-    try:
-        purge_marker = DATA_DIR / ".branches_purged_v1"
-        if not purge_marker.exists():
-            try:
-                db.query(Attendance).delete()
-                db.query(Child).delete()
-                db.query(User).update({User.branch_id: None, User.bal_mandal_id: None})
-                db.query(BalMandal).delete()
-                db.query(Branch).delete()
-                db.commit()
-                purge_marker.touch()
-                print("Purged all branches and bal mandals successfully.")
-            except Exception as e:
-                print("Purge warning:", e)
-
         seed_if_empty(db)
         # Backfill legacy children if needed
         legacy = db.query(Child).filter((Child.first_name == "") | (Child.first_name.is_(None))).all()
