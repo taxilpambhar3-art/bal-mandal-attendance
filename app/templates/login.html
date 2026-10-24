@@ -391,8 +391,9 @@
           <div class="login-input-group d-flex align-items-center">
             <span class="input-group-text"><i class="bi bi-lock"></i></span>
             <input name="password" id="passwordInput" type="password" class="form-control login-input ps-0" required placeholder="Enter password" autocomplete="current-password">
-            <button class="pwd-toggle-btn" type="button" onclick="togglePassword()" aria-label="Toggle password visibility">
-              <i class="bi bi-eye" id="eyeIcon"></i>
+            <button class="pwd-toggle-btn" type="button" onclick="togglePassword()" id="pwdToggleBtn" aria-label="Toggle password visibility" title="Show/Hide Password">
+              <i class="bi bi-eye text-primary" id="eyeIcon"></i>
+              <span id="pwdToggleLabel" class="ms-1 fw-semibold small text-secondary" style="font-size: 11.5px;">Show</span>
             </button>
           </div>
         </div>
@@ -412,17 +413,26 @@
       </form>
 
       <!-- Quick 1-Tap Demo Logins -->
-      <div class="mt-4 pt-3 border-top">
-        <div class="demo-section-header">
-          <span class="demo-section-title">
-            <i class="bi bi-lightning-charge-fill text-warning me-1"></i>Quick Demo Login
-          </span>
-          <span class="badge bg-primary-subtle text-primary border border-primary-subtle" style="font-size: 10.5px; border-radius: 6px;">
-            1-Tap Fill
-          </span>
+      <div class="mt-4 pt-3 border-top" id="demoSection">
+        <div class="demo-section-header d-flex justify-content-between align-items-center mb-2">
+          <div class="d-flex align-items-center gap-2">
+            <span class="demo-section-title mb-0">
+              <i class="bi bi-lightning-charge-fill text-warning me-1"></i>Quick Demo Login
+            </span>
+            <span class="badge bg-primary-subtle text-primary border border-primary-subtle" style="font-size: 10px; border-radius: 6px;">
+              1-Tap Fill
+            </span>
+          </div>
+
+          <!-- Show / Hide Demo Logins Button -->
+          <button type="button" class="btn btn-sm btn-light border py-1 px-2 rounded-pill d-flex align-items-center gap-1 shadow-xs" 
+                  id="toggleDemoBtn" onclick="toggleDemoLogins()" title="Show/Hide Demo Accounts" style="font-size: 11.5px; font-weight: 600;">
+            <i class="bi bi-eye-slash text-secondary" id="toggleDemoIcon"></i>
+            <span id="toggleDemoText" class="text-secondary">Hide</span>
+          </button>
         </div>
 
-        <div class="d-flex flex-column gap-2">
+        <div id="demoRolesContainer" class="d-flex flex-column gap-2" style="transition: all 0.25s ease;">
           <!-- Super Admin -->
           <div class="demo-role-card d-flex align-items-center justify-content-between" id="cardSuperadmin" onclick="fillLogin('superadmin', 'password', 'Super Admin', this)">
             <div class="d-flex align-items-center gap-2 text-truncate">
@@ -464,6 +474,11 @@
             </div>
             <span class="badge bg-white text-secondary border font-monospace ms-2 shadow-xs" style="font-size: 11px; padding: 5px 8px;">hetal_shani</span>
           </div>
+        </div>
+
+        <!-- Collapsed Notice -->
+        <div id="demoHiddenNotice" class="text-center py-2 text-muted small d-none" style="font-size: 11.5px;">
+          <span>Demo accounts hidden. Click <a href="javascript:void(0)" onclick="toggleDemoLogins()" class="fw-bold text-primary text-decoration-none">Show</a> to view.</span>
         </div>
       </div>
 
@@ -515,14 +530,54 @@ function fillLogin(user, pass, roleLabel, cardElement) {
 function togglePassword() {
   const p = document.getElementById('passwordInput');
   const eye = document.getElementById('eyeIcon');
+  const label = document.getElementById('pwdToggleLabel');
   if (p.type === 'password') {
     p.type = 'text';
-    eye.className = 'bi bi-eye-slash';
+    eye.className = 'bi bi-eye-slash text-danger';
+    if (label) {
+      label.textContent = 'Hide';
+      label.className = 'ms-1 fw-semibold small text-danger';
+    }
   } else {
     p.type = 'password';
-    eye.className = 'bi bi-eye';
+    eye.className = 'bi bi-eye text-primary';
+    if (label) {
+      label.textContent = 'Show';
+      label.className = 'ms-1 fw-semibold small text-secondary';
+    }
   }
 }
+
+function toggleDemoLogins() {
+  const container = document.getElementById('demoRolesContainer');
+  const notice = document.getElementById('demoHiddenNotice');
+  const icon = document.getElementById('toggleDemoIcon');
+  const text = document.getElementById('toggleDemoText');
+  const isHidden = container.classList.contains('d-none');
+
+  if (isHidden) {
+    container.classList.remove('d-none');
+    notice.classList.add('d-none');
+    icon.className = 'bi bi-eye-slash text-secondary';
+    text.textContent = 'Hide';
+    try { localStorage.setItem('demo_logins_visibility', 'show'); } catch(e) {}
+  } else {
+    container.classList.add('d-none');
+    notice.classList.remove('d-none');
+    icon.className = 'bi bi-eye text-primary';
+    text.textContent = 'Show';
+    try { localStorage.setItem('demo_logins_visibility', 'hide'); } catch(e) {}
+  }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  try {
+    const saved = localStorage.getItem('demo_logins_visibility');
+    if (saved === 'hide') {
+      toggleDemoLogins();
+    }
+  } catch(e) {}
+});
 
 function handleFormSubmit() {
   const btn = document.getElementById('submitBtn');
