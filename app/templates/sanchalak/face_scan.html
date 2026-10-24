@@ -4,24 +4,35 @@
 {% block content %}
 <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
   <div>
-    <h6 class="fw-bold mb-0">Automatic Face Scan Attendance (Auto Attendance Kiosk)</h6>
-    <small class="text-muted">{{ mandal.name if mandal else 'Bal Mandal' }} · {{ week.date.strftime('%d %B %Y') }} · {{ week.week_label }}</small>
+    <h6 class="fw-bold mb-0">
+      <i class="bi bi-camera-video-fill text-success me-2"></i>Face Scan Attendance Kiosk
+    </h6>
+    <small class="text-muted">{{ mandal.name if mandal else 'Bal Mandal' }} · {{ week.date.strftime('%d %B %Y') }} · <span class="badge badge-soft-info">{{ week.week_label }}</span></small>
   </div>
   <div class="d-flex align-items-center gap-2 flex-wrap">
-    <div class="d-flex align-items-center gap-1 bg-light py-1 px-3 border rounded-pill shadow-sm" style="font-size:12px;">
-      <span class="text-secondary fw-bold"><i class="bi bi-lightning-charge-fill text-warning me-1"></i>Scan Speed:</span>
+    <!-- Modern Scan Mode Switcher (Inspired by Face-scanner) -->
+    <div class="scan-mode-tabs shadow-sm">
+      <button type="button" class="mode-tab tab-auto active" id="modeBtnAuto" onclick="setScanMode('auto')" title="Hands-free instant attendance">
+        <i class="bi bi-lightning-charge-fill text-warning me-1"></i>Auto (Instant)
+      </button>
+      <button type="button" class="mode-tab tab-prompt" id="modeBtnPrompt" onclick="setScanMode('prompt')" title="Recognize and confirm with dialog">
+        <i class="bi bi-chat-square-dots-fill text-primary me-1"></i>Ask Me (Prompt)
+      </button>
+      <button type="button" class="mode-tab tab-manual" id="modeBtnManual" onclick="setScanMode('manual')" title="Sanchalak manually captures">
+        <i class="bi bi-hand-index-thumb-fill text-secondary me-1"></i>Manual
+      </button>
+    </div>
+
+    <!-- Scan Speed Selector (for Auto Mode) -->
+    <div class="d-flex align-items-center gap-1 bg-light py-1 px-3 border rounded-pill shadow-sm" id="speedSelectorContainer" style="font-size:12px;">
+      <span class="text-secondary fw-bold"><i class="bi bi-stopwatch text-warning me-1"></i>Delay:</span>
       <select id="kioskDelaySelect" class="form-select form-select-sm border-0 bg-transparent fw-bold text-success py-0 ps-1 pe-4" style="width:auto;cursor:pointer;font-size:12px;">
         <option value="0">0s (Instant)</option>
         <option value="2" selected>2s (Default)</option>
         <option value="5">5s</option>
       </select>
     </div>
-    <div class="form-check form-switch bg-light py-1 px-3 border rounded-pill d-flex align-items-center gap-2 m-0 shadow-sm">
-      <input class="form-check-input ms-0 mt-0" type="checkbox" id="autoScanToggle" checked style="cursor:pointer;">
-      <label class="form-check-label small fw-bold text-success mb-0" for="autoScanToggle" style="cursor:pointer;" id="autoScanLabel">
-        <i class="bi bi-magic me-1"></i>Auto-Scan
-      </label>
-    </div>
+
     <span class="badge badge-soft-success py-2 px-3" id="cameraStatus">
       <i class="bi bi-circle-fill me-1" style="font-size:8px;"></i>Camera Active
     </span>
@@ -32,51 +43,132 @@
   <!-- Left Side: Camera & Live Scanner -->
   <div class="col-lg-7">
     <div class="panel">
-      <!-- Camera Viewport with Scanner Ring & Overlays -->
-      <div class="camera-box position-relative" id="cameraContainer" style="aspect-ratio: 4/3; min-height: 280px; background:#0f172a; border-radius:14px; overflow:hidden;">
-        <video id="video" autoplay playsinline webkit-playsinline muted style="width:100%;height:100%;object-fit:cover;"></video>
+      <!-- Camera Viewport with Biometric HUD & Overlays -->
+      <div class="camera-box position-relative" id="cameraContainer" style="aspect-ratio: 4/3; min-height: 290px; background:#0b1120; border-radius:16px; overflow:hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.3);">
+        <video id="video" class="mirror-mode" autoplay playsinline webkit-playsinline muted style="width:100%;height:100%;object-fit:cover;"></video>
         <canvas id="canvas" style="display:none;"></canvas>
         <canvas id="motionCanvas" style="display:none;"></canvas>
 
-        <!-- Dynamic Scanning Target Ring -->
-        <div class="face-ring" id="faceRing"></div>
+        <!-- Futuristic Biometric Scanner HUD Reticle -->
+        <div class="bio-scanner-hud" id="bioScannerHud">
+          <div class="hud-corner hud-tl"></div>
+          <div class="hud-corner hud-tr"></div>
+          <div class="hud-corner hud-bl"></div>
+          <div class="hud-corner hud-br"></div>
+          <div class="bio-reticle" id="bioReticle">
+            <div class="bio-crosshair"></div>
+            <div class="bio-laser" id="bioLaser"></div>
+          </div>
+        </div>
+
+        <div class="face-ring d-none" id="faceRing"></div>
 
         <!-- Camera Flash Overlay Effect -->
         <div id="flashOverlay" style="position:absolute;inset:0;background:#ffffff;opacity:0;pointer-events:none;transition:opacity 0.25s ease;z-index:10;"></div>
 
-        <!-- Live Status Tag -->
-        <div style="position:absolute;top:12px;left:12px;color:#fff;background:rgba(0,0,0,0.6);padding:3px 12px;border-radius:20px;font-size:11.5px;backdrop-filter:blur(4px);z-index:5;">
-          <span class="spinner-grow spinner-grow-sm text-danger me-1" style="width:8px;height:8px;" role="status"></span>
-          <b>LIVE CAMERA</b>
+        <!-- Live Status Tag & Mode Pill -->
+        <div style="position:absolute;top:12px;left:12px;display:flex;align-items:center;gap:6px;z-index:5;">
+          <div style="color:#fff;background:rgba(0,0,0,0.65);padding:4px 12px;border-radius:20px;font-size:11.5px;backdrop-filter:blur(6px);border:1px solid rgba(255,255,255,0.1);">
+            <span class="spinner-grow spinner-grow-sm text-danger me-1" style="width:7px;height:7px;" role="status"></span>
+            <b>LIVE</b> <span class="text-white-50 ms-1">MIRROR CAM</span>
+          </div>
+          <div class="badge bg-primary-subtle text-primary border border-primary-subtle px-2 py-1 rounded-pill" id="hudModeBadge" style="font-size:11px;">
+            ⚡ Auto Mode
+          </div>
         </div>
 
         <!-- Auto Countdown / Scan Progress Bar in Camera -->
         <div id="autoScanProgressContainer" style="position:absolute;top:12px;right:12px;display:none;z-index:5;">
           <div class="badge bg-success py-1 px-3 shadow" style="font-size:12px;">
-            <i class="bi bi-lightning-charge-fill me-1"></i>Auto Scanning: <span id="countdownSec">1s</span>
+            <i class="bi bi-lightning-charge-fill me-1"></i>Scanning: <span id="countdownSec">1s</span>
           </div>
         </div>
 
         <!-- Target Guide Overlay Label -->
         <div class="cam-label" id="camOverlayLabel" style="z-index:5;">
-          <i class="bi bi-person-bounding-box me-1"></i>Look at the camera to scan automatically
+          <i class="bi bi-person-bounding-box me-1"></i>Align face inside the biometric reticle
         </div>
 
-        <!-- 0-Second Instant Success Floating Toast on Camera -->
-        <div id="instantSuccessToast" class="position-absolute" style="top:12px; left:12px; right:12px; background:rgba(16,185,129,0.95); backdrop-filter:blur(8px); color:#fff; border-radius:12px; padding:8px 12px; display:none; align-items:center; justify-content:space-between; z-index:25; box-shadow:0 8px 24px rgba(0,0,0,0.35); transition:all 0.25s ease;">
-          <div class="d-flex align-items-center gap-2">
-            <img id="instantToastPhoto" src="" style="width:38px;height:38px;border-radius:50%;object-fit:cover;border:2px solid #fff;" alt="">
-            <div>
-              <div class="fw-bold" style="font-size:13.5px;" id="instantToastName">Child Name</div>
-              <small style="font-size:11px;" id="instantToastScore" class="text-white-50">✓ 100% Match · Attendance Recorded</small>
+        <!-- AI Model Loading State Overlay -->
+        <div id="aiLoadingOverlay" class="ai-loading-overlay">
+          <div class="ai-loader-spinner">
+            <div class="spinner-ring"></div>
+            <i class="bi bi-cpu-fill fs-3 text-info"></i>
+          </div>
+          <div class="fw-bold text-white mt-3" style="font-size:14px; letter-spacing:0.3px;">
+            Initializing AI Face Recognition
+          </div>
+          <div class="text-white-50 small mt-1" id="aiLoadingStatus">
+            Loading biometric neural network models...
+          </div>
+        </div>
+
+        <!-- Floating Result Feedback Toast on Camera (Frosted Glass) -->
+        <div id="floatingResultToast" class="floating-result-toast">
+          <div class="d-flex align-items-center gap-3">
+            <div class="toast-avatar-ring">
+              <img id="floatingToastPhoto" src="" alt="Avatar">
+            </div>
+            <div class="flex-grow-1">
+              <div class="fw-bold text-white fs-6" id="floatingToastName">Child Name</div>
+              <div class="small d-flex align-items-center gap-1" style="color:#6ee7b7;">
+                <i class="bi bi-shield-check text-success"></i>
+                <span id="floatingToastSub">Marked Present · 96% Match Verified</span>
+              </div>
+            </div>
+            <div class="ms-auto">
+              <span class="badge bg-success-subtle text-success border border-success-subtle px-2 py-1 rounded-pill" style="font-size:11px;">
+                <i class="bi bi-check-circle-fill me-1"></i>Verified
+              </span>
             </div>
           </div>
-          <span class="badge bg-white text-success fw-bold px-2 py-1 shadow-sm" style="font-size:11px;">
-            <i class="bi bi-lightning-charge-fill me-1 text-warning"></i>Instant Attendance
-          </span>
         </div>
 
-        <!-- In-Camera Success Kiosk Overlay (Used when 2s or 5s delay selected) -->
+        <!-- Prompt Confirmation Modal ("Ask Me" Mode) -->
+        <div id="promptConfirmModal" class="prompt-confirm-overlay">
+          <div class="prompt-confirm-card">
+            <div class="d-flex align-items-center justify-content-between mb-3 border-bottom pb-2" style="border-color: rgba(255,255,255,0.1) !important;">
+              <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-2 py-1 rounded-pill" style="font-size:11px;">
+                <i class="bi bi-person-check-fill me-1"></i>Face Recognized
+              </span>
+              <span class="text-success fw-bold small" id="promptConfidenceBadge">
+                ✓ 96% Match
+              </span>
+            </div>
+
+            <div class="d-flex align-items-center justify-content-center gap-3 my-2">
+              <div class="text-center">
+                <div class="prompt-photo-wrap ring-live">
+                  <img id="promptLiveImg" src="" alt="Live Scan">
+                </div>
+                <small class="text-white-50 mt-1 d-block" style="font-size:10.5px;">Live Camera</small>
+              </div>
+              <i class="bi bi-arrow-right text-white-50 fs-5"></i>
+              <div class="text-center">
+                <div class="prompt-photo-wrap ring-enrolled">
+                  <img id="promptEnrolledImg" src="" alt="Enrolled">
+                </div>
+                <small class="text-white-50 mt-1 d-block" style="font-size:10.5px;">Enrolled Profile</small>
+              </div>
+            </div>
+
+            <div class="text-center my-3">
+              <h5 class="fw-bold text-white mb-0" id="promptChildName">Child Name</h5>
+              <div class="text-white-50 small mt-1" id="promptChildMeta">Child Code</div>
+            </div>
+
+            <div class="d-flex gap-2 mt-3">
+              <button type="button" class="btn btn-outline-light btn-sm flex-grow-1" onclick="cancelPromptModal()">
+                <i class="bi bi-x-circle me-1"></i>Cancel
+              </button>
+              <button type="button" class="btn btn-success btn-sm flex-grow-1 fw-bold shadow" onclick="confirmPromptAttendance()">
+                <i class="bi bi-check-circle-fill me-1"></i>Confirm Present
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- In-Camera Success Kiosk Overlay (Used when 2s or 5s delay selected in Auto mode) -->
         <div id="kioskSuccessOverlay" class="position-absolute" style="inset:0; background:rgba(15,23,42,0.92); backdrop-filter:blur(8px); display:none; flex-direction:column; justify-content:center; align-items:center; z-index:20; padding:20px; text-align:center;">
           <div class="rounded-circle d-flex align-items-center justify-content-center bg-success text-white mb-2 shadow" style="width:56px;height:56px;">
             <i class="bi bi-check-lg fs-1"></i>
@@ -188,13 +280,13 @@
           <button type="button" id="captureBtn" class="btn btn-warning fw-bold flex-grow-1 shadow-sm">
             <i class="bi bi-camera-fill me-1"></i>Manual Capture
           </button>
-          <button type="button" id="switchCamBtn" class="btn btn-outline-secondary" title="Switch Camera">
+          <button type="button" id="switchCamBtn" class="btn btn-outline-secondary" title="Switch Camera (Front / Back)">
             <i class="bi bi-arrow-clockwise"></i>
           </button>
         </div>
       </form>
 
-      <div class="note-box mt-3 py-2 px-3" style="font-size:12px;">
+      <div class="note-box mt-3 py-2 px-3" style="font-size:12px;" id="scanModeNoteText">
         <i class="bi bi-lightning-charge-fill me-1 text-warning"></i>
         <b>Automatic Hands-Free Scan (Instant):</b> No need to press any button! As soon as a child faces the camera, attendance is verified instantly and the camera stays ready for the next child without delay.
       </div>
@@ -262,19 +354,22 @@
   const refChildName = document.getElementById('refChildName');
   const refBadge = document.getElementById('refBadge');
   const camOverlayLabel = document.getElementById('camOverlayLabel');
+  const bioScannerHud = document.getElementById('bioScannerHud');
   const faceRing = document.getElementById('faceRing');
-  const autoScanToggle = document.getElementById('autoScanToggle');
-  const autoScanLabel = document.getElementById('autoScanLabel');
   const autoScanProgressContainer = document.getElementById('autoScanProgressContainer');
   const countdownSec = document.getElementById('countdownSec');
   const flashOverlay = document.getElementById('flashOverlay');
+  const aiLoadingOverlay = document.getElementById('aiLoadingOverlay');
+  const floatingResultToast = document.getElementById('floatingResultToast');
+  const promptConfirmModal = document.getElementById('promptConfirmModal');
 
   let currentStream = null;
   let useFacingMode = 'user';
   let isAiModelLoaded = false;
   let enrolledDescriptor = null;
-  let isAutoScanning = true;
+  let currentScanMode = 'auto'; // 'auto' | 'prompt' | 'manual'
   let isScanTriggered = false;
+  let isPromptOpen = false;
   let faceHoldTicks = 0;
   let REQUIRED_HOLD_TICKS = 2; // Default 2s hold
 
@@ -288,6 +383,45 @@
   let kioskTimer = null;
   let failTimer = null;
   let toastTimer = null;
+  let pendingPromptData = null;
+
+  // Scan Mode Switcher (Inspired by modern FaceID Scanner)
+  window.setScanMode = function(mode) {
+    currentScanMode = mode;
+    document.querySelectorAll('.mode-tab').forEach(b => b.classList.remove('active'));
+    const btn = document.getElementById('modeBtn' + mode.charAt(0).toUpperCase() + mode.slice(1));
+    if (btn) btn.classList.add('active');
+
+    const speedContainer = document.getElementById('speedSelectorContainer');
+    const noteText = document.getElementById('scanModeNoteText');
+    const hudBadge = document.getElementById('hudModeBadge');
+
+    if (mode === 'auto') {
+      if (speedContainer) speedContainer.style.display = 'flex';
+      if (hudBadge) {
+        hudBadge.className = 'badge bg-success-subtle text-success border border-success-subtle px-2 py-1 rounded-pill';
+        hudBadge.innerHTML = '⚡ Auto Mode';
+      }
+      if (noteText) noteText.innerHTML = '<i class="bi bi-lightning-charge-fill me-1 text-warning"></i><b>Auto Attendance Mode:</b> As soon as any child faces the camera, attendance is verified instantly and hands-free!';
+      resetAutoScanUI();
+    } else if (mode === 'prompt') {
+      if (speedContainer) speedContainer.style.display = 'none';
+      if (hudBadge) {
+        hudBadge.className = 'badge bg-primary-subtle text-primary border border-primary-subtle px-2 py-1 rounded-pill';
+        hudBadge.innerHTML = '💬 Ask Me Mode';
+      }
+      if (noteText) noteText.innerHTML = '<i class="bi bi-chat-square-dots-fill me-1 text-primary"></i><b>Ask Me (Prompt Mode):</b> When a child is detected, scanner prompts for confirmation with child details before marking attendance.';
+      resetAutoScanUI();
+    } else {
+      if (speedContainer) speedContainer.style.display = 'none';
+      if (hudBadge) {
+        hudBadge.className = 'badge bg-secondary-subtle text-secondary border border-secondary-subtle px-2 py-1 rounded-pill';
+        hudBadge.innerHTML = '📷 Manual Mode';
+      }
+      if (noteText) noteText.innerHTML = '<i class="bi bi-hand-index-thumb-fill me-1 text-secondary"></i><b>Manual Mode:</b> Camera stays live. Click "Manual Capture" button to record attendance.';
+      resetAutoScanUI();
+    }
+  };
 
   // Audio Chime using Web Audio API
   function playScanChime() {
@@ -314,7 +448,7 @@
     }, 180);
   }
 
-  // Start Camera
+  // Start Camera with Mirror Mode support
   async function startCamera() {
     if (currentStream) {
       currentStream.getTracks().forEach(t => t.stop());
@@ -330,6 +464,11 @@
       };
       currentStream = await navigator.mediaDevices.getUserMedia(constraints);
       video.srcObject = currentStream;
+      if (useFacingMode === 'user') {
+        video.classList.add('mirror-mode');
+      } else {
+        video.classList.remove('mirror-mode');
+      }
       cameraStatus.innerHTML = '<i class="bi bi-circle-fill me-1" style="font-size:8px;"></i>Camera Active';
       cameraStatus.className = 'badge badge-soft-success py-2 px-3';
     } catch (err) {
@@ -344,19 +483,6 @@
   switchCamBtn.addEventListener('click', () => {
     useFacingMode = useFacingMode === 'user' ? 'environment' : 'user';
     startCamera();
-  });
-
-  // Toggle Auto-Scan
-  autoScanToggle.addEventListener('change', () => {
-    isAutoScanning = autoScanToggle.checked;
-    if (isAutoScanning) {
-      autoScanLabel.innerText = 'Auto-Scan Active (Hands-Free)';
-      autoScanLabel.className = 'form-check-label small fw-bold text-success mb-0';
-    } else {
-      autoScanLabel.innerText = 'Manual Mode (Click to Scan)';
-      autoScanLabel.className = 'form-check-label small fw-bold text-secondary mb-0';
-      resetAutoScanUI();
-    }
   });
 
   let mandalFaceMatcher = null;
@@ -408,11 +534,17 @@
           faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL)
         ]);
         isAiModelLoaded = true;
+        if (aiLoadingOverlay) {
+          aiLoadingOverlay.classList.add('loaded');
+        }
         updateEnrolledReference();
         buildMandalFaceMatcher();
       }
     } catch (err) {
       console.warn('Face API models fallback to canvas motion detector:', err);
+      if (aiLoadingOverlay) {
+        aiLoadingOverlay.classList.add('loaded');
+      }
     }
   }
 
@@ -476,19 +608,23 @@
     }
   }
 
-  // Initial reference update
   updateEnrolledReference();
 
   function resetAutoScanUI() {
     faceHoldTicks = 0;
     autoScanProgressContainer.style.display = 'none';
-    faceRing.classList.remove('face-detected');
-    camOverlayLabel.innerHTML = '<i class="bi bi-person-bounding-box me-1"></i>Look at the camera to scan automatically';
+    if (bioScannerHud) bioScannerHud.classList.remove('face-detected');
+    if (faceRing) faceRing.classList.remove('face-detected');
+    if (currentScanMode === 'manual') {
+      camOverlayLabel.innerHTML = '<i class="bi bi-camera me-1"></i>Click "Manual Capture" to take attendance';
+    } else {
+      camOverlayLabel.innerHTML = '<i class="bi bi-person-bounding-box me-1"></i>Align face inside the biometric reticle';
+    }
   }
 
   // Real-Time Detection Loop (Runs every 280ms)
   setInterval(async () => {
-    if (!isAutoScanning || isScanTriggered || !video.videoWidth) return;
+    if (currentScanMode === 'manual' || isScanTriggered || isPromptOpen || !video.videoWidth) return;
 
     let facePresent = false;
 
@@ -512,20 +648,26 @@
 
     if (facePresent) {
       faceHoldTicks++;
-      faceRing.classList.add('face-detected');
+      if (bioScannerHud) bioScannerHud.classList.add('face-detected');
+      if (faceRing) faceRing.classList.add('face-detected');
       autoScanProgressContainer.style.display = 'block';
 
       const remainingSec = Math.max(0, Math.ceil((REQUIRED_HOLD_TICKS - faceHoldTicks) * 0.3));
       countdownSec.innerText = remainingSec > 0 ? remainingSec + 's' : 'Scanning...';
-      camOverlayLabel.innerHTML = '<span class="text-success fw-bold"><i class="bi bi-check-circle-fill me-1"></i>Face detected! Hold steady...</span>';
+      camOverlayLabel.innerHTML = '<span class="text-success fw-bold"><i class="bi bi-check-circle-fill me-1"></i>Face locked! Hold steady...</span>';
 
       if (faceHoldTicks >= REQUIRED_HOLD_TICKS) {
-        // Trigger Automatic Scan!
         isScanTriggered = true;
         playScanChime();
         triggerFlashEffect();
-        camOverlayLabel.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Verifying attendance...';
-        await performCaptureAndSubmit();
+
+        if (currentScanMode === 'prompt') {
+          camOverlayLabel.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Matching face...';
+          await handlePromptScan();
+        } else {
+          camOverlayLabel.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Verifying attendance...';
+          await performCaptureAndSubmit();
+        }
       }
     } else {
       if (faceHoldTicks > 0) {
@@ -571,14 +713,13 @@
     await performCaptureAndSubmit();
   });
 
-  // Capture frame and submit seamlessly via AJAX without leaving camera!
-  async function performCaptureAndSubmit() {
+  // Capture image data URL from live stream
+  function captureVideoDataUrl() {
     const width = video.videoWidth || 640;
     const height = video.videoHeight || 480;
     canvas.width = width;
     canvas.height = height;
     const ctx = canvas.getContext('2d');
-
     if (video.videoWidth) {
       ctx.drawImage(video, 0, 0, width, height);
     } else {
@@ -586,10 +727,159 @@
       ctx.fillRect(0, 0, width, height);
       ctx.fillStyle = '#38bdf8';
       ctx.font = '24px sans-serif';
-      ctx.fillText('Automatic Attendance Scan', 180, 240);
+      ctx.fillText('Attendance Scan', 180, 240);
+    }
+    return canvas.toDataURL('image/jpeg', 0.88);
+  }
+
+  // Prompt Mode Scan Handler ("Ask Me" Mode)
+  async function handlePromptScan() {
+    const dataUrl = captureVideoDataUrl();
+    photoDataInput.value = dataUrl;
+
+    if (!isAiModelLoaded || !video.videoWidth) {
+      // Fallback directly to server submit if model not loaded
+      await performCaptureAndSubmit();
+      return;
     }
 
-    const dataUrl = canvas.toDataURL('image/jpeg', 0.88);
+    try {
+      const liveDetection = await faceapi.detectSingleFace(video, new faceapi.TinyFaceDetectorOptions({ inputSize: 224, scoreThreshold: 0.35 }))
+        .withFaceLandmarks()
+        .withFaceDescriptor();
+
+      if (!liveDetection) {
+        showKioskFail({ message: "No clear face detected! Please face the camera directly.", confidence: 0 });
+        return;
+      }
+
+      let matchedChildId = null;
+      let matchedScore = 95;
+      let matchedOpt = null;
+
+      if (childSelect.value === 'auto') {
+        if (!mandalFaceMatcher || !mandalFaceMatcher.labeledDescriptors || mandalFaceMatcher.labeledDescriptors.length === 0) {
+          showKioskFail({ message: "No registered child face photos in this Bal Mandal!", confidence: 0 });
+          return;
+        }
+        const bestMatch = mandalFaceMatcher.findBestMatch(liveDetection.descriptor);
+        if (!bestMatch || bestMatch.label === 'unknown' || bestMatch.distance >= 0.40) {
+          const diffScore = Math.max(5, Math.min(45, Math.round((1.0 - (bestMatch ? bestMatch.distance / 0.65 : 1.0)) * 100)));
+          showKioskFail({
+            message: "Face does not match any registered child in this Bal Mandal!",
+            confidence: diffScore
+          });
+          return;
+        }
+        matchedChildId = bestMatch.label;
+        matchedScore = Math.max(75, Math.min(99, Math.round((1.0 - (bestMatch.distance / 0.50)) * 100)));
+        matchedOpt = childSelect.querySelector(`option[value="${matchedChildId}"]`);
+      } else {
+        if (!enrolledDescriptor) {
+          showKioskFail({ message: "Selected child does not have an enrolled face photo!", confidence: 0 });
+          return;
+        }
+        const dist = faceapi.euclideanDistance(enrolledDescriptor, liveDetection.descriptor);
+        if (dist >= 0.40) {
+          const diffScore = Math.max(5, Math.min(45, Math.round((1.0 - (dist / 0.65)) * 100)));
+          showKioskFail({
+            message: "Face does not match the selected child!",
+            confidence: diffScore
+          });
+          return;
+        }
+        matchedChildId = childSelect.value;
+        matchedScore = Math.max(75, Math.min(99, Math.round((1.0 - (dist / 0.50)) * 100)));
+        matchedOpt = childSelect.options[childSelect.selectedIndex];
+      }
+
+      if (!matchedOpt) {
+        showKioskFail({ message: "Child information could not be loaded.", confidence: 0 });
+        return;
+      }
+
+      // Store pending prompt submission
+      pendingPromptData = {
+        dataUrl: dataUrl,
+        childId: matchedChildId,
+        score: matchedScore,
+        name: matchedOpt.getAttribute('data-name'),
+        code: matchedOpt.getAttribute('data-code'),
+        photo: matchedOpt.getAttribute('data-photo')
+      };
+
+      // Open Prompt Modal
+      isPromptOpen = true;
+      document.getElementById('promptLiveImg').src = dataUrl;
+      document.getElementById('promptEnrolledImg').src = pendingPromptData.photo ? '/static/uploads/' + pendingPromptData.photo : dataUrl;
+      document.getElementById('promptChildName').innerText = pendingPromptData.name;
+      document.getElementById('promptChildMeta').innerText = 'Code: ' + pendingPromptData.code;
+      document.getElementById('promptConfidenceBadge').innerText = '✓ ' + matchedScore + '% Match';
+
+      promptConfirmModal.classList.add('show');
+    } catch (err) {
+      console.warn('Prompt scan evaluation error:', err);
+      showKioskFail({ message: "Face verification error. Please try again.", confidence: 0 });
+    }
+  }
+
+  // Confirm attendance from Ask Me prompt modal
+  window.confirmPromptAttendance = async function() {
+    if (!pendingPromptData) return;
+    promptConfirmModal.classList.remove('show');
+    isPromptOpen = false;
+
+    photoDataInput.value = pendingPromptData.dataUrl;
+    childSelect.value = pendingPromptData.childId;
+    clientVerifiedInput.value = 'true';
+    clientScoreInput.value = pendingPromptData.score;
+
+    try {
+      const formData = new FormData(scanForm);
+      const resp = await fetch('/sanchalak/face-scan?ajax=1', {
+        method: 'POST',
+        body: formData,
+        headers: { 'X-Requested-With': 'XMLHttpRequest' }
+      });
+      const data = await resp.json();
+
+      if (data.success && data.is_match) {
+        updateLiveFeed(data);
+        showFloatingToast(data);
+      } else {
+        showKioskFail(data);
+      }
+    } catch (err) {
+      console.warn('AJAX submit error:', err);
+    }
+
+    setTimeout(() => {
+      isScanTriggered = false;
+      faceHoldTicks = 0;
+      pendingPromptData = null;
+      if (childSelect && childSelect.value !== 'auto') {
+        childSelect.value = 'auto';
+        updateEnrolledReference();
+      }
+      resetAutoScanUI();
+    }, 1200);
+  };
+
+  // Cancel attendance prompt modal
+  window.cancelPromptModal = function() {
+    promptConfirmModal.classList.remove('show');
+    isPromptOpen = false;
+    pendingPromptData = null;
+    setTimeout(() => {
+      isScanTriggered = false;
+      faceHoldTicks = 0;
+      resetAutoScanUI();
+    }, 800);
+  };
+
+  // Capture frame and submit seamlessly via AJAX without leaving camera!
+  async function performCaptureAndSubmit() {
+    const dataUrl = captureVideoDataUrl();
     photoDataInput.value = dataUrl;
 
     // Strict Face-API verification
@@ -613,18 +903,16 @@
           if (!bestMatch || bestMatch.label === 'unknown' || bestMatch.distance >= 0.40) {
             const diffScore = Math.max(5, Math.min(45, Math.round((1.0 - (bestMatch ? bestMatch.distance / 0.65 : 1.0)) * 100)));
             showKioskFail({
-              message: "Face does not match any registered child in this Bal Mandal (Unrecognized Child Face)!",
+              message: "Face does not match any registered child in this Bal Mandal!",
               confidence: diffScore
             });
             return;
           }
-          // Positive neural match
           childSelect.value = bestMatch.label;
           const score = Math.max(75, Math.min(99, Math.round((1.0 - (bestMatch.distance / 0.50)) * 100)));
           clientVerifiedInput.value = 'true';
           clientScoreInput.value = score;
         } else {
-          // Specific child selected
           if (!enrolledDescriptor) {
             showKioskFail({ message: "Selected child does not have an enrolled face photo!", confidence: 0 });
             return;
@@ -633,7 +921,7 @@
           if (dist >= 0.40) {
             const diffScore = Math.max(5, Math.min(45, Math.round((1.0 - (dist / 0.65)) * 100)));
             showKioskFail({
-              message: "Face does not match the selected child (Face Mismatch)!",
+              message: "Face does not match the selected child!",
               confidence: diffScore
             });
             return;
@@ -665,10 +953,8 @@
       const data = await resp.json();
 
       if (data.success && data.is_match) {
-        // Show in-camera 5-second success overlay
         showKioskSuccess(data);
       } else {
-        // Show in-camera fail/mismatch overlay
         showKioskFail(data);
       }
     } catch (err) {
@@ -679,28 +965,25 @@
 
   // Show In-Camera Success (0s Instant or 2s / 5s Countdown Overlay)
   function showKioskSuccess(data) {
-    // 1. Immediately update today's verified feed
     updateLiveFeed(data);
+    showFloatingToast(data);
 
     const delaySec = parseInt(document.getElementById('kioskDelaySelect')?.value || '2', 10);
 
-    // 0-SECOND INSTANT MODE (0s scanning delay requested)
+    // 0-SECOND INSTANT MODE
     if (delaySec === 0) {
-      showInstantToast(data);
-
       if (childSelect && childSelect.value !== 'auto') {
         childSelect.value = 'auto';
         updateEnrolledReference();
       }
 
-      // Camera is ready for next child immediately with 0s delay!
       setTimeout(() => {
         isScanTriggered = false;
         faceHoldTicks = 0;
         captureBtn.disabled = false;
         captureBtn.innerHTML = '<i class="bi bi-camera-fill me-1"></i>Manual Capture';
         resetAutoScanUI();
-      }, 400); // 400ms frame reset buffer
+      }, 400);
       return;
     }
 
@@ -735,41 +1018,35 @@
     }, 100);
   }
 
-  // 0-second Instant Floating Toast Notification on Camera
-  function showInstantToast(data) {
-    const toast = document.getElementById('instantSuccessToast');
-    if (!toast) return;
-    document.getElementById('instantToastName').innerText = data.child.name + ' (' + data.child.child_code + ')';
-    document.getElementById('instantToastScore').innerText = '✓ ' + data.confidence + '% Match Verified · Attendance Recorded!';
-    const imgEl = document.getElementById('instantToastPhoto');
-    if (imgEl) {
-      imgEl.src = '/static/uploads/' + (data.child.face_photo || data.live_photo);
-    }
-    toast.style.display = 'flex';
-    toast.style.opacity = '1';
+  // Floating Toast Notification (Frosted Glass)
+  function showFloatingToast(data) {
+    if (!floatingResultToast) return;
+    const nameEl = document.getElementById('floatingToastName');
+    const subEl = document.getElementById('floatingToastSub');
+    const photoEl = document.getElementById('floatingToastPhoto');
 
+    if (nameEl) nameEl.innerText = data.child.name + (data.child.child_code ? ' (' + data.child.child_code + ')' : '');
+    if (subEl) subEl.innerText = 'Marked Present · ' + (data.confidence || 95) + '% Match Verified';
+    if (photoEl) photoEl.src = '/static/uploads/' + (data.child.face_photo || data.live_photo);
+
+    floatingResultToast.classList.add('show');
     if (toastTimer) clearTimeout(toastTimer);
     toastTimer = setTimeout(() => {
-      toast.style.opacity = '0';
-      setTimeout(() => {
-        toast.style.display = 'none';
-      }, 250);
-    }, 2200);
+      floatingResultToast.classList.remove('show');
+    }, 3200);
   }
 
-  // Dismiss Success Overlay and resume scanning for next child immediately
+  // Dismiss Success Overlay
   window.dismissKioskSuccessNow = function() {
     if (kioskTimer) clearInterval(kioskTimer);
     const overlay = document.getElementById('kioskSuccessOverlay');
     overlay.style.display = 'none';
 
-    // Reset dropdown to Auto-Detect mode for next child
     if (childSelect && childSelect.value !== 'auto') {
       childSelect.value = 'auto';
       updateEnrolledReference();
     }
 
-    // Camera is ready for next child immediately after the 2s gap finishes
     isScanTriggered = false;
     faceHoldTicks = 0;
     captureBtn.disabled = false;
@@ -785,7 +1062,7 @@
     const overlay = document.getElementById('kioskFailOverlay');
     overlay.style.display = 'flex';
 
-    let failRemaining = 4;
+    let failRemaining = 3;
     const failSecEl = document.getElementById('failCountdownSec');
 
     if (failTimer) clearInterval(failTimer);
@@ -811,7 +1088,7 @@
     resetAutoScanUI();
   };
 
-  // Append new attendance directly to the live feed on the right
+  // Append new attendance directly to the live feed
   function updateLiveFeed(data) {
     const feed = document.getElementById('todayFeed');
     const badge = document.getElementById('todayCountBadge');

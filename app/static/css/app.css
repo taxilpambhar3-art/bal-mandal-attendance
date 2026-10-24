@@ -580,51 +580,342 @@ table.mock tbody tr:hover {
   object-fit: cover;
 }
 
+.camera-box video.mirror-mode {
+  transform: scaleX(-1);
+  -webkit-transform: scaleX(-1);
+}
+
+/* Biometric Scanner HUD Container (Inspired by modern FaceID scanner) */
+.bio-scanner-hud {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 230px;
+  height: 250px;
+  pointer-events: none;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* HUD Corner Brackets */
+.hud-corner {
+  position: absolute;
+  width: 24px;
+  height: 24px;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.hud-tl {
+  top: -8px;
+  left: -8px;
+  border-top: 3.5px solid #38bdf8;
+  border-left: 3.5px solid #38bdf8;
+  border-top-left-radius: 12px;
+}
+.hud-tr {
+  top: -8px;
+  right: -8px;
+  border-top: 3.5px solid #38bdf8;
+  border-right: 3.5px solid #38bdf8;
+  border-top-right-radius: 12px;
+}
+.hud-bl {
+  bottom: -8px;
+  left: -8px;
+  border-bottom: 3.5px solid #38bdf8;
+  border-left: 3.5px solid #38bdf8;
+  border-bottom-left-radius: 12px;
+}
+.hud-br {
+  bottom: -8px;
+  right: -8px;
+  border-bottom: 3.5px solid #38bdf8;
+  border-right: 3.5px solid #38bdf8;
+  border-bottom-right-radius: 12px;
+}
+
+/* Rounded Biometric Reticle Frame with dashed border */
+.bio-reticle {
+  width: 100%;
+  height: 100%;
+  border: 2px dashed rgba(56, 189, 248, 0.75);
+  border-radius: 38px;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 0 25px rgba(56, 189, 248, 0.25), inset 0 0 20px rgba(56, 189, 248, 0.08);
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Subtle crosshair accents inside frame */
+.bio-crosshair {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.35;
+}
+.bio-crosshair::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 20px;
+  right: 20px;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(56, 189, 248, 0.6), transparent);
+}
+.bio-crosshair::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 20px;
+  bottom: 20px;
+  width: 1px;
+  background: linear-gradient(180deg, transparent, rgba(56, 189, 248, 0.6), transparent);
+}
+
+/* Moving Laser Scanning Beam */
+.bio-laser {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, transparent 5%, rgba(56, 189, 248, 0.85) 50%, transparent 95%);
+  box-shadow: 0 0 16px rgba(56, 189, 248, 0.95), 0 0 4px #38bdf8;
+  animation: bioLaserSweep 2.2s infinite ease-in-out;
+  z-index: 3;
+}
+
+@keyframes bioLaserSweep {
+  0% { top: 8%; opacity: 0.4; }
+  50% { top: 92%; opacity: 1; }
+  100% { top: 8%; opacity: 0.4; }
+}
+
+/* When Face is Detected (Match / Steady State) */
+.bio-scanner-hud.face-detected .hud-corner {
+  border-color: #10b981 !important;
+  box-shadow: 0 0 12px rgba(16, 185, 129, 0.8) !important;
+}
+.bio-scanner-hud.face-detected .bio-reticle {
+  border-color: #10b981 !important;
+  border-style: solid !important;
+  box-shadow: 0 0 35px rgba(16, 185, 129, 0.65), inset 0 0 25px rgba(16, 185, 129, 0.2) !important;
+  animation: bioPulseMatch 0.8s infinite alternate ease-in-out !important;
+}
+.bio-scanner-hud.face-detected .bio-laser {
+  background: linear-gradient(90deg, transparent 5%, rgba(16, 185, 129, 0.95) 50%, transparent 95%) !important;
+  box-shadow: 0 0 20px rgba(16, 185, 129, 1), 0 0 6px #10b981 !important;
+}
+
+@keyframes bioPulseMatch {
+  0% { transform: scale(0.98); }
+  100% { transform: scale(1.02); }
+}
+
+/* Backward compatibility for legacy .face-ring */
 .face-ring {
-  width: 200px;
+  width: 220px;
   height: 240px;
-  border: 3px dashed #38bdf8;
-  border-radius: 50%;
+  border: 2px dashed #38bdf8;
+  border-radius: 38px;
   position: absolute;
   pointer-events: none;
   z-index: 2;
-  box-shadow: 0 0 30px rgba(56, 189, 248, 0.4);
+  box-shadow: 0 0 30px rgba(56, 189, 248, 0.35);
   transition: all 0.25s ease;
 }
-
 .face-ring::after {
   content: '';
   position: absolute;
-  left: -10px;
-  right: -10px;
+  left: 0;
+  right: 0;
   top: 50%;
   height: 3px;
   background: linear-gradient(90deg, transparent, #38bdf8 50%, transparent);
   box-shadow: 0 0 14px #38bdf8;
   animation: scan 2.2s infinite ease-in-out;
 }
-
-@keyframes scan {
-  0% { transform: translateY(-95px); opacity: 0.5; }
-  50% { transform: translateY(95px); opacity: 1; }
-  100% { transform: translateY(-95px); opacity: 0.5; }
-}
-
 .face-ring.face-detected {
   border-color: #10b981 !important;
   border-style: solid !important;
   box-shadow: 0 0 40px rgba(16, 185, 129, 0.7) !important;
   animation: pulse-face 0.8s infinite alternate ease-in-out !important;
 }
-
 .face-ring.face-detected::after {
   background: linear-gradient(90deg, transparent, #10b981 50%, transparent) !important;
   box-shadow: 0 0 18px #10b981 !important;
 }
 
-@keyframes pulse-face {
-  0% { transform: scale(0.97); }
-  100% { transform: scale(1.02); }
+/* Floating Result Feedback Toast (Frosted Glass) */
+.floating-result-toast {
+  position: absolute;
+  bottom: 20px;
+  left: 16px;
+  right: 16px;
+  max-width: 480px;
+  margin: 0 auto;
+  background: rgba(15, 23, 42, 0.92);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(16, 185, 129, 0.45);
+  border-radius: 18px;
+  padding: 10px 16px;
+  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.5), 0 0 24px rgba(16, 185, 129, 0.25);
+  z-index: 30;
+  transform: translateY(15px);
+  opacity: 0;
+  pointer-events: none;
+  transition: all 0.32s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.floating-result-toast.show {
+  transform: translateY(0);
+  opacity: 1;
+  pointer-events: auto;
+}
+.toast-avatar-ring {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  border: 2px solid #10b981;
+  overflow: hidden;
+  flex-shrink: 0;
+  box-shadow: 0 0 10px rgba(16, 185, 129, 0.4);
+}
+.toast-avatar-ring img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* AI Model Loading State Overlay */
+.ai-loading-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.92);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 40;
+  transition: opacity 0.35s ease, visibility 0.35s ease;
+}
+.ai-loading-overlay.loaded {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+.ai-loader-spinner {
+  position: relative;
+  width: 60px;
+  height: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.spinner-ring {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  border: 3px solid rgba(56, 189, 248, 0.2);
+  border-top-color: #38bdf8;
+  border-right-color: #10b981;
+  animation: spin 0.9s linear infinite;
+}
+
+/* Prompt Confirmation Modal Overlay ("Ask Me" Mode) */
+.prompt-confirm-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.88);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 35;
+  padding: 16px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.25s ease;
+}
+.prompt-confirm-overlay.show {
+  opacity: 1;
+  pointer-events: auto;
+}
+.prompt-confirm-card {
+  width: 100%;
+  max-width: 320px;
+  background: rgba(30, 41, 59, 0.96);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  box-shadow: 0 20px 45px rgba(0, 0, 0, 0.55), 0 0 25px rgba(56, 189, 248, 0.15);
+  border-radius: 20px;
+  padding: 18px;
+  transform: scale(0.94);
+  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.prompt-confirm-overlay.show .prompt-confirm-card {
+  transform: scale(1);
+}
+.prompt-photo-wrap {
+  width: 66px;
+  height: 66px;
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35);
+}
+.prompt-photo-wrap img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.ring-live {
+  border: 2px solid #38bdf8;
+}
+.ring-enrolled {
+  border: 2px solid #10b981;
+}
+
+/* Scan Mode Segmented Switcher */
+.scan-mode-tabs {
+  background: #f1f5f9;
+  padding: 3px;
+  border-radius: 9999px;
+  border: 1px solid var(--border-color);
+  display: inline-flex;
+  gap: 2px;
+}
+.mode-tab {
+  border: none;
+  background: transparent;
+  color: #64748b;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 5px 14px;
+  border-radius: 9999px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.mode-tab:hover {
+  color: #0f172a;
+}
+.mode-tab.active {
+  background: #ffffff;
+  color: #0f172a;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+.mode-tab.active.tab-auto {
+  color: #059669;
+}
+.mode-tab.active.tab-prompt {
+  color: #2563eb;
+}
+.mode-tab.active.tab-manual {
+  color: #475569;
 }
 
 .cam-label {
