@@ -12,10 +12,9 @@
     <i class="bi bi-list fs-4"></i>
   </button>
 
-  <a href="/" class="brand text-decoration-none">
-    <img src="/static/img/shantigram_logo.webp" alt="Shantigram Gurukul" class="d-none d-sm-inline-block" style="height: 32px; width: auto; object-fit: contain; filter: brightness(0) invert(1);" onerror="this.style.display='none'">
-    <span class="fw-bold text-white">Shantigram Gurukul</span>
-    <span class="badge bg-warning text-dark fw-bold ms-1 shadow-xs" style="font-size: 10px; padding: 2px 7px;">Bal Mandal</span>
+  <a href="/" class="brand text-decoration-none d-flex align-items-center gap-2">
+    <i class="bi bi-person-bounding-box text-white fs-5"></i>
+    <span class="fw-bold text-white">Bal Mandal Attendance Portal</span>
   </a>
 
   <span class="role-badge d-none d-sm-inline-flex">
@@ -48,8 +47,8 @@
   <div class="offcanvas-header text-white" style="background: {{ ROLE_THEME[user.role] }};">
     <div>
       <div class="d-flex align-items-center gap-2 mb-1">
-        <img src="/static/img/shantigram_logo.webp" alt="Shantigram Gurukul" style="height: 24px; width: auto; object-fit: contain; filter: brightness(0) invert(1);" onerror="this.style.display='none'">
-        <h6 class="offcanvas-title fw-bold mb-0" id="mobileOffcanvasNavLabel">Shantigram Gurukul</h6>
+        <i class="bi bi-person-bounding-box fs-5"></i>
+        <h6 class="offcanvas-title fw-bold mb-0" id="mobileOffcanvasNavLabel">Bal Mandal Attendance Portal</h6>
       </div>
       <div class="small opacity-75">
         <i class="bi bi-person-circle me-1"></i>{{ user.full_name }}
