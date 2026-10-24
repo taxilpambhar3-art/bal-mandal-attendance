@@ -1,14 +1,14 @@
 {% extends "base.html" %}
-{% block title %}Login — Bal Mandal Attendance Portal{% endblock %}
+{% block title %}Login — Shantigram Gurukul Bal Mandal Portal{% endblock %}
 {% block head %}
 <style>
   :root {
-    --brand-primary: #2563eb;
-    --brand-dark: #0f172a;
-    --brand-accent: #4f46e5;
+    --brand-primary: #AC2B31;
+    --brand-dark: #1a0507;
+    --brand-accent: #f59e0b;
   }
 
-  /* Full viewport immersive background with mesh glow */
+  /* Full viewport immersive background with Shantigram Gurukul crimson & amber mesh glow */
   .login-page-wrapper {
     min-height: 100vh;
     min-height: 100dvh;
@@ -18,11 +18,11 @@
     padding: 24px 16px;
     position: relative;
     overflow: hidden;
-    background-color: #0b1329;
+    background-color: #160406;
     background-image: 
-      radial-gradient(at 0% 0%, rgba(37, 99, 235, 0.28) 0px, transparent 50%),
-      radial-gradient(at 100% 0%, rgba(79, 70, 229, 0.25) 0px, transparent 50%),
-      radial-gradient(at 50% 100%, rgba(14, 165, 233, 0.2) 0px, transparent 50%),
+      radial-gradient(at 0% 0%, rgba(172, 43, 49, 0.45) 0px, transparent 50%),
+      radial-gradient(at 100% 0%, rgba(245, 158, 11, 0.3) 0px, transparent 50%),
+      radial-gradient(at 50% 100%, rgba(138, 31, 36, 0.38) 0px, transparent 50%),
       radial-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px);
     background-size: 100% 100%, 100% 100%, 100% 100%, 28px 28px;
   }
@@ -34,7 +34,7 @@
     left: -100px;
     width: 380px;
     height: 380px;
-    background: radial-gradient(circle, rgba(37, 99, 235, 0.35) 0%, rgba(37, 99, 235, 0) 70%);
+    background: radial-gradient(circle, rgba(172, 43, 49, 0.45) 0%, rgba(172, 43, 49, 0) 70%);
     border-radius: 50%;
     filter: blur(40px);
     pointer-events: none;
@@ -46,7 +46,7 @@
     right: -80px;
     width: 360px;
     height: 360px;
-    background: radial-gradient(circle, rgba(99, 102, 241, 0.3) 0%, rgba(99, 102, 241, 0) 70%);
+    background: radial-gradient(circle, rgba(245, 158, 11, 0.35) 0%, rgba(245, 158, 11, 0) 70%);
     border-radius: 50%;
     filter: blur(45px);
     pointer-events: none;
@@ -96,13 +96,13 @@
     width: 66px;
     height: 66px;
     border-radius: 20px;
-    background: linear-gradient(135deg, #2563eb 0%, #4338ca 100%);
+    background: linear-gradient(135deg, #AC2B31 0%, #7d1c21 100%);
     display: flex;
     align-items: center;
     justify-content: center;
     color: #ffffff;
     font-size: 32px;
-    box-shadow: 0 10px 25px -5px rgba(37, 99, 235, 0.45);
+    box-shadow: 0 10px 25px -5px rgba(172, 43, 49, 0.45);
     position: relative;
   }
   .pulse-indicator {
@@ -140,10 +140,10 @@
     align-items: center;
     gap: 6px;
     padding: 3px 10px;
-    background: #f0fdf4;
-    border: 1px solid #bbf7d0;
+    background: #fdf2f2;
+    border: 1px solid #fecaca;
     border-radius: 999px;
-    color: #15803d;
+    color: #AC2B31;
     font-size: 11px;
     font-weight: 600;
     margin-top: 6px;
@@ -173,9 +173,9 @@
     transition: all 0.2s ease;
   }
   .login-input-group:focus-within {
-    border-color: #2563eb;
+    border-color: #AC2B31;
     background: #ffffff;
-    box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.12);
+    box-shadow: 0 0 0 4px rgba(172, 43, 49, 0.12);
   }
   .login-input-group .input-group-text {
     background: transparent;
@@ -215,7 +215,7 @@
     align-items: center;
   }
   .pwd-toggle-btn:hover {
-    color: #2563eb;
+    color: #AC2B31;
   }
 
   /* Submit Button */
@@ -224,23 +224,23 @@
     font-size: 15px;
     font-weight: 700;
     border-radius: 14px;
-    background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+    background: linear-gradient(135deg, #AC2B31 0%, #8a1f24 100%);
     border: 0;
     color: #ffffff;
-    box-shadow: 0 8px 20px -3px rgba(37, 99, 235, 0.4);
+    box-shadow: 0 8px 20px -3px rgba(172, 43, 49, 0.4);
     transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
     position: relative;
     overflow: hidden;
   }
   .login-btn:hover {
-    background: linear-gradient(135deg, #1d4ed8 0%, #1e40af 100%);
-    box-shadow: 0 10px 24px -2px rgba(37, 99, 235, 0.5);
+    background: linear-gradient(135deg, #8a1f24 0%, #681519 100%);
+    box-shadow: 0 10px 24px -2px rgba(172, 43, 49, 0.5);
     transform: translateY(-1px);
     color: #ffffff;
   }
   .login-btn:active {
     transform: translateY(0);
-    box-shadow: 0 4px 12px -2px rgba(37, 99, 235, 0.4);
+    box-shadow: 0 4px 12px -2px rgba(172, 43, 49, 0.4);
   }
   .login-btn.btn-pulse-active {
     background: linear-gradient(135deg, #10b981 0%, #059669 100%) !important;
@@ -280,8 +280,8 @@
   }
   .demo-role-card.active-selected {
     background: #ffffff;
-    border-color: #2563eb;
-    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+    border-color: #AC2B31;
+    box-shadow: 0 0 0 3px rgba(172, 43, 49, 0.15);
   }
   .role-icon-box {
     width: 38px;
@@ -344,6 +344,9 @@
       
       <!-- Brand Header -->
       <div class="text-center mb-3 mb-sm-4">
+        <div class="mb-3">
+          <img src="/static/img/shantigram_logo.webp" alt="Shantigram Gurukul Logo" class="img-fluid" style="max-height: 52px; width: auto; object-fit: contain;">
+        </div>
         <div class="brand-icon-wrapper">
           <div class="brand-icon-box">
             <i class="bi bi-person-bounding-box"></i>
@@ -351,14 +354,14 @@
           <span class="pulse-indicator" title="System Live"></span>
         </div>
         <h4 class="portal-title">
-          Bal Mandal Attendance
+          Shantigram Gurukul
         </h4>
         <p class="portal-subtitle mb-1">
-          Face Scanner Web Attendance Portal
+          Bal Mandal Attendance Portal
         </p>
         <div>
           <span class="status-pill">
-            <span class="status-dot"></span> Face Recognition Model Live
+            <span class="status-dot"></span> Face Recognition Active
           </span>
         </div>
       </div>

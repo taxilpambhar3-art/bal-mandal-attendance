@@ -20,10 +20,14 @@
   --text-muted: #64748b;
   --text-light: #94a3b8;
   
-  /* Semantic Accents */
-  --primary: #2563eb;
-  --primary-hover: #1d4ed8;
-  --primary-subtle: #eff6ff;
+  /* Semantic Accents — Shantigram Gurukul Official Brand */
+  --primary: #AC2B31;
+  --primary-hover: #8a1f24;
+  --primary-subtle: #fdf2f2;
+  --primary-border: #fecaca;
+  --gold: #f59e0b;
+  --gold-hover: #d97706;
+  --gold-subtle: #fef3c7;
   --success: #10b981;
   --success-hover: #059669;
   --success-subtle: #ecfdf5;
@@ -501,16 +505,16 @@ table.mock tbody tr:hover {
 }
 
 .btn-primary {
-  background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
-  border-color: #2563eb;
+  background: linear-gradient(135deg, #AC2B31 0%, #8a1f24 100%);
+  border-color: #AC2B31;
   color: #ffffff;
-  box-shadow: 0 4px 12px -2px rgba(37, 99, 235, 0.35);
+  box-shadow: 0 4px 12px -2px rgba(172, 43, 49, 0.35);
 }
 .btn-primary:hover {
-  background: linear-gradient(135deg, #1d4ed8 0%, #1e40af 100%);
-  border-color: #1d4ed8;
+  background: linear-gradient(135deg, #8a1f24 0%, #681519 100%);
+  border-color: #8a1f24;
   color: #ffffff;
-  box-shadow: 0 6px 16px -2px rgba(37, 99, 235, 0.45);
+  box-shadow: 0 6px 16px -2px rgba(172, 43, 49, 0.45);
 }
 
 .btn-success {
