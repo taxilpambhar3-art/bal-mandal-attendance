@@ -28,9 +28,9 @@ ROLE_LABEL = {
 }
 
 ROLE_THEME = {
-    "super_admin": "linear-gradient(135deg,#1e3c72,#2a5298)",
-    "branch_admin": "linear-gradient(135deg,#065f46,#047857)",
-    "sanchalak": "linear-gradient(135deg,#7c2d12,#c2410c)",
+    "super_admin": "linear-gradient(135deg, #0b1329 0%, #1e3a8a 55%, #2563eb 100%)",
+    "branch_admin": "linear-gradient(135deg, #022c22 0%, #065f46 55%, #059669 100%)",
+    "sanchalak": "linear-gradient(135deg, #431407 0%, #9a3412 55%, #ea580c 100%)",
 }
 
 

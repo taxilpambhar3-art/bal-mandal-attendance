@@ -1,9 +1,13 @@
+<div class="sidenav-header">Overview</div>
 <a href="/super-admin/" class="{{ 'active' if active=='dashboard' else '' }}"><i class="bi bi-speedometer2"></i> Dashboard</a>
+
+<div class="sidenav-header">Statewide Organization</div>
 <a href="/super-admin/branches" class="{{ 'active' if active=='branches' else '' }}"><i class="bi bi-building"></i> Branches</a>
 <a href="/super-admin/mandals" class="{{ 'active' if active=='mandals' else '' }}"><i class="bi bi-diagram-3"></i> Bal Mandals</a>
 <a href="/super-admin/users" class="{{ 'active' if active=='users' else '' }}"><i class="bi bi-people-fill"></i> Admins & Sanchalaks</a>
 <a href="/super-admin/children" class="{{ 'active' if active=='children' else '' }}"><i class="bi bi-person-hearts"></i> All Children</a>
-<a href="/super-admin/attendance" class="{{ 'active' if active=='attendance' else '' }}"><i class="bi bi-camera-video"></i> Live Attendance Scans</a>
-<a href="/super-admin/reports" class="{{ 'active' if active=='reports' else '' }}"><i class="bi bi-bar-chart-line"></i> Reports</a>
-<a href="/super-admin/credentials" class="{{ 'active' if active=='credentials' else '' }}"><i class="bi bi-key-fill text-warning"></i> Login IDs & Passwords</a>
 
+<div class="sidenav-header">Security & Analytics</div>
+<a href="/super-admin/attendance" class="{{ 'active' if active=='attendance' else '' }}"><i class="bi bi-camera-video"></i> Live Attendance Scans</a>
+<a href="/super-admin/reports" class="{{ 'active' if active=='reports' else '' }}"><i class="bi bi-bar-chart-line"></i> Attendance Reports</a>
+<a href="/super-admin/credentials" class="{{ 'active' if active=='credentials' else '' }}"><i class="bi bi-key-fill text-warning"></i> Login IDs & Passwords</a>

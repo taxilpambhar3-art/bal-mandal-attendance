@@ -1,6 +1,11 @@
+<div class="sidenav-header">Overview</div>
 <a href="/sanchalak/" class="{{ 'active' if active=='dashboard' else '' }}"><i class="bi bi-speedometer2"></i> Dashboard</a>
-<a href="/sanchalak/face-scan" class="{{ 'active' if active=='face_scan' else '' }}"><i class="bi bi-camera-video"></i> Face Scan Attendance</a>
+
+<div class="sidenav-header">Attendance & Kiosk</div>
+<a href="/sanchalak/face-scan" class="{{ 'active' if active=='face_scan' else '' }}"><i class="bi bi-camera-video text-warning"></i> Face Scan</a>
 <a href="/sanchalak/children" class="{{ 'active' if active=='children' else '' }}"><i class="bi bi-people"></i> Children</a>
+
+<div class="sidenav-header">Analytics & Records</div>
 <a href="/sanchalak/reports" class="{{ 'active' if active=='reports' else '' }}"><i class="bi bi-calendar-check"></i> Attendance Reports</a>
-<a href="/sanchalak/history" class="{{ 'active' if active=='history' else '' }}"><i class="bi bi-clock-history"></i> History</a>
+<a href="/sanchalak/history" class="{{ 'active' if active=='history' else '' }}"><i class="bi bi-clock-history"></i> History Log</a>
 <a href="/sanchalak/top-attendees" class="{{ 'active' if active=='top' else '' }}"><i class="bi bi-trophy"></i> Top Attendees</a>

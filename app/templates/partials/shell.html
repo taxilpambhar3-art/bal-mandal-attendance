@@ -23,21 +23,20 @@
   </span>
 
   <!-- Spotlight Search Trigger Button -->
-  <button type="button" class="btn btn-sm btn-light border-0 py-1 px-3 rounded-pill text-secondary d-flex align-items-center gap-2 shadow-sm ms-2" onclick="openSpotlightModal()" title="Spotlight Search (Cmd+K / Ctrl+K)">
-    <i class="bi bi-search text-primary"></i>
-    <span class="d-none d-md-inline small fw-semibold">Search...</span>
-    <kbd class="d-none d-lg-inline bg-white text-muted border px-1 rounded shadow-none" style="font-size:10px; font-family: inherit;">⌘K</kbd>
+  <button type="button" class="nav-search-btn ms-2" onclick="openSpotlightModal()" title="Spotlight Search (Cmd+K / Ctrl+K)">
+    <i class="bi bi-search"></i>
+    <span class="d-none d-md-inline">Quick Search...</span>
+    <kbd class="d-none d-lg-inline">⌘K</kbd>
   </button>
 
   <div class="right ms-auto">
-    <span class="d-none d-md-inline-flex align-items-center me-2 text-white-50" role="button" title="Notifications">
-      <i class="bi bi-bell text-white"></i>
-    </span>
-    <span class="fw-semibold d-none d-md-inline-flex align-items-center text-truncate" style="max-width: 160px;">
-      <i class="bi bi-person-circle me-1"></i>{{ user.full_name }}
-    </span>
-    <a href="/logout" class="btn btn-sm btn-outline-light py-1 px-2 border-0 opacity-75 opacity-100-hover" title="Logout">
-      <i class="bi bi-box-arrow-right me-1"></i><span class="d-none d-sm-inline">Logout</span>
+    <div class="user-profile-pill d-none d-md-flex align-items-center">
+      <i class="bi bi-person-circle"></i>
+      <span class="text-truncate" style="max-width: 150px;">{{ user.full_name }}</span>
+    </div>
+    <a href="/logout" class="logout-btn" title="Sign Out">
+      <i class="bi bi-box-arrow-right"></i>
+      <span class="d-none d-sm-inline">Logout</span>
     </a>
   </div>
 </div>
