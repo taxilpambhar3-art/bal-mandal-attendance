@@ -93,33 +93,37 @@
     margin-bottom: 14px;
   }
   .brand-icon-box {
-    width: 76px;
-    height: 76px;
-    border-radius: 22px;
+    width: clamp(96px, 20vw, 116px);
+    height: clamp(96px, 20vw, 116px);
+    border-radius: 28px;
     background: #ffffff;
-    border: 2px solid rgba(172, 43, 49, 0.25);
+    border: 2.5px solid rgba(172, 43, 49, 0.28);
     display: flex;
     align-items: center;
     justify-content: center;
-    box-shadow: 0 10px 25px -5px rgba(172, 43, 49, 0.25);
+    box-shadow: 0 14px 35px -5px rgba(172, 43, 49, 0.35), 0 0 20px rgba(245, 158, 11, 0.15);
     position: relative;
-    padding: 6px;
+    padding: 8px;
+    transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  .brand-icon-box:hover {
+    transform: scale(1.04);
   }
   .pulse-indicator {
     position: absolute;
-    bottom: -2px;
-    right: -2px;
-    width: 16px;
-    height: 16px;
+    bottom: 2px;
+    right: 2px;
+    width: 20px;
+    height: 20px;
     background: #10b981;
-    border: 3px solid #ffffff;
+    border: 3.5px solid #ffffff;
     border-radius: 50%;
     box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7);
     animation: livePulse 2s infinite;
   }
   @keyframes livePulse {
     0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
-    70% { box-shadow: 0 0 0 7px rgba(16, 185, 129, 0); }
+    70% { box-shadow: 0 0 0 9px rgba(16, 185, 129, 0); }
     100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
   }
 
