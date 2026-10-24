@@ -11,9 +11,9 @@ from starlette.middleware.sessions import SessionMiddleware
 
 from datetime import date
 from .auth import ROLE_HOME, ROLE_LABEL, ROLE_THEME
-from .database import Base, SessionLocal, engine
+from .database import Base, SessionLocal, engine, DATA_DIR
 from .deps import AuthRedirect
-from .models import Child
+from .models import Attendance, BalMandal, Branch, Child, User
 from .routers import auth, branch_admin, sanchalak, spotlight, super_admin
 from .seed import seed_if_empty
 from .weeks import current_week_info, format_dt, gujarati_month, week_number_for
@@ -89,6 +89,20 @@ def on_startup():
             print("Migration warning:", e)
     db = SessionLocal()
     try:
+        purge_marker = DATA_DIR / ".branches_purged_v1"
+        if not purge_marker.exists():
+            try:
+                db.query(Attendance).delete()
+                db.query(Child).delete()
+                db.query(User).update({User.branch_id: None, User.bal_mandal_id: None})
+                db.query(BalMandal).delete()
+                db.query(Branch).delete()
+                db.commit()
+                purge_marker.touch()
+                print("Purged all branches and bal mandals successfully.")
+            except Exception as e:
+                print("Purge warning:", e)
+
         seed_if_empty(db)
         # Backfill legacy children if needed
         legacy = db.query(Child).filter((Child.first_name == "") | (Child.first_name.is_(None))).all()
