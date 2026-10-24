@@ -23,8 +23,8 @@
     <div class="col-md-2">
       <label class="form-label small mb-1 fw-bold text-secondary">View Type</label>
       <select name="type" class="form-select form-select-sm">
-        <option value="monthly" {% if report_type != 'weekly' and report_type != 'week' %}selected{% endif %}>📅 Monthly</option>
-        <option value="weekly" {% if report_type == 'weekly' or report_type == 'week' %}selected{% endif %}>📊 Weekly</option>
+        <option value="monthly" {% if report_type != 'weekly' and report_type != 'week' %}selected{% endif %}>Monthly</option>
+        <option value="weekly" {% if report_type == 'weekly' or report_type == 'week' %}selected{% endif %}>Weekly</option>
       </select>
     </div>
     <div class="col-md-2">

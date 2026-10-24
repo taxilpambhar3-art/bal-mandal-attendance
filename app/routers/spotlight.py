@@ -64,7 +64,7 @@ def spotlight_search(
             if branch_name and role == "super_admin":
                 meta_str += f" ({branch_name})"
             if c.mobile_number:
-                meta_str += f" · 📞 {c.mobile_number}"
+                meta_str += f" · Mob: {c.mobile_number}"
 
             subtitle_parts = [c.child_code]
             if c.standard:

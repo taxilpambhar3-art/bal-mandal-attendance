@@ -78,13 +78,13 @@
             </label>
             <select name="admin_role" class="form-select form-select-sm fw-bold border-primary" required>
               <option value="branch_admin" {% if not admin or admin.role == 'branch_admin' %}selected{% endif %}>
-                🏢 Branch Admin (Full Branch Access)
+                Branch Admin (Full Branch Access)
               </option>
               <option value="sanchalak" {% if admin and admin.role == 'sanchalak' %}selected{% endif %}>
-                👦 Sanchalak (Bal Mandal Coordinator)
+                Sanchalak (Bal Mandal Coordinator)
               </option>
               <option value="super_admin" {% if admin and admin.role == 'super_admin' %}selected{% endif %}>
-                👑 Super Admin (System-wide Access)
+                Super Admin (System-wide Access)
               </option>
             </select>
             <small class="text-muted d-block mt-1" style="font-size:11px;">

@@ -40,11 +40,11 @@
         <tr>
           <td>
             {% if loop.index == 1 %}
-            <span class="badge bg-warning text-dark fw-bold fs-6 px-2 py-1 shadow-sm">🥇 1</span>
+            <span class="badge bg-warning text-dark fw-bold fs-6 px-2 py-1 shadow-sm">#1</span>
             {% elif loop.index == 2 %}
-            <span class="badge bg-secondary text-white fw-bold fs-6 px-2 py-1 shadow-sm">🥈 2</span>
+            <span class="badge bg-secondary text-white fw-bold fs-6 px-2 py-1 shadow-sm">#2</span>
             {% elif loop.index == 3 %}
-            <span class="badge text-white fw-bold fs-6 px-2 py-1 shadow-sm" style="background:#b45309;">🥉 3</span>
+            <span class="badge text-white fw-bold fs-6 px-2 py-1 shadow-sm" style="background:#b45309;">#3</span>
             {% else %}
             <span class="badge bg-light text-dark fw-bold px-2 py-1 border">{{ loop.index }}</span>
             {% endif %}
@@ -75,7 +75,7 @@
           </td>
           <td class="text-end">
             {% if item.count >= 3 %}
-            <span class="badge badge-soft-success fw-bold">🌟 Excellent Attendance</span>
+            <span class="badge badge-soft-success fw-bold">Excellent Attendance</span>
             {% elif item.count >= 1 %}
             <span class="badge badge-soft-info fw-bold">Regular</span>
             {% else %}

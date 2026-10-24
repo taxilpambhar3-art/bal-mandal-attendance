@@ -26,8 +26,8 @@
       <label class="form-label small fw-bold text-secondary mb-1">Filter by Role:</label>
       <select name="role" class="form-select form-select-sm" onchange="this.form.submit()">
         <option value="">All Roles (Admins & Sanchalaks)</option>
-        <option value="branch_admin" {% if selected_role == 'branch_admin' %}selected{% endif %}>🏢 Branch Admins Only</option>
-        <option value="sanchalak" {% if selected_role == 'sanchalak' %}selected{% endif %}>👦 Sanchalaks Only</option>
+        <option value="branch_admin" {% if selected_role == 'branch_admin' %}selected{% endif %}>Branch Admins Only</option>
+        <option value="sanchalak" {% if selected_role == 'sanchalak' %}selected{% endif %}>Sanchalaks Only</option>
       </select>
     </div>
     <div class="col-md-3">

@@ -82,8 +82,8 @@
           <div class="col-md-4">
             <label class="form-label small fw-bold text-secondary mb-1">Gender <span class="text-danger">*</span></label>
             <select name="gender" id="genderInput" class="form-select" required>
-              <option value="Male" {% if (child and child.gender == 'Male') or (form_data and form_data.gender == 'Male') %}selected{% endif %}>👦 Male</option>
-              <option value="Female" {% if (child and child.gender == 'Female') or (form_data and form_data.gender == 'Female') %}selected{% endif %}>👧 Female</option>
+              <option value="Male" {% if (child and child.gender == 'Male') or (form_data and form_data.gender == 'Male') %}selected{% endif %}>Male</option>
+              <option value="Female" {% if (child and child.gender == 'Female') or (form_data and form_data.gender == 'Female') %}selected{% endif %}>Female</option>
             </select>
           </div>
 

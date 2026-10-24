@@ -24,9 +24,9 @@
       <div class="col-md-3">
         <label class="form-label small mb-1 fw-bold text-secondary">Report View Type</label>
         <select name="type" class="form-select form-select-sm" id="viewTypeSelect" onchange="if(this.value==='custom') window.location.href='/sanchalak/reports/custom';">
-          <option value="monthly" {% if report_type != 'weekly' and report_type != 'week' %}selected{% endif %}>📅 Monthly</option>
-          <option value="weekly" {% if report_type == 'weekly' or report_type == 'week' %}selected{% endif %}>📊 Weekly</option>
-          <option value="custom">🗓️ Custom Date Range</option>
+          <option value="monthly" {% if report_type != 'weekly' and report_type != 'week' %}selected{% endif %}>Monthly</option>
+          <option value="weekly" {% if report_type == 'weekly' or report_type == 'week' %}selected{% endif %}>Weekly</option>
+          <option value="custom">Custom Date Range</option>
         </select>
       </div>
       <div class="col-md-3">
