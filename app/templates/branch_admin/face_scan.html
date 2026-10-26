@@ -229,12 +229,27 @@
             <i class="bi bi-arrow-repeat me-1"></i>Try Again
           </button>
         </div>
+
+        <!-- Camera Off / Paused Overlay -->
+        <div id="cameraOffOverlay" class="position-absolute" style="inset:0; background:rgba(11,17,32,0.96); backdrop-filter:blur(8px); display:none; flex-direction:column; justify-content:center; align-items:center; z-index:25; color:#94a3b8; padding:20px; text-align:center;">
+          <div class="rounded-circle d-flex align-items-center justify-content-center bg-dark mb-3 shadow" style="width:68px;height:68px;border:2px solid #ef4444;">
+            <i class="bi bi-camera-video-off-fill fs-2 text-danger"></i>
+          </div>
+          <h5 class="text-white fw-bold mb-1">Camera is Turned Off</h5>
+          <p class="small text-white-50 mb-3" style="max-width:280px;">The live video feed and attendance scanning are currently paused.</p>
+          <button type="button" class="btn btn-success btn-sm px-4 py-2 fw-bold shadow" onclick="toggleCamera()">
+            <i class="bi bi-camera-video-fill me-1"></i>Turn Camera On
+          </button>
+        </div>
       </div>
 
       <!-- Kiosk Actions Bar -->
       <div class="d-flex justify-content-between align-items-center mt-3 gap-2 flex-wrap">
         <button type="button" class="btn btn-warning fw-bold flex-grow-1 shadow-sm" id="manualSnapBtn">
           <i class="bi bi-camera-fill me-1"></i>Manual Capture
+        </button>
+        <button type="button" id="toggleCamBtn" class="btn btn-outline-danger fw-bold shadow-sm" onclick="toggleCamera()" title="Turn Camera Off">
+          <i class="bi bi-camera-video-off-fill me-1" id="toggleCamIcon"></i><span id="toggleCamText">Camera Off</span>
         </button>
         <button type="button" class="btn btn-outline-secondary" id="switchCamBtn" title="Switch Camera (Front / Back)">
           <i class="bi bi-arrow-clockwise"></i>
@@ -456,6 +471,63 @@ function playChime(success = true) {
   }
 }
 
+let isCameraOn = true;
+
+// Toggle Camera On / Off
+window.toggleCamera = async function() {
+  if (isCameraOn) {
+    isCameraOn = false;
+    if (videoStream) {
+      videoStream.getTracks().forEach(t => t.stop());
+      videoStream = null;
+    }
+    video.srcObject = null;
+    updateCameraUI(false);
+  } else {
+    isCameraOn = true;
+    updateCameraUI(true);
+    await startCamera();
+  }
+};
+
+function updateCameraUI(isOn) {
+  const camOverlay = document.getElementById('cameraOffOverlay');
+  const toggleBtn = document.getElementById('toggleCamBtn');
+  const toggleIcon = document.getElementById('toggleCamIcon');
+  const toggleText = document.getElementById('toggleCamText');
+  const manualSnapBtn = document.getElementById('manualSnapBtn');
+  const cameraStatus = document.getElementById('cameraStatus');
+
+  if (isOn) {
+    if (camOverlay) camOverlay.style.display = 'none';
+    if (toggleBtn) {
+      toggleBtn.className = 'btn btn-outline-danger fw-bold shadow-sm';
+      toggleBtn.title = 'Turn Camera Off';
+    }
+    if (toggleIcon) toggleIcon.className = 'bi bi-camera-video-off-fill me-1';
+    if (toggleText) toggleText.textContent = 'Camera Off';
+    if (manualSnapBtn) manualSnapBtn.disabled = false;
+    if (cameraStatus) {
+      cameraStatus.innerHTML = '<i class="bi bi-circle-fill me-1" style="font-size:8px;"></i>Camera Active';
+      cameraStatus.className = 'badge badge-soft-success py-2 px-3';
+    }
+  } else {
+    if (camOverlay) camOverlay.style.display = 'flex';
+    if (toggleBtn) {
+      toggleBtn.className = 'btn btn-success fw-bold shadow-sm';
+      toggleBtn.title = 'Turn Camera On';
+    }
+    if (toggleIcon) toggleIcon.className = 'bi bi-camera-video-fill me-1';
+    if (toggleText) toggleText.textContent = 'Camera On';
+    if (manualSnapBtn) manualSnapBtn.disabled = true;
+    if (cameraStatus) {
+      cameraStatus.innerHTML = '<i class="bi bi-camera-video-off me-1"></i>Camera Paused';
+      cameraStatus.className = 'badge bg-secondary text-white py-2 px-3';
+    }
+    resetScanUI();
+  }
+}
+
 async function startCamera() {
   if (videoStream) {
     videoStream.getTracks().forEach(t => t.stop());
@@ -470,6 +542,8 @@ async function startCamera() {
     } else {
       video.classList.remove('mirror-mode');
     }
+    isCameraOn = true;
+    updateCameraUI(true);
     video.onloadedmetadata = () => {
       motionCanvas.width = 160;
       motionCanvas.height = 120;
@@ -657,7 +731,7 @@ function resetScanUI() {
 function startFacePresenceMonitor() {
   if (motionInterval) clearInterval(motionInterval);
   motionInterval = setInterval(async () => {
-    if (isProcessing || isPromptOpen || currentScanMode === 'manual' || !video.videoWidth) return;
+    if (!isCameraOn || isProcessing || isPromptOpen || currentScanMode === 'manual' || !video.videoWidth) return;
 
     let facePresent = false;
     if (isAiModelLoaded) {
@@ -817,6 +891,10 @@ window.cancelPromptModal = function() {
 };
 
 async function captureAndVerify() {
+  if (!isCameraOn || !videoStream) {
+    alert("Camera is turned off. Please click 'Turn Camera On' to take attendance.");
+    return;
+  }
   if (isProcessing) return;
   isProcessing = true;
 
