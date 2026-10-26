@@ -67,29 +67,30 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
 @app.on_event("startup")
 def on_startup():
     Base.metadata.create_all(bind=engine)
-    with engine.connect() as conn:
-        try:
-            cols = [r[1] for r in conn.exec_driver_sql("PRAGMA table_info(children)").fetchall()]
-            new_cols = {
-                "mobile_number": "VARCHAR(20) DEFAULT ''",
-                "first_name": "VARCHAR(60) DEFAULT ''",
-                "father_name": "VARCHAR(60) DEFAULT ''",
-                "surname": "VARCHAR(60) DEFAULT ''",
-                "dob": "DATE",
-                "dob_str": "VARCHAR(12) DEFAULT ''",
-                "gender": "VARCHAR(10) DEFAULT 'Male'",
-                "standard": "VARCHAR(20) DEFAULT ''",
-                "address": "TEXT DEFAULT ''",
-                "uses_bus": "BOOLEAN DEFAULT 0",
-                "bus_route": "VARCHAR(100) DEFAULT ''",
-                "face_descriptor": "TEXT DEFAULT NULL",
-            }
-            for col_name, col_def in new_cols.items():
-                if cols and col_name not in cols:
-                    conn.exec_driver_sql(f"ALTER TABLE children ADD COLUMN {col_name} {col_def}")
-            conn.commit()
-        except Exception as e:
-            print("Migration warning:", e)
+    if engine.dialect.name == "sqlite":
+        with engine.connect() as conn:
+            try:
+                cols = [r[1] for r in conn.exec_driver_sql("PRAGMA table_info(children)").fetchall()]
+                new_cols = {
+                    "mobile_number": "VARCHAR(20) DEFAULT ''",
+                    "first_name": "VARCHAR(60) DEFAULT ''",
+                    "father_name": "VARCHAR(60) DEFAULT ''",
+                    "surname": "VARCHAR(60) DEFAULT ''",
+                    "dob": "DATE",
+                    "dob_str": "VARCHAR(12) DEFAULT ''",
+                    "gender": "VARCHAR(10) DEFAULT 'Male'",
+                    "standard": "VARCHAR(20) DEFAULT ''",
+                    "address": "TEXT DEFAULT ''",
+                    "uses_bus": "BOOLEAN DEFAULT 0",
+                    "bus_route": "VARCHAR(100) DEFAULT ''",
+                    "face_descriptor": "TEXT DEFAULT NULL",
+                }
+                for col_name, col_def in new_cols.items():
+                    if cols and col_name not in cols:
+                        conn.exec_driver_sql(f"ALTER TABLE children ADD COLUMN {col_name} {col_def}")
+                conn.commit()
+            except Exception as e:
+                print("Migration warning:", e)
     db = SessionLocal()
     try:
         seed_if_empty(db)

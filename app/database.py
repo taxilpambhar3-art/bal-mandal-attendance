@@ -10,9 +10,19 @@ DATA_DIR.mkdir(exist_ok=True)
 UPLOAD_DIR = BASE_DIR / "app" / "static" / "uploads"
 UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
 
-DATABASE_URL = f"sqlite:///{DATA_DIR / 'bal_mandal.db'}"
+import os
 
-engine = create_engine(DATABASE_URL, connect_args={"check_same_thread": False})
+raw_db_url = os.environ.get("DATABASE_URL")
+
+if raw_db_url:
+    if raw_db_url.startswith("postgres://"):
+        raw_db_url = raw_db_url.replace("postgres://", "postgresql://", 1)
+    DATABASE_URL = raw_db_url
+    engine = create_engine(DATABASE_URL, pool_pre_ping=True)
+else:
+    DATABASE_URL = f"sqlite:///{DATA_DIR / 'bal_mandal.db'}"
+    engine = create_engine(DATABASE_URL, connect_args={"check_same_thread": False})
+
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 

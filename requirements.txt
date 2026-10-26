@@ -11,3 +11,4 @@ eval_type_backport>=0.2.0
 Pillow>=10.0.0
 numpy>=1.24.0
 httpx>=0.25.0
+psycopg2-binary>=2.9.9
