@@ -91,6 +91,7 @@ def on_startup():
         except Exception as e:
             print("Migration warning:", e)
     db = SessionLocal()
+    try:
         seed_if_empty(db)
         # Backfill legacy children if needed
         legacy = db.query(Child).filter((Child.first_name == "") | (Child.first_name.is_(None))).all()
