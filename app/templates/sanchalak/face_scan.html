@@ -486,18 +486,18 @@
   });
 
   let mandalFaceMatcher = null;
-  const MATCH_THRESHOLD = 0.54; // Recommended threshold: genuine matches 0.38 - 0.52; distinct faces > 0.62
+  const MATCH_THRESHOLD = 0.58; // Calibrated: genuine matches 0.35 - 0.57; distinct faces > 0.62
 
   // Distance to Confidence Score mapper (0 - 100%)
   function distanceToConfidence(dist) {
     if (dist <= 0.20) return 99;
     if (dist <= 0.35) return Math.round(92 + (0.35 - dist) * 46);
-    if (dist <= 0.45) return Math.round(85 + (0.45 - dist) * 70);
-    if (dist <= 0.54) return Math.round(72 + (0.54 - dist) * 144);
+    if (dist <= 0.48) return Math.round(82 + (0.48 - dist) * 76);
+    if (dist <= 0.58) return Math.round(68 + (0.58 - dist) * 140);
     return Math.max(10, Math.round((1.0 - (dist / 0.65)) * 100));
   }
 
-  // Multi-pass descriptor extractor with canvas downscaling fallback
+  // Multi-pass descriptor extractor with canvas downscaling and rotation fallback
   async function extractDescriptorFromPhoto(photoUrl) {
     if (!photoUrl) return null;
     try {
@@ -506,7 +506,11 @@
       img.crossOrigin = 'anonymous';
       img.src = src;
       if (!img.complete) {
-        await img.decode().catch(() => {});
+        await new Promise((resolve) => {
+          img.onload = () => resolve();
+          img.onerror = () => resolve();
+          if (img.decode) img.decode().then(resolve).catch(resolve);
+        });
       }
 
       // Pass 1: standard TinyFaceDetector (inputSize: 320, scoreThreshold: 0.20)
@@ -535,6 +539,30 @@
       const ctx = c.getContext('2d');
       ctx.drawImage(img, 0, 0, w, h);
       det = await faceapi.detectSingleFace(c, new faceapi.TinyFaceDetectorOptions({ inputSize: 320, scoreThreshold: 0.15 }))
+        .withFaceLandmarks()
+        .withFaceDescriptor();
+      if (det && det.descriptor) return det.descriptor;
+
+      // Pass 4: Rotate 90 deg clockwise (for sideways mobile photos)
+      const cRot = document.createElement('canvas');
+      cRot.width = h;
+      cRot.height = w;
+      const ctxRot = cRot.getContext('2d');
+      ctxRot.translate(h / 2, w / 2);
+      ctxRot.rotate((90 * Math.PI) / 180);
+      ctxRot.drawImage(c, -w / 2, -h / 2);
+      det = await faceapi.detectSingleFace(cRot, new faceapi.TinyFaceDetectorOptions({ inputSize: 320, scoreThreshold: 0.15 }))
+        .withFaceLandmarks()
+        .withFaceDescriptor();
+      if (det && det.descriptor) return det.descriptor;
+
+      // Pass 5: Rotate 270 deg (counter-clockwise)
+      ctxRot.clearRect(0, 0, h, w);
+      ctxRot.setTransform(1, 0, 0, 1, 0, 0);
+      ctxRot.translate(h / 2, w / 2);
+      ctxRot.rotate((270 * Math.PI) / 180);
+      ctxRot.drawImage(c, -w / 2, -h / 2);
+      det = await faceapi.detectSingleFace(cRot, new faceapi.TinyFaceDetectorOptions({ inputSize: 320, scoreThreshold: 0.15 }))
         .withFaceLandmarks()
         .withFaceDescriptor();
       if (det && det.descriptor) return det.descriptor;

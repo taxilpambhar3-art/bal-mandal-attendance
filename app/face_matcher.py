@@ -86,7 +86,7 @@ def _has_valid_face_content(img: Image.Image) -> bool:
 def compare_face_photos(
     live_img_path: str | Path,
     enrolled_img_path: Optional[str | Path],
-    threshold: float = 65.0,
+    threshold: float = 58.0,
     client_verified: Optional[bool] = None,
     client_score: Optional[float] = None,
 ) -> Dict[str, Any]:
@@ -106,7 +106,7 @@ def compare_face_photos(
     # If client-side deep neural face-api already evaluated the 128D descriptor:
     if client_verified is not None:
         c_score = float(client_score) if client_score is not None else 85.0
-        is_match = bool(client_verified) and c_score >= 65.0
+        is_match = bool(client_verified) and c_score >= 58.0
         return {
             "is_match": is_match,
             "match": is_match,

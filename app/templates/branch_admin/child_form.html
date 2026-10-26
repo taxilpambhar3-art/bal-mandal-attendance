@@ -326,14 +326,45 @@ async function applyEnrolledPhoto(dataUrl) {
     try {
       const img = new Image();
       img.src = dataUrl;
-      await img.decode();
-      let det = await faceapi.detectSingleFace(img, new faceapi.TinyFaceDetectorOptions({ inputSize: 320, scoreThreshold: 0.20 }))
+      if (!img.complete) {
+        await new Promise((resolve) => {
+          img.onload = () => resolve();
+          img.onerror = () => resolve();
+          if (img.decode) img.decode().then(resolve).catch(resolve);
+        });
+      }
+      let det = await faceapi.detectSingleFace(img, new faceapi.TinyFaceDetectorOptions({ inputSize: 320, scoreThreshold: 0.15 }))
         .withFaceLandmarks()
         .withFaceDescriptor();
       if (!det) {
-        det = await faceapi.detectSingleFace(img, new faceapi.TinyFaceDetectorOptions({ inputSize: 416, scoreThreshold: 0.15 }))
+        det = await faceapi.detectSingleFace(img, new faceapi.TinyFaceDetectorOptions({ inputSize: 416, scoreThreshold: 0.12 }))
           .withFaceLandmarks()
           .withFaceDescriptor();
+      }
+      // If not detected upright, try rotating 90 deg and 270 deg (for smartphone photos)
+      if (!det && (img.width || img.naturalWidth)) {
+        const origW = img.naturalWidth || img.width;
+        const origH = img.naturalHeight || img.height;
+        const cRot = document.createElement('canvas');
+        cRot.width = origH;
+        cRot.height = origW;
+        const ctxRot = cRot.getContext('2d');
+        ctxRot.translate(origH / 2, origW / 2);
+        ctxRot.rotate((90 * Math.PI) / 180);
+        ctxRot.drawImage(img, -origW / 2, -origH / 2);
+        det = await faceapi.detectSingleFace(cRot, new faceapi.TinyFaceDetectorOptions({ inputSize: 320, scoreThreshold: 0.15 }))
+          .withFaceLandmarks()
+          .withFaceDescriptor();
+        if (!det) {
+          ctxRot.clearRect(0, 0, origH, origW);
+          ctxRot.setTransform(1, 0, 0, 1, 0, 0);
+          ctxRot.translate(origH / 2, origW / 2);
+          ctxRot.rotate((270 * Math.PI) / 180);
+          ctxRot.drawImage(img, -origW / 2, -origH / 2);
+          det = await faceapi.detectSingleFace(cRot, new faceapi.TinyFaceDetectorOptions({ inputSize: 320, scoreThreshold: 0.15 }))
+            .withFaceLandmarks()
+            .withFaceDescriptor();
+        }
       }
       if (det && det.descriptor) {
         if (faceDescriptorInput) faceDescriptorInput.value = JSON.stringify(Array.from(det.descriptor));

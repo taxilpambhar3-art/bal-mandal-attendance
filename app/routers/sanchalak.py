@@ -235,7 +235,7 @@ def face_scan_submit(
             res = compare_face_photos(
                 live_img_path=live_path,
                 enrolled_img_path=enrolled_p,
-                threshold=65.0,
+                threshold=58.0,
             )
             sc = res["confidence"]
             if sc > best_score:
@@ -246,7 +246,7 @@ def face_scan_submit(
             elif sc > second_score:
                 second_score = sc
 
-        if best_match and best_match["is_match"] and best_score >= 65.0:
+        if best_match and best_match["is_match"] and best_score >= 58.0:
             child = best_child
             match_result = best_match
         else:
@@ -321,7 +321,7 @@ def face_scan_submit(
         match_result = compare_face_photos(
             live_img_path=live_path,
             enrolled_img_path=enrolled_path,
-            threshold=65.0,
+            threshold=58.0,
             client_verified=c_ver,
             client_score=parsed_client_score,
         )
