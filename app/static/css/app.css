@@ -565,6 +565,10 @@ table.mock tbody tr:hover {
   background: #090e1a;
   border-radius: var(--radius-xl);
   aspect-ratio: 4 / 3;
+  min-height: 290px;
+  width: 100%;
+  max-width: 680px;
+  margin: 0 auto;
   position: relative;
   overflow: hidden;
   display: flex;
@@ -578,6 +582,7 @@ table.mock tbody tr:hover {
   width: 100%;
   height: 100%;
   object-fit: cover;
+  object-position: center center;
 }
 
 .camera-box video.mirror-mode {
@@ -720,6 +725,9 @@ table.mock tbody tr:hover {
   border: 2px dashed #38bdf8;
   border-radius: 38px;
   position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
   pointer-events: none;
   z-index: 2;
   box-shadow: 0 0 30px rgba(56, 189, 248, 0.35);
@@ -1189,5 +1197,71 @@ table.mock tbody tr:hover {
   table.mock th, table.mock td {
     padding: 10px 12px;
     font-size: 12px;
+  }
+
+  /* Center face scan camera & biometric reticle on mobile phones */
+  .camera-box {
+    aspect-ratio: 3 / 4 !important;
+    min-height: 380px !important;
+    max-height: 66vh !important;
+    border-radius: 20px !important;
+    margin: 0 auto !important;
+    max-width: 100% !important;
+  }
+  .camera-box.landscape-stream {
+    aspect-ratio: 4 / 3 !important;
+    min-height: 260px !important;
+  }
+  .camera-box.portrait-stream {
+    aspect-ratio: 3 / 4 !important;
+    min-height: 380px !important;
+  }
+  .camera-box video, .camera-box img {
+    object-position: center 38% !important;
+  }
+  .bio-scanner-hud {
+    width: min(205px, 64vw) !important;
+    height: min(240px, 68vw) !important;
+    top: 48% !important;
+    left: 50% !important;
+    transform: translate(-50%, -50%) !important;
+  }
+  .face-ring {
+    width: min(205px, 64vw) !important;
+    height: min(240px, 68vw) !important;
+    top: 48% !important;
+    left: 50% !important;
+    transform: translate(-50%, -50%) !important;
+  }
+  .cam-label {
+    bottom: 12px !important;
+    font-size: 11px !important;
+    padding: 4px 12px !important;
+    max-width: 90% !important;
+    white-space: nowrap !important;
+    text-overflow: ellipsis !important;
+    overflow: hidden !important;
+  }
+  .face-scan-header {
+    flex-direction: column !important;
+    align-items: center !important;
+    text-align: center !important;
+    gap: 10px !important;
+  }
+  .face-scan-controls {
+    justify-content: center !important;
+    width: 100% !important;
+    gap: 6px !important;
+  }
+  .scan-mode-tabs {
+    width: 100% !important;
+    display: flex !important;
+    justify-content: center !important;
+  }
+  .scan-mode-tabs .mode-tab {
+    flex: 1 1 0 !important;
+    justify-content: center !important;
+    padding: 6px 4px !important;
+    font-size: 11.5px !important;
   }
 }

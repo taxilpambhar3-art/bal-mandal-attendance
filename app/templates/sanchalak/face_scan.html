@@ -2,14 +2,14 @@
 {% block title %}Face Scan Attendance — Bal Mandal{% endblock %}
 {% block sidenav %}{% include "sanchalak/_nav.html" %}{% endblock %}
 {% block content %}
-<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+<div class="face-scan-header d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
   <div>
     <h6 class="fw-bold mb-0">
       <i class="bi bi-camera-video-fill text-success me-2"></i>Face Scan Attendance Kiosk
     </h6>
     <small class="text-muted">{{ mandal.name if mandal else 'Bal Mandal' }} · {{ week.date.strftime('%d %B %Y') }} · <span class="badge badge-soft-info">{{ week.week_label }}</span></small>
   </div>
-  <div class="d-flex align-items-center gap-2 flex-wrap">
+  <div class="face-scan-controls d-flex align-items-center gap-2 flex-wrap">
     <!-- Modern Scan Mode Switcher (Inspired by Face-scanner) -->
     <div class="scan-mode-tabs shadow-sm">
       <button type="button" class="mode-tab tab-auto active" id="modeBtnAuto" onclick="setScanMode('auto')" title="Hands-free instant attendance">
@@ -44,7 +44,7 @@
   <div class="col-lg-7">
     <div class="panel">
       <!-- Camera Viewport with Biometric HUD & Overlays -->
-      <div class="camera-box position-relative" id="cameraContainer" style="aspect-ratio: 4/3; min-height: 290px; background:#0b1120; border-radius:16px; overflow:hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.3);">
+      <div class="camera-box position-relative" id="cameraContainer" style="background:#0b1120; border-radius:16px; overflow:hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.3);">
         <video id="video" class="mirror-mode" autoplay playsinline webkit-playsinline muted style="width:100%;height:100%;object-fit:cover;"></video>
         <canvas id="canvas" style="display:none;"></canvas>
         <canvas id="motionCanvas" style="display:none;"></canvas>
@@ -522,11 +522,12 @@
       currentStream.getTracks().forEach(t => t.stop());
     }
     try {
+      const isMobile = window.innerWidth < 768 || /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
       const constraints = {
         video: {
           facingMode: useFacingMode,
-          width: { ideal: 640 },
-          height: { ideal: 480 }
+          width: { ideal: isMobile ? 480 : 640 },
+          height: { ideal: isMobile ? 640 : 480 }
         },
         audio: false
       };
@@ -539,6 +540,20 @@
       }
       isCameraOn = true;
       updateCameraUI(true);
+
+      video.onloadedmetadata = () => {
+        const isPortrait = video.videoHeight > video.videoWidth;
+        const container = document.getElementById('cameraContainer');
+        if (container) {
+          if (isPortrait) {
+            container.classList.add('portrait-stream');
+            container.classList.remove('landscape-stream');
+          } else {
+            container.classList.add('landscape-stream');
+            container.classList.remove('portrait-stream');
+          }
+        }
+      };
     } catch (err) {
       console.warn('Camera error:', err);
       cameraStatus.innerHTML = '<i class="bi bi-exclamation-triangle-fill me-1"></i>No Camera Access';

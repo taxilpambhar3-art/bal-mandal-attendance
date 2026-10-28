@@ -216,7 +216,7 @@
       </div>
       <div class="modal-body text-center">
         <!-- Live Webcam Frame -->
-        <div class="position-relative mx-auto rounded-3 overflow-hidden bg-dark mb-3" style="width: 280px; height: 210px;">
+        <div class="position-relative mx-auto rounded-3 overflow-hidden bg-dark mb-3" style="max-width: 280px; width: 100%; aspect-ratio: 4/3;">
           <video id="modalVideo" autoplay playsinline webkit-playsinline muted style="width:100%;height:100%;object-fit:cover;"></video>
           <canvas id="modalCanvas" style="display:none;"></canvas>
           <img id="modalPreviewImg" src="" style="width:100%;height:100%;object-fit:cover;display:none;" alt="">
@@ -273,7 +273,14 @@ async function openFaceModal(childId, childName, existingPhoto) {
   modal.show();
 
   try {
-    modalStream = await navigator.mediaDevices.getUserMedia({ video: { width: { ideal: 640 }, height: { ideal: 480 }, facingMode: 'user' } });
+    const isMobile = window.innerWidth < 768 || /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+    modalStream = await navigator.mediaDevices.getUserMedia({
+      video: {
+        width: { ideal: isMobile ? 480 : 640 },
+        height: { ideal: isMobile ? 640 : 480 },
+        facingMode: 'user'
+      }
+    });
     modalVideo.srcObject = modalStream;
   } catch (err) {
     console.error('Camera error in modal:', err);

@@ -209,7 +209,7 @@
       </div>
 
       <!-- Video / Camera Box -->
-      <div class="camera-box position-relative mb-3" style="aspect-ratio: 4/3; min-height: 240px; background:#0f172a; border-radius:12px; overflow:hidden;">
+      <div class="camera-box position-relative mb-3" style="background:#0f172a; border-radius:12px; overflow:hidden;">
         <video id="regVideo" autoplay playsinline webkit-playsinline muted style="width:100%;height:100%;object-fit:cover; display:{% if child and child.face_photo %}none{% else %}block{% endif %};"></video>
         <canvas id="regCanvas" style="display:none;"></canvas>
         <img id="enrolledPreview" src="{% if child and child.face_photo %}/static/uploads/{{ child.face_photo }}{% endif %}" style="width:100%;height:100%;object-fit:cover; display:{% if child and child.face_photo %}block{% else %}none{% endif %};" alt="Enrolled Face">
@@ -281,8 +281,13 @@ loadFormAi();
 
 async function startRegCam() {
   try {
+    const isMobile = window.innerWidth < 768 || /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
     regStream = await navigator.mediaDevices.getUserMedia({
-      video: { width: { ideal: 640 }, height: { ideal: 480 }, facingMode: 'user' }
+      video: {
+        width: { ideal: isMobile ? 480 : 640 },
+        height: { ideal: isMobile ? 640 : 480 },
+        facingMode: 'user'
+      }
     });
     regVideo.srcObject = regStream;
   } catch (err) {

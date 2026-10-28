@@ -2,7 +2,7 @@
 {% block title %}Face Scan Attendance Kiosk — Branch Admin{% endblock %}
 {% block sidenav %}{% include "branch_admin/_nav.html" %}{% endblock %}
 {% block content %}
-<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+<div class="face-scan-header d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
   <div>
     <h5 class="fw-bold mb-0">
       <i class="bi bi-camera-video-fill text-success me-2"></i>Face Scan Attendance Kiosk
@@ -11,7 +11,7 @@
       {{ branch.name }} Branch · {{ week.date.strftime('%d %B %Y') }} · <span class="badge badge-soft-info">{{ week.week_label }}</span>
     </small>
   </div>
-  <div class="d-flex align-items-center gap-2 flex-wrap">
+  <div class="face-scan-controls d-flex align-items-center gap-2 flex-wrap">
     <!-- Mandal Switcher Dropdown -->
     <div class="d-flex align-items-center gap-1 bg-light py-1 px-3 border rounded-pill shadow-sm">
       <span class="text-secondary small fw-bold"><i class="bi bi-diagram-3-fill text-primary me-1"></i>Mandal:</span>
@@ -59,7 +59,7 @@
   <div class="col-lg-7">
     <div class="panel">
       <!-- Camera Box with Biometric HUD and Instant Toast -->
-      <div class="camera-box position-relative" id="cameraContainer" style="aspect-ratio: 4/3; min-height: 290px; background:#0b1120; border-radius:16px; overflow:hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.3);">
+      <div class="camera-box position-relative" id="cameraContainer" style="background:#0b1120; border-radius:16px; overflow:hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.3);">
         <video id="video" class="mirror-mode" autoplay playsinline webkit-playsinline muted style="width:100%;height:100%;object-fit:cover;"></video>
         <canvas id="canvas" style="display:none;"></canvas>
         <canvas id="motionCanvas" style="display:none;"></canvas>
@@ -533,8 +533,13 @@ async function startCamera() {
     videoStream.getTracks().forEach(t => t.stop());
   }
   try {
+    const isMobile = window.innerWidth < 768 || /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
     videoStream = await navigator.mediaDevices.getUserMedia({
-      video: { width: { ideal: 640 }, height: { ideal: 480 }, facingMode: useFacingMode }
+      video: {
+        width: { ideal: isMobile ? 480 : 640 },
+        height: { ideal: isMobile ? 640 : 480 },
+        facingMode: useFacingMode
+      }
     });
     video.srcObject = videoStream;
     if (useFacingMode === 'user') {
@@ -545,6 +550,17 @@ async function startCamera() {
     isCameraOn = true;
     updateCameraUI(true);
     video.onloadedmetadata = () => {
+      const isPortrait = video.videoHeight > video.videoWidth;
+      const container = document.getElementById('cameraContainer');
+      if (container) {
+        if (isPortrait) {
+          container.classList.add('portrait-stream');
+          container.classList.remove('landscape-stream');
+        } else {
+          container.classList.add('landscape-stream');
+          container.classList.remove('portrait-stream');
+        }
+      }
       motionCanvas.width = 160;
       motionCanvas.height = 120;
       loadFaceModels();

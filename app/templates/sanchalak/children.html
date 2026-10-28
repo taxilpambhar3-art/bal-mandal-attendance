@@ -224,7 +224,7 @@
         <input type="hidden" name="face_descriptor" id="modalFaceDescriptor">
         <div class="modal-body">
           <!-- Video preview -->
-          <div class="camera-box position-relative mb-3" style="aspect-ratio: 4/3; min-height: 220px; background: #0f172a; border-radius: 12px; overflow: hidden;">
+          <div class="camera-box position-relative mb-3" style="background: #0f172a; border-radius: 12px; overflow: hidden;">
             <video id="modalVideo" autoplay playsinline webkit-playsinline muted style="width:100%;height:100%;object-fit:cover;"></video>
             <canvas id="modalCanvas" style="display:none;"></canvas>
             <div class="face-ring"></div>
@@ -326,8 +326,13 @@ async function startModalCamera() {
     modalStream.getTracks().forEach(t => t.stop());
   }
   try {
+    const isMobile = window.innerWidth < 768 || /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
     const stream = await navigator.mediaDevices.getUserMedia({
-      video: { facingMode: modalFacing, width: { ideal: 640 }, height: { ideal: 480 } },
+      video: {
+        facingMode: modalFacing,
+        width: { ideal: isMobile ? 480 : 640 },
+        height: { ideal: isMobile ? 640 : 480 }
+      },
       audio: false
     });
     modalStream = stream;
