@@ -71,7 +71,7 @@
     <div class="col-auto text-center">
       <div class="position-relative d-inline-block">
         {% if child.face_photo %}
-        <img src="/static/uploads/{{ child.face_photo }}" alt="{{ child.name }}" class="rounded-4 shadow" style="width: 120px; height: 120px; object-fit: cover; border: 3px solid #ffffff; box-shadow: 0 8px 24px rgba(172,43,49,0.2) !important;">
+        <img src="/static/uploads/{{ child.face_photo }}" alt="" class="rounded-4 shadow" style="width: 120px; height: 120px; object-fit: cover; border: 3px solid #ffffff; box-shadow: 0 8px 24px rgba(172,43,49,0.2) !important;" onerror="this.onerror=null; this.src='/static/img/avatar-placeholder.svg';">
         <span class="position-absolute bottom-0 end-0 bg-success border border-white rounded-circle p-1" title="Face Scan Registered" style="width: 22px; height: 22px; display: flex; align-items: center; justify-content: center;">
           <i class="bi bi-check text-white" style="font-size: 14px;"></i>
         </span>

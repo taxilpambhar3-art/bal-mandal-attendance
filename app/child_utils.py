@@ -208,7 +208,23 @@ def save_normalized_face_photo(data_url: str, prefix: str = "scan") -> str | Non
 
             name = f"{prefix}_{uuid.uuid4().hex[:12]}.jpg"
             out_path = UPLOAD_DIR / name
-            pil_img.save(out_path, format="JPEG", quality=90, optimize=True)
+            buf = io.BytesIO()
+            pil_img.save(buf, format="JPEG", quality=90, optimize=True)
+            raw_bytes = buf.getvalue()
+            out_path.write_bytes(raw_bytes)
+
+            # Persist to database so photos survive cloud container redeployments
+            try:
+                from .database import SessionLocal
+                from .models import StoredPhoto
+                with SessionLocal() as db_session:
+                    b64_str = base64.b64encode(raw_bytes).decode("ascii")
+                    sp = StoredPhoto(filename=name, data_b64=b64_str)
+                    db_session.merge(sp)
+                    db_session.commit()
+            except Exception as db_err:
+                print(f"StoredPhoto DB persistence warning: {db_err}")
+
             return name
     except Exception as e:
         print(f"Error saving normalized face photo: {e}")

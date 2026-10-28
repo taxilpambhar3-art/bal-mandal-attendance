@@ -2,9 +2,10 @@ from __future__ import annotations
 from pathlib import Path
 from urllib.parse import urlencode
 
-from fastapi import FastAPI, Request
+import base64
+from fastapi import FastAPI, Request, Response
 from fastapi.exceptions import RequestValidationError
-from fastapi.responses import JSONResponse, RedirectResponse
+from fastapi.responses import FileResponse, JSONResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from starlette.middleware.sessions import SessionMiddleware
@@ -13,15 +14,60 @@ from datetime import date
 from .auth import ROLE_HOME, ROLE_LABEL, ROLE_THEME
 from .database import Base, SessionLocal, engine, DATA_DIR
 from .deps import AuthRedirect
-from .models import Attendance, BalMandal, Branch, Child, User
+from .models import Attendance, BalMandal, Branch, Child, StoredPhoto, User
 from .routers import auth, branch_admin, dossier, sanchalak, spotlight, super_admin
 from .seed import seed_if_empty
 from .weeks import current_week_info, format_dt, gujarati_month, week_number_for
 
 BASE_DIR = Path(__file__).resolve().parent
+UPLOAD_DIR = BASE_DIR / "static" / "uploads"
+UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
+
+AVATAR_PLACEHOLDER_SVG = """<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100" height="100">
+  <defs>
+    <linearGradient id="avatarBg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#f8fafc"/>
+      <stop offset="100%" stop-color="#e2e8f0"/>
+    </linearGradient>
+  </defs>
+  <circle cx="50" cy="50" r="48" fill="url(#avatarBg)" stroke="#cbd5e1" stroke-width="2"/>
+  <circle cx="50" cy="38" r="16" fill="#94a3b8"/>
+  <path d="M 22 78 C 22 62, 35 56, 50 56 C 65 56, 78 62, 78 78 Z" fill="#94a3b8"/>
+</svg>"""
 
 app = FastAPI(title="Bal Mandal Attendance System")
 app.add_middleware(SessionMiddleware, secret_key="bal-mandal-dev-secret-change-me")
+
+
+@app.get("/static/uploads/{filename}")
+def serve_upload(filename: str):
+    """
+    Serve uploaded face photos and scan snapshots with database persistence.
+    If the file is missing from local disk (e.g. after cloud redeployment),
+    it is dynamically restored from the database StoredPhoto table.
+    If not found, returns a clean SVG avatar placeholder instead of a broken 404.
+    """
+    safe_name = Path(filename).name
+    target = UPLOAD_DIR / safe_name
+    if target.exists() and target.is_file() and target.stat().st_size > 0:
+        return FileResponse(target, media_type="image/jpeg", headers={"Cache-Control": "public, max-age=86400"})
+
+    try:
+        with SessionLocal() as db_session:
+            sp = db_session.query(StoredPhoto).filter(StoredPhoto.filename == safe_name).first()
+            if sp and sp.data_b64:
+                img_data = base64.b64decode(sp.data_b64)
+                target.write_bytes(img_data)
+                return Response(content=img_data, media_type="image/jpeg", headers={"Cache-Control": "public, max-age=86400"})
+    except Exception as e:
+        print(f"StoredPhoto retrieval warning: {e}")
+
+    return Response(
+        content=AVATAR_PLACEHOLDER_SVG,
+        media_type="image/svg+xml",
+        headers={"Cache-Control": "public, max-age=3600"},
+    )
+
 
 app.mount("/static", StaticFiles(directory=str(BASE_DIR / "static")), name="static")
 templates = Jinja2Templates(directory=str(BASE_DIR / "templates"))

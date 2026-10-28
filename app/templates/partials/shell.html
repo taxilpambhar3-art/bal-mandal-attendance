@@ -818,7 +818,7 @@ function renderChildDossierModal(c) {
   if (badgeEl) badgeEl.innerText = 'CHILD DOSSIER';
 
   let photoHtml = c.face_photo
-    ? `<img src="${c.face_photo}" class="rounded-4 shadow-sm" style="width: 86px; height: 86px; object-fit: cover; border: 3px solid #AC2B31;" alt="${escapeHtml(c.name)}">`
+    ? `<img src="${c.face_photo}" class="rounded-4 shadow-sm" style="width: 86px; height: 86px; object-fit: cover; border: 3px solid #AC2B31;" alt="" onerror="this.onerror=null; this.src='/static/img/avatar-placeholder.svg';">`
     : `<div class="rounded-4 bg-light text-secondary d-flex flex-column align-items-center justify-content-center border" style="width: 86px; height: 86px;">
         <i class="bi bi-person-fill fs-2 text-muted"></i>
         <small style="font-size: 9px;" class="text-muted">No Photo</small>

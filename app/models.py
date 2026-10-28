@@ -119,3 +119,12 @@ class Attendance(Base):
 
     child = relationship("Child", back_populates="attendances")
     bal_mandal = relationship("BalMandal", back_populates="attendances")
+
+
+class StoredPhoto(Base):
+    __tablename__ = "stored_photos"
+
+    filename: Mapped[str] = mapped_column(String(255), primary_key=True)
+    data_b64: Mapped[str] = mapped_column(Text)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+

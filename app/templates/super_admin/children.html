@@ -114,7 +114,7 @@
           <td>
             <a href="javascript:void(0)" onclick="openDossier('child', {{ r.child.id }})" title="Open Child Dossier">
               {% if r.child.face_photo %}
-              <img src="/static/uploads/{{ r.child.face_photo }}" class="rounded-circle shadow-sm" style="width:42px;height:42px;object-fit:cover;border:2px solid #3b82f6;" alt="">
+              <img src="/static/uploads/{{ r.child.face_photo }}" class="rounded-circle shadow-sm" style="width:42px;height:42px;object-fit:cover;border:2px solid #3b82f6;" alt="" onerror="this.onerror=null; this.src='/static/img/avatar-placeholder.svg';">
               {% else %}
               <div class="rounded-circle bg-light text-secondary d-flex align-items-center justify-content-center border fw-bold" style="width:42px;height:42px;font-size:14px;">
                 {{ r.child.name[0] }}
