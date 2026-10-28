@@ -32,6 +32,16 @@ def _check_scope(user: User, branch_id: Optional[int] = None, bal_mandal_id: Opt
     return False
 
 
+def _extract_sanchalak(mandal: Optional[BalMandal]) -> Optional[User]:
+    """Safely retrieve the sanchalak User object regardless of whether relationship is a list or scalar."""
+    if not mandal:
+        return None
+    s = mandal.sanchalak
+    if isinstance(s, (list, tuple)) or (hasattr(s, "__iter__") and not isinstance(s, User)):
+        return s[0] if len(s) > 0 else None
+    return s
+
+
 # ============================================================================
 # 1. API: CHILD DOSSIER
 # ============================================================================
@@ -107,7 +117,7 @@ def api_child_dossier(
     role_slug = "super-admin" if user.role == "super_admin" else ("branch-admin" if user.role == "branch_admin" else "sanchalak")
     edit_url = f"/{role_slug}/children/{child.id}/edit"
 
-    sanchalak_user = mandal.sanchalak if mandal else None
+    sanchalak_user = _extract_sanchalak(mandal)
 
     # Clean clean phone for WhatsApp
     clean_mob = "".join(ch for ch in (child.mobile_number or "") if ch.isdigit())
@@ -270,7 +280,7 @@ def api_mandal_dossier(
             "attendance_rate": s_rate,
         })
 
-    sanch = mandal.sanchalak
+    sanch = _extract_sanchalak(mandal)
     clean_mob = "".join(ch for ch in (sanch.mobile or "") if ch.isdigit()) if sanch and sanch.mobile else None
     if clean_mob and len(clean_mob) == 10:
         clean_mob = "91" + clean_mob
@@ -399,7 +409,7 @@ def api_branch_dossier(
             or 0
         )
         m_rate = min(round((m_pres / m_kids) * 100, 1), 100.0) if m_kids else 0
-        sanch = m.sanchalak
+        sanch = _extract_sanchalak(m)
 
         mandals_data.append({
             "id": m.id,
@@ -502,7 +512,7 @@ def child_dossier_view(
             "child": child,
             "mandal": mandal,
             "branch": branch,
-            "sanchalak": mandal.sanchalak if mandal else None,
+            "sanchalak": _extract_sanchalak(mandal),
             "stats": {
                 "total_records": total_records,
                 "present_count": present_count,
@@ -573,7 +583,7 @@ def mandal_dossier_view(
             "user": user,
             "mandal": mandal,
             "branch": branch,
-            "sanchalak": mandal.sanchalak,
+            "sanchalak": _extract_sanchalak(mandal),
             "children": children,
             "stats": {
                 "total_children": total_children,

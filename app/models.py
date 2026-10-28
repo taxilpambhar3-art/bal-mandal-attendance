@@ -65,7 +65,7 @@ class BalMandal(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
 
     branch = relationship("Branch", back_populates="bal_mandals")
-    sanchalak = relationship("User", back_populates="bal_mandal", foreign_keys="User.bal_mandal_id")
+    sanchalak = relationship("User", back_populates="bal_mandal", foreign_keys="User.bal_mandal_id", uselist=False)
     children = relationship("Child", back_populates="bal_mandal")
     attendances = relationship("Attendance", back_populates="bal_mandal")
 

@@ -750,7 +750,14 @@ async function openDossier(type, id, pushHistory = true) {
     const res = await fetch(`/api/dossier/${type}/${id}`);
     if (!res.ok) {
       const errData = await res.json().catch(() => ({}));
-      throw new Error(errData.detail || 'Failed to load dossier');
+      let msg = errData.detail;
+      if (!msg) {
+        if (res.status === 403) msg = 'You do not have permission to view this dossier.';
+        else if (res.status === 404) msg = 'Record not found.';
+        else if (res.status >= 500) msg = 'Server error while generating dossier. Please try again.';
+        else msg = 'Failed to load dossier';
+      }
+      throw new Error(msg);
     }
     const json = await res.json();
     const data = json.data;
