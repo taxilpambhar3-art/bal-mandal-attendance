@@ -14,7 +14,7 @@ def seed_if_empty(db: Session) -> None:
 
     admin = User(
         username="superadmin",
-        password_hash=hash_password("admin123"),
+        password_hash=hash_password("password"),
         plain_password="password",
         full_name="Super Admin",
         mobile="9876500001",

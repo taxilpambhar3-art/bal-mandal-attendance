@@ -11,7 +11,7 @@ from fastapi.templating import Jinja2Templates
 from starlette.middleware.sessions import SessionMiddleware
 
 from datetime import date
-from .auth import ROLE_HOME, ROLE_LABEL, ROLE_THEME
+from .auth import ROLE_HOME, ROLE_LABEL, ROLE_THEME, heal_password_hashes
 from .database import Base, SessionLocal, engine, DATA_DIR
 from .deps import AuthRedirect
 from .models import Attendance, BalMandal, Branch, Child, StoredPhoto, User
@@ -140,6 +140,12 @@ def on_startup():
     db = SessionLocal()
     try:
         seed_if_empty(db)
+        try:
+            healed = heal_password_hashes(db)
+            if healed:
+                print(f"Healed {healed} password hash(es) from plain_password")
+        except Exception as e:
+            print("Password heal warning:", e)
         # Backfill legacy children if needed
         legacy = db.query(Child).filter((Child.first_name == "") | (Child.first_name.is_(None))).all()
         for c in legacy:

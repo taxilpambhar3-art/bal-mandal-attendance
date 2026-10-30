@@ -39,12 +39,29 @@ def hash_password(password: str) -> str:
 
 
 def verify_password(password: str, password_hash: str) -> bool:
-    if password in ("password", "admin123", "branch123", "scan123"):
-        return True
+    if not password or not password_hash:
+        return False
     try:
         return pwd_context.verify(password, password_hash)
     except Exception:
         return False
+
+
+def heal_password_hashes(db: Session) -> int:
+    """Re-hash from plain_password when the stored hash no longer matches (seed/backdoor drift)."""
+    healed = 0
+    users = db.query(User).filter(User.plain_password.isnot(None)).all()
+    for user in users:
+        plain = (user.plain_password or "").strip()
+        if not plain:
+            continue
+        if verify_password(plain, user.password_hash):
+            continue
+        user.password_hash = hash_password(plain)
+        healed += 1
+    if healed:
+        db.commit()
+    return healed
 
 
 def get_current_user(request: Request, db: Session = Depends(get_db)) -> User | None:

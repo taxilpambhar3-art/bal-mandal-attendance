@@ -438,47 +438,31 @@
         </div>
 
         <div id="demoRolesContainer" class="d-flex flex-column gap-2" style="transition: all 0.25s ease;">
-          <!-- Super Admin -->
-          <div class="demo-role-card d-flex align-items-center justify-content-between" id="cardSuperadmin" onclick="fillLogin('superadmin', 'password', 'Super Admin', this)">
+          {% if demo_accounts %}
+          {% for demo in demo_accounts %}
+          <div class="demo-role-card d-flex align-items-center justify-content-between"
+               id="{{ demo.card_id }}"
+               data-username="{{ demo.username }}"
+               data-password="{{ demo.password }}"
+               data-label="{{ demo.label }}"
+               onclick="fillLoginFromCard(this)">
             <div class="d-flex align-items-center gap-2 text-truncate">
-              <div class="role-icon-box bg-primary-subtle text-primary">
-                <i class="bi bi-shield-check"></i>
+              <div class="role-icon-box {{ demo.icon_box }}">
+                <i class="bi {{ demo.icon }}"></i>
               </div>
               <div class="text-truncate">
-                <div class="fw-bold text-dark lh-1" style="font-size: 13px;">Super Admin</div>
-                <small class="text-muted" style="font-size: 11px;">All Branches, Analytics & Reports</small>
+                <div class="fw-bold text-dark lh-1" style="font-size: 13px;">{{ demo.label }}</div>
+                <small class="text-muted" style="font-size: 11px;">{{ demo.subtitle }}</small>
               </div>
             </div>
-            <span class="badge bg-white text-secondary border font-monospace ms-2 shadow-xs" style="font-size: 11px; padding: 5px 8px;">superadmin</span>
+            <span class="badge bg-white text-secondary border font-monospace ms-2 shadow-xs" style="font-size: 11px; padding: 5px 8px;">{{ demo.username }}</span>
           </div>
-
-          <!-- Branch Admin -->
-          <div class="demo-role-card d-flex align-items-center justify-content-between" id="cardBranchadmin" onclick="fillLogin('maninagar_admin', 'password', 'Branch Admin', this)">
-            <div class="d-flex align-items-center gap-2 text-truncate">
-              <div class="role-icon-box bg-success-subtle text-success">
-                <i class="bi bi-building"></i>
-              </div>
-              <div class="text-truncate">
-                <div class="fw-bold text-dark lh-1" style="font-size: 13px;">Branch Admin</div>
-                <small class="text-muted" style="font-size: 11px;">Maninagar Branch Management</small>
-              </div>
-            </div>
-            <span class="badge bg-white text-secondary border font-monospace ms-2 shadow-xs" style="font-size: 11px; padding: 5px 8px;">maninagar_admin</span>
+          {% endfor %}
+          {% else %}
+          <div class="text-center py-2 text-muted small" style="font-size: 12px;">
+            No active demo accounts available. Ask a Super Admin to create users.
           </div>
-
-          <!-- Sanchalak -->
-          <div class="demo-role-card d-flex align-items-center justify-content-between" id="cardSanchalak" onclick="fillLogin('hetal_shani', 'password', 'Sanchalak', this)">
-            <div class="d-flex align-items-center gap-2 text-truncate">
-              <div class="role-icon-box bg-warning-subtle text-warning">
-                <i class="bi bi-camera-video"></i>
-              </div>
-              <div class="text-truncate">
-                <div class="fw-bold text-dark lh-1" style="font-size: 13px;">Sanchalak</div>
-                <small class="text-muted" style="font-size: 11px;">AI Face Scanner & Live Attendance</small>
-              </div>
-            </div>
-            <span class="badge bg-white text-secondary border font-monospace ms-2 shadow-xs" style="font-size: 11px; padding: 5px 8px;">hetal_shani</span>
-          </div>
+          {% endif %}
         </div>
 
         <!-- Collapsed Notice -->
@@ -506,6 +490,16 @@
 
 {% block scripts %}
 <script>
+function fillLoginFromCard(cardElement) {
+  if (!cardElement) return;
+  fillLogin(
+    cardElement.getAttribute('data-username') || '',
+    cardElement.getAttribute('data-password') || '',
+    cardElement.getAttribute('data-label') || 'Account',
+    cardElement
+  );
+}
+
 function fillLogin(user, pass, roleLabel, cardElement) {
   const u = document.getElementById('usernameInput');
   const p = document.getElementById('passwordInput');

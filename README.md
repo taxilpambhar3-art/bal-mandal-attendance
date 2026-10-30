@@ -62,12 +62,13 @@ Open **http://127.0.0.1:8000** in your browser.
 
 ## 🔑 Demo Credentials
 
+Fresh installs seed only a Super Admin. Branch Admin / Sanchalak accounts are created in-app; the login page **Quick Demo Login** cards always pull from live active users.
+
 | Role | Username | Password | Dashboard Route | Description |
 |---|---|---|---|---|
-| **Super Admin** | `superadmin` | `password` (or `admin123`) | `/super-admin/` | State-wide consolidated monitoring & branch management |
-| **Branch Admin** | `maninagar_admin` | `password` (or `branch123`) | `/branch-admin/` | Branch oversight, staff management, child enrollment |
-| **Sanchalak** | `hetal_shani` | `password` (or `scan123`) | `/sanchalak/` | Saturday Bal Mandal face scan attendance kiosk |
-| **Sanchalak** | `kavita_mangal` | `password` (or `scan123`) | `/sanchalak/` | Tuesday Bal Mandal face scan attendance kiosk |
+| **Super Admin** | `superadmin` | `password` | `/super-admin/` | State-wide consolidated monitoring & branch management |
+| **Branch Admin** | *(from DB)* | *(credentials directory)* | `/branch-admin/` | e.g. live: `Taxil Pambhar` / `Taxil123` |
+| **Sanchalak** | *(from DB)* | *(credentials directory)* | `/sanchalak/` | e.g. live: `Nayn_01` / `Nayn123` |
 
 ---
 
