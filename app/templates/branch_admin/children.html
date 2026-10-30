@@ -207,119 +207,297 @@
 </div>
 
 <!-- Modal: Update Face Photo with Live Webcam -->
-<div class="modal fade" id="updateFaceModal" tabindex="-1">
+<!-- Modal for Face Capture / Update -->
+<div class="modal fade" id="updateFaceModal" tabindex="-1" aria-labelledby="modalTitle" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered">
-    <div class="modal-content">
+    <div class="modal-content shadow">
       <div class="modal-header">
-        <h6 class="modal-title fw-bold" id="modalTitle">Update Face Photo</h6>
-        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        <div>
+          <h6 class="modal-title fw-bold" id="modalTitle">Update Face Photo</h6>
+          <small class="text-muted" id="modalChildInfo">—</small>
+        </div>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" onclick="stopModalCamera()"></button>
       </div>
-      <div class="modal-body text-center">
-        <!-- Live Webcam Frame -->
-        <div class="position-relative mx-auto rounded-3 overflow-hidden bg-dark mb-3" style="max-width: 280px; width: 100%; aspect-ratio: 4/3;">
-          <video id="modalVideo" autoplay playsinline webkit-playsinline muted style="width:100%;height:100%;object-fit:cover;"></video>
-          <canvas id="modalCanvas" style="display:none;"></canvas>
-          <img id="modalPreviewImg" src="" style="width:100%;height:100%;object-fit:cover;display:none;" alt="">
-          <div class="face-ring" id="modalRing"></div>
-        </div>
+      <form id="updateFaceForm" method="post" action="">
+        <input type="hidden" name="photo_data" id="modalPhotoData">
+        <input type="hidden" name="face_descriptor" id="modalFaceDescriptor">
+        <div class="modal-body text-center">
+          <!-- Video preview in centered camera-box -->
+          <div class="camera-box position-relative mx-auto mb-3" style="background: #0f172a; border-radius: 14px; overflow: hidden; max-width: 320px;">
+            <video id="modalVideo" autoplay playsinline webkit-playsinline muted style="width:100%;height:100%;object-fit:cover;object-position:center center;"></video>
+            <canvas id="modalCanvas" style="display:none;"></canvas>
+            <div class="face-ring" id="modalRing"></div>
+            <div class="cam-label">
+              <i class="bi bi-person-bounding-box me-1"></i>Position face within circle
+            </div>
+          </div>
 
-        <div class="d-flex justify-content-center gap-2 mb-3">
-          <button type="button" class="btn btn-warning btn-sm fw-bold" id="modalSnapBtn" onclick="snapModalPhoto()">
-            <i class="bi bi-camera me-1"></i>Capture Photo
-          </button>
-          <button type="button" class="btn btn-outline-secondary btn-sm" id="modalRetakeBtn" style="display:none;" onclick="retakeModalPhoto()">
-            <i class="bi bi-arrow-counterclockwise me-1"></i>Retake Photo
-          </button>
-        </div>
-
-        <form id="updateFaceForm" method="post" action="">
-          <input type="hidden" name="photo_data" id="modalPhotoData">
-          <div class="d-flex justify-content-end gap-2">
-            <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
-            <button type="submit" class="btn btn-success btn-sm fw-bold" id="modalSaveBtn" disabled>
-              <i class="bi bi-check-circle me-1"></i>Save Photo
+          <div class="d-flex justify-content-center gap-2 mb-3">
+            <button type="button" class="btn btn-warning fw-bold flex-grow-1" id="modalSnapBtn" onclick="snapModalPhoto()">
+              <i class="bi bi-camera-fill me-1"></i>Capture Photo
+            </button>
+            <button type="button" class="btn btn-outline-secondary" id="modalRetakeBtn" style="display:none;" onclick="retakeModalPhoto()">
+              <i class="bi bi-arrow-counterclockwise me-1"></i>Retake
+            </button>
+            <button type="button" id="modalFlipBtn" class="btn btn-outline-secondary" title="Switch Camera" onclick="flipModalCamera()">
+              <i class="bi bi-arrow-clockwise"></i>
             </button>
           </div>
-        </form>
-      </div>
+
+          <!-- File upload fallback -->
+          <div class="border rounded-3 p-2 bg-light mb-3 text-start">
+            <label class="form-label small fw-bold text-secondary mb-1">
+              <i class="bi bi-upload me-1"></i>Or upload photo:
+            </label>
+            <input type="file" id="modalFileInput" accept="image/*" class="form-control form-control-sm" onchange="handleModalFile(this)">
+          </div>
+
+          <!-- Preview of captured photo -->
+          <div id="modalPreviewBox" class="p-2 border rounded-3 text-center bg-white mb-2" style="display: none;">
+            <small class="text-muted fw-bold d-block mb-1">Face Photo Preview:</small>
+            <img id="modalPreviewImg" class="rounded-3 shadow-sm mx-auto mb-2" style="width: 100px; height: 100px; object-fit: cover; border: 2px solid #10b981;" alt="Preview">
+            <div>
+              <span id="modalFaceBadge" class="badge badge-soft-success"><i class="bi bi-check-circle-fill me-1"></i>Ready to Save</span>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal" onclick="stopModalCamera()">Cancel</button>
+          <button type="submit" class="btn btn-primary fw-bold" id="modalSaveBtn" disabled>
+            <i class="bi bi-check-lg me-1"></i>Save Face Photo
+          </button>
+        </div>
+      </form>
     </div>
   </div>
 </div>
+{% endblock %}
 
+{% block scripts %}
+<script src="/static/js/face-api.min.js"></script>
 <script>
 let modalStream = null;
+let modalFacing = 'user';
+let isModalAiLoaded = false;
+let modalAiPromise = null;
 const modalVideo = document.getElementById('modalVideo');
 const modalCanvas = document.getElementById('modalCanvas');
 const modalPreviewImg = document.getElementById('modalPreviewImg');
+const modalPreviewBox = document.getElementById('modalPreviewBox');
 const modalSnapBtn = document.getElementById('modalSnapBtn');
 const modalRetakeBtn = document.getElementById('modalRetakeBtn');
 const modalSaveBtn = document.getElementById('modalSaveBtn');
 const modalPhotoData = document.getElementById('modalPhotoData');
+const modalFaceDescriptor = document.getElementById('modalFaceDescriptor');
+const modalFaceBadge = document.getElementById('modalFaceBadge');
 const updateFaceForm = document.getElementById('updateFaceForm');
 const modalRing = document.getElementById('modalRing');
+const modalChildInfo = document.getElementById('modalChildInfo');
+const faceModalObj = new bootstrap.Modal(document.getElementById('updateFaceModal'));
 
-async function openFaceModal(childId, childName, existingPhoto) {
+// Preload Face-API models
+function loadModalAi() {
+  if (isModalAiLoaded) return Promise.resolve(true);
+  if (modalAiPromise) return modalAiPromise;
+  modalAiPromise = (async () => {
+    try {
+      if (typeof faceapi !== 'undefined') {
+        const MODEL_URL = '/static/models';
+        await Promise.all([
+          faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL),
+          faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL),
+          faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL)
+        ]);
+        isModalAiLoaded = true;
+        return true;
+      }
+    } catch(e) {
+      console.warn('Face-API modal preload warning:', e);
+    }
+    return false;
+  })();
+  return modalAiPromise;
+}
+loadModalAi();
+
+function openFaceModal(childId, childName, existingPhoto) {
   document.getElementById('modalTitle').textContent = childName + ' - Update Face Photo';
+  if (modalChildInfo) modalChildInfo.textContent = 'ID: #' + childId;
   updateFaceForm.action = '/branch-admin/children/' + childId + '/face';
   modalPhotoData.value = '';
+  if (modalFaceDescriptor) modalFaceDescriptor.value = '';
   modalSaveBtn.disabled = true;
-  modalPreviewImg.style.display = 'none';
+  modalPreviewBox.style.display = 'none';
   modalVideo.style.display = 'block';
   modalRing.style.display = 'block';
   modalSnapBtn.style.display = 'inline-block';
   modalRetakeBtn.style.display = 'none';
+  const fi = document.getElementById('modalFileInput');
+  if (fi) fi.value = '';
 
-  const modal = new bootstrap.Modal(document.getElementById('updateFaceModal'));
-  modal.show();
+  faceModalObj.show();
+  startModalCamera();
+}
 
+async function startModalCamera() {
+  stopModalCamera();
   try {
     const isMobile = window.innerWidth < 768 || /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
     modalStream = await navigator.mediaDevices.getUserMedia({
       video: {
         width: { ideal: isMobile ? 480 : 640 },
         height: { ideal: isMobile ? 640 : 480 },
-        facingMode: 'user'
-      }
+        facingMode: modalFacing
+      },
+      audio: false
     });
     modalVideo.srcObject = modalStream;
   } catch (err) {
     console.error('Camera error in modal:', err);
-    alert('Could not start camera. Please grant camera permission.');
   }
 }
 
+function stopModalCamera() {
+  if (modalStream) {
+    modalStream.getTracks().forEach(t => t.stop());
+    modalStream = null;
+  }
+}
+
+function flipModalCamera() {
+  modalFacing = modalFacing === 'user' ? 'environment' : 'user';
+  startModalCamera();
+}
+
 function snapModalPhoto() {
-  if (!modalVideo.videoWidth) return;
-  modalCanvas.width = modalVideo.videoWidth;
-  modalCanvas.height = modalVideo.videoHeight;
+  const width = modalVideo.videoWidth || 640;
+  const height = modalVideo.videoHeight || 480;
+  modalCanvas.width = width;
+  modalCanvas.height = height;
   const ctx = modalCanvas.getContext('2d');
-  ctx.drawImage(modalVideo, 0, 0);
-  const dataUrl = modalCanvas.toDataURL('image/jpeg', 0.9);
+  if (modalVideo.videoWidth) {
+    ctx.drawImage(modalVideo, 0, 0, width, height);
+  } else {
+    ctx.fillStyle = '#1e293b';
+    ctx.fillRect(0, 0, width, height);
+  }
+  const dataUrl = modalCanvas.toDataURL('image/jpeg', 0.90);
+  applyModalPhoto(dataUrl);
+}
+
+function handleModalFile(input) {
+  if (input.files && input.files[0]) {
+    const file = input.files[0];
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      const tempImg = new Image();
+      tempImg.onload = function() {
+        const c = document.createElement('canvas');
+        let w = tempImg.naturalWidth || tempImg.width || 640;
+        let h = tempImg.naturalHeight || tempImg.height || 480;
+        const maxDim = 640;
+        if (w > maxDim || h > maxDim) {
+          if (w > h) { h = Math.round((h * maxDim) / w); w = maxDim; }
+          else { w = Math.round((w * maxDim) / h); h = maxDim; }
+        }
+        c.width = w;
+        c.height = h;
+        const ctx = c.getContext('2d');
+        ctx.drawImage(tempImg, 0, 0, w, h);
+        const resizedDataUrl = c.toDataURL('image/jpeg', 0.90);
+        applyModalPhoto(resizedDataUrl);
+      };
+      tempImg.src = e.target.result;
+    };
+    reader.readAsDataURL(file);
+  }
+}
+
+async function applyModalPhoto(dataUrl) {
   modalPhotoData.value = dataUrl;
   modalPreviewImg.src = dataUrl;
-  modalPreviewImg.style.display = 'block';
+  modalPreviewBox.style.display = 'block';
   modalVideo.style.display = 'none';
   modalRing.style.display = 'none';
   modalSnapBtn.style.display = 'none';
   modalRetakeBtn.style.display = 'inline-block';
   modalSaveBtn.disabled = false;
+
+  if (modalFaceBadge) {
+    modalFaceBadge.className = 'badge badge-soft-info';
+    modalFaceBadge.innerHTML = '<span class="spinner-border spinner-border-sm me-1" style="width:10px;height:10px;"></span>Verifying facial features...';
+  }
+
+  if (!isModalAiLoaded && modalAiPromise) {
+    try {
+      await modalAiPromise;
+    } catch(e) {}
+  }
+
+  if (typeof faceapi !== 'undefined' && isModalAiLoaded) {
+    try {
+      const img = new Image();
+      img.src = dataUrl;
+      if (!img.complete) {
+        await new Promise((resolve) => {
+          img.onload = () => resolve();
+          img.onerror = () => resolve();
+          if (img.decode) img.decode().then(resolve).catch(resolve);
+        });
+      }
+      let det = await faceapi.detectSingleFace(img, new faceapi.TinyFaceDetectorOptions({ inputSize: 320, scoreThreshold: 0.15 }))
+        .withFaceLandmarks()
+        .withFaceDescriptor();
+      if (!det) {
+        det = await faceapi.detectSingleFace(img, new faceapi.TinyFaceDetectorOptions({ inputSize: 416, scoreThreshold: 0.12 }))
+          .withFaceLandmarks()
+          .withFaceDescriptor();
+      }
+      if (det && det.descriptor) {
+        if (modalFaceDescriptor) modalFaceDescriptor.value = JSON.stringify(Array.from(det.descriptor));
+        if (modalFaceBadge) {
+          modalFaceBadge.className = 'badge badge-soft-success';
+          modalFaceBadge.innerHTML = '<i class="bi bi-shield-check me-1"></i>Face Verified & Biometric Ready ✓';
+        }
+      } else {
+        if (modalFaceDescriptor) modalFaceDescriptor.value = '';
+        if (modalFaceBadge) {
+          modalFaceBadge.className = 'badge badge-soft-warning';
+          modalFaceBadge.innerHTML = '<i class="bi bi-exclamation-triangle-fill me-1"></i>Face not clear. Look directly at camera.';
+        }
+      }
+    } catch(err) {
+      if (modalFaceBadge) {
+        modalFaceBadge.className = 'badge badge-soft-success';
+        modalFaceBadge.innerHTML = '<i class="bi bi-check-circle-fill me-1"></i>Photo Ready';
+      }
+    }
+  } else {
+    if (modalFaceBadge) {
+      modalFaceBadge.className = 'badge badge-soft-success';
+      modalFaceBadge.innerHTML = '<i class="bi bi-check-circle-fill me-1"></i>Photo Ready';
+    }
+  }
 }
 
 function retakeModalPhoto() {
   modalPhotoData.value = '';
+  if (modalFaceDescriptor) modalFaceDescriptor.value = '';
   modalSaveBtn.disabled = true;
-  modalPreviewImg.style.display = 'none';
+  modalPreviewBox.style.display = 'none';
   modalVideo.style.display = 'block';
   modalRing.style.display = 'block';
   modalSnapBtn.style.display = 'inline-block';
   modalRetakeBtn.style.display = 'none';
+  const fi = document.getElementById('modalFileInput');
+  if (fi) fi.value = '';
+  if (!modalStream) {
+    startModalCamera();
+  }
 }
 
 document.getElementById('updateFaceModal').addEventListener('hidden.bs.modal', function () {
-  if (modalStream) {
-    modalStream.getTracks().forEach(t => t.stop());
-    modalStream = null;
-  }
+  stopModalCamera();
 });
 </script>
 {% endblock %}

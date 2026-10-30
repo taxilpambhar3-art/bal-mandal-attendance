@@ -1207,6 +1207,7 @@ def child_edit_submit(
                 child.face_descriptor = None
     elif face_descriptor and face_descriptor.strip().startswith("["):
         child.face_descriptor = face_descriptor.strip()
+    db.commit()
     # HISTORY IS PRESERVED: attendance table is untouched!
     return RedirectResponse("/super-admin/children?updated=1", status_code=303)
 

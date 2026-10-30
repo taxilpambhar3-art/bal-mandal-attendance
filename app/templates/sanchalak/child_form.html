@@ -260,22 +260,30 @@ const regRing = document.getElementById('regRing');
 const regLabel = document.getElementById('regLabel');
 let regStream = null;
 let isFormAiLoaded = false;
+let formAiPromise = null;
 
 // Preload face-api models
-async function loadFormAi() {
-  try {
-    if (typeof faceapi !== 'undefined') {
-      const MODEL_URL = '/static/models';
-      await Promise.all([
-        faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL),
-        faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL),
-        faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL)
-      ]);
-      isFormAiLoaded = true;
+function loadFormAi() {
+  if (isFormAiLoaded) return Promise.resolve(true);
+  if (formAiPromise) return formAiPromise;
+  formAiPromise = (async () => {
+    try {
+      if (typeof faceapi !== 'undefined') {
+        const MODEL_URL = '/static/models';
+        await Promise.all([
+          faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL),
+          faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL),
+          faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL)
+        ]);
+        isFormAiLoaded = true;
+        return true;
+      }
+    } catch(e) {
+      console.warn('Face-API preload warning:', e);
     }
-  } catch(e) {
-    console.warn('Face-API preload warning:', e);
-  }
+    return false;
+  })();
+  return formAiPromise;
 }
 loadFormAi();
 
@@ -313,6 +321,12 @@ async function applyEnrolledPhoto(dataUrl) {
 
   statusDot.style.background = '#0ea5e9';
   faceStatusText.innerHTML = '<span class="spinner-border spinner-border-sm me-1" style="width:10px;height:10px;"></span>Analyzing facial features...';
+
+  if (!isFormAiLoaded && formAiPromise) {
+    try {
+      await formAiPromise;
+    } catch(e) {}
+  }
 
   if (typeof faceapi !== 'undefined' && isFormAiLoaded) {
     try {

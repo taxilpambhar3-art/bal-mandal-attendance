@@ -1202,8 +1202,8 @@ table.mock tbody tr:hover {
   /* Center face scan camera & biometric reticle on mobile phones */
   .camera-box {
     aspect-ratio: 3 / 4 !important;
-    min-height: 380px !important;
-    max-height: 66vh !important;
+    min-height: 340px !important;
+    max-height: 62vh !important;
     border-radius: 20px !important;
     margin: 0 auto !important;
     max-width: 100% !important;
@@ -1214,22 +1214,39 @@ table.mock tbody tr:hover {
   }
   .camera-box.portrait-stream {
     aspect-ratio: 3 / 4 !important;
-    min-height: 380px !important;
+    min-height: 340px !important;
   }
   .camera-box video, .camera-box img {
-    object-position: center 38% !important;
+    object-position: center center !important;
   }
   .bio-scanner-hud {
-    width: min(205px, 64vw) !important;
-    height: min(240px, 68vw) !important;
-    top: 48% !important;
+    width: min(210px, 62vw) !important;
+    height: min(240px, 66vw) !important;
+    top: 50% !important;
     left: 50% !important;
     transform: translate(-50%, -50%) !important;
   }
   .face-ring {
-    width: min(205px, 64vw) !important;
-    height: min(240px, 68vw) !important;
-    top: 48% !important;
+    width: min(210px, 62vw) !important;
+    height: min(240px, 66vw) !important;
+    top: 50% !important;
+    left: 50% !important;
+    transform: translate(-50%, -50%) !important;
+  }
+  /* Inside modal dialogs on mobile */
+  .modal-dialog .camera-box, .modal-body .camera-box {
+    aspect-ratio: 4 / 3 !important;
+    min-height: 220px !important;
+    max-height: 42vh !important;
+    border-radius: 14px !important;
+    max-width: 320px !important;
+    margin: 0 auto !important;
+  }
+  .modal-dialog .bio-scanner-hud, .modal-body .bio-scanner-hud,
+  .modal-dialog .face-ring, .modal-body .face-ring {
+    width: min(160px, 48vw) !important;
+    height: min(180px, 52vw) !important;
+    top: 50% !important;
     left: 50% !important;
     transform: translate(-50%, -50%) !important;
   }
