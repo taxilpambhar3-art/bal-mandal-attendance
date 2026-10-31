@@ -216,9 +216,30 @@
     <div class="panel h-100">
       <div class="d-flex justify-content-between align-items-center mb-3">
         <h6 class="mb-0 text-success"><i class="bi bi-camera-fill me-2"></i>Face Camera & Preview</h6>
-        <span class="badge badge-soft-success py-1 px-2" id="camIndicator">
-          <i class="bi bi-circle-fill me-1" style="font-size:7px;"></i>Live Camera
+        <div class="d-flex align-items-center gap-2">
+          <button type="button" id="regFlipCamBtnHeader" class="btn btn-outline-secondary btn-sm py-0 px-2 shadow-sm d-inline-flex align-items-center gap-1" style="font-size:11.5px; height:24px; display:{% if child and child.face_photo %}none{% else %}inline-flex{% endif %};" onclick="toggleRegCamFacing()" title="Switch Front / Rear Camera">
+            <i class="bi bi-arrow-repeat"></i>
+            <span id="camFacingModeTextHeader">Rear Camera</span>
+          </button>
+          <span class="badge badge-soft-success py-1 px-2" id="camIndicator">
+            <i class="bi bi-circle-fill me-1" style="font-size:7px;"></i>Live Camera
+          </span>
+        </div>
+      </div>
+
+      <!-- Dedicated Camera Choice Segmented Control (Front / Rear) -->
+      <div class="mb-3 p-2 rounded-3 bg-light border d-flex align-items-center justify-content-between gap-2 flex-wrap" id="cameraChoiceBar" style="display:{% if child and child.face_photo %}none{% else %}flex{% endif %};">
+        <span class="small fw-bold text-dark d-flex align-items-center gap-1">
+          <i class="bi bi-camera-video-fill text-primary"></i>Camera Choice:
         </span>
+        <div class="btn-group btn-group-sm shadow-sm" role="group" aria-label="Camera facing selection">
+          <button type="button" class="btn btn-primary fw-bold" id="btnFrontCam" onclick="setRegCamFacing('user')">
+            <i class="bi bi-person-fill me-1"></i>Front (Selfie)
+          </button>
+          <button type="button" class="btn btn-outline-primary fw-bold" id="btnRearCam" onclick="setRegCamFacing('environment')">
+            <i class="bi bi-camera-fill me-1"></i>Rear (Back Camera)
+          </button>
+        </div>
       </div>
 
       <!-- Video / Camera Box -->
@@ -230,12 +251,20 @@
         <div class="cam-label" id="regLabel" style="display:{% if child and child.face_photo %}none{% else %}block{% endif %};">
           <i class="bi bi-person-bounding-box me-1"></i>Position face within circle
         </div>
+        <button type="button" id="regFlipCamBtnOverlay" class="btn btn-sm btn-dark position-absolute top-0 end-0 m-2 rounded-pill px-2.5 py-1 shadow" style="z-index: 10; opacity: 0.92; font-size: 11.5px; border: 1px solid rgba(255,255,255,0.25); display: {% if child and child.face_photo %}none{% else %}inline-flex{% endif %}; align-items: center; gap: 4px;" onclick="toggleRegCamFacing()" title="Switch Front / Rear Camera">
+          <i class="bi bi-arrow-repeat"></i>
+          <span id="camFacingModeTextOverlay">Rear Camera</span>
+        </button>
       </div>
 
       <!-- Camera Action Buttons -->
       <div class="d-flex gap-2 mb-3">
         <button type="button" id="snapFaceBtn" class="btn btn-warning fw-bold flex-grow-1 shadow-sm" style="display:{% if child and child.face_photo %}none{% else %}inline-block{% endif %};">
           <i class="bi bi-camera-fill me-1"></i>Capture Face Photo
+        </button>
+        <button type="button" id="regFlipCamBtnAction" class="btn btn-outline-secondary fw-semibold shadow-sm px-3" style="display:{% if child and child.face_photo %}none{% else %}inline-flex{% endif %}; align-items:center; gap:5px;" onclick="toggleRegCamFacing()" title="Switch Front / Rear Camera">
+          <i class="bi bi-arrow-repeat"></i>
+          <span id="camFacingModeTextAction">Rear Camera</span>
         </button>
         <button type="button" id="retakeFaceBtn" class="btn btn-outline-secondary fw-bold flex-grow-1 shadow-sm" style="display:{% if child and child.face_photo %}inline-block{% else %}none{% endif %};">
           <i class="bi bi-arrow-counterclockwise me-1"></i>{% if child and child.face_photo %}Change Face Photo{% else %}Retake Photo{% endif %}
@@ -300,17 +329,84 @@ function loadFormAi() {
 }
 loadFormAi();
 
+let regFacingMode = 'user';
+
+function setRegCamFacing(mode) {
+  regFacingMode = mode;
+  updateCamFacingUI();
+  startRegCam();
+}
+
+function updateCamFacingUI() {
+  const btnFront = document.getElementById('btnFrontCam');
+  const btnRear = document.getElementById('btnRearCam');
+  if (btnFront && btnRear) {
+    if (regFacingMode === 'user') {
+      btnFront.className = 'btn btn-primary fw-bold';
+      btnRear.className = 'btn btn-outline-primary fw-bold';
+    } else {
+      btnFront.className = 'btn btn-outline-primary fw-bold';
+      btnRear.className = 'btn btn-primary fw-bold';
+    }
+  }
+
+  const shortText = regFacingMode === 'user' ? 'Rear Camera' : 'Front Camera';
+
+  const overlayText = document.getElementById('camFacingModeTextOverlay');
+  if (overlayText) overlayText.textContent = shortText;
+  const actionText = document.getElementById('camFacingModeTextAction');
+  if (actionText) actionText.textContent = shortText;
+  const headerText = document.getElementById('camFacingModeTextHeader');
+  if (headerText) headerText.textContent = shortText;
+
+  const ind = document.getElementById('camIndicator');
+  if (ind && regStream) {
+    ind.className = 'badge badge-soft-success py-1 px-2';
+    ind.innerHTML = '<i class="bi bi-circle-fill me-1" style="font-size:7px;"></i>Live Camera (' + (regFacingMode === 'user' ? 'Front' : 'Rear') + ')';
+  }
+}
+
+function setFlipButtonsDisplay(displayStyle) {
+  const choiceBar = document.getElementById('cameraChoiceBar');
+  if (choiceBar) choiceBar.style.display = displayStyle === 'none' ? 'none' : 'flex';
+  const overlayBtn = document.getElementById('regFlipCamBtnOverlay');
+  if (overlayBtn) overlayBtn.style.display = displayStyle;
+  const actionBtn = document.getElementById('regFlipCamBtnAction');
+  if (actionBtn) actionBtn.style.display = displayStyle;
+  const headerBtn = document.getElementById('regFlipCamBtnHeader');
+  if (headerBtn) headerBtn.style.display = displayStyle;
+}
+
+function toggleRegCamFacing() {
+  regFacingMode = regFacingMode === 'user' ? 'environment' : 'user';
+  updateCamFacingUI();
+  startRegCam();
+}
+
 async function startRegCam() {
+  if (regStream) {
+    regStream.getTracks().forEach(t => t.stop());
+    regStream = null;
+  }
   try {
     const isMobile = window.innerWidth < 768 || /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
     regStream = await navigator.mediaDevices.getUserMedia({
       video: {
         width: { ideal: isMobile ? 480 : 640 },
         height: { ideal: isMobile ? 640 : 480 },
-        facingMode: 'user'
-      }
+        facingMode: { ideal: regFacingMode }
+      },
+      audio: false
     });
     regVideo.srcObject = regStream;
+
+    if (regFacingMode === 'user') {
+      regVideo.style.transform = 'scaleX(-1)';
+    } else {
+      regVideo.style.transform = 'scaleX(1)';
+    }
+
+    updateCamFacingUI();
   } catch (err) {
     console.error('Camera access failed:', err);
     const ind = document.getElementById('camIndicator');
@@ -322,6 +418,7 @@ async function startRegCam() {
 }
 
 async function applyEnrolledPhoto(dataUrl) {
+  setFlipButtonsDisplay('none');
   photoDataInput.value = dataUrl;
   enrolledPreview.src = dataUrl;
   enrolledPreview.style.display = 'block';
@@ -467,6 +564,7 @@ retakeFaceBtn.addEventListener('click', () => {
   regLabel.style.display = 'block';
 
   snapFaceBtn.style.display = 'inline-block';
+  setFlipButtonsDisplay('inline-flex');
   retakeFaceBtn.style.display = 'none';
 
   if (!regStream) {

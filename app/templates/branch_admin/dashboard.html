@@ -265,30 +265,42 @@
 
 {% block scripts %}
 <script>
-const mandalLabels = [{% for r in mandal_rows %}"{{ r.mandal.name }}",{% endfor %}];
-const mandalRates = [{% for r in mandal_rows %}{{ r.rate }},{% endfor %}];
-const ctxBranch = document.getElementById('branchDashChart').getContext('2d');
-
-new Chart(ctxBranch, {
-  type: 'bar',
-  data: {
-    labels: mandalLabels,
-    datasets: [{
-      label: 'Attendance %',
-      data: mandalRates,
-      backgroundColor: 'rgba(16, 185, 129, 0.8)',
-      hoverBackgroundColor: 'rgba(5, 150, 105, 1)',
-      borderRadius: 6
-    }]
-  },
-  options: {
-    responsive: true,
-    maintainAspectRatio: false,
-    plugins: { legend: { display: false } },
-    scales: {
-      x: { grid: { display: false } },
-      y: { min: 0, max: 100, title: { display: true, text: '%' } }
-    }
+document.addEventListener("DOMContentLoaded", function() {
+  const chartMandals = {{ (chart_mandals or []) | tojson }};
+  const canvasBranch = document.getElementById('branchDashChart');
+  if (typeof Chart !== 'undefined' && canvasBranch) {
+    new Chart(canvasBranch.getContext('2d'), {
+      type: 'bar',
+      data: {
+        labels: chartMandals.map(m => m.name),
+        datasets: [{
+          label: 'Attendance %',
+          data: chartMandals.map(m => m.rate),
+          backgroundColor: 'rgba(16, 185, 129, 0.8)',
+          hoverBackgroundColor: 'rgba(5, 150, 105, 1)',
+          borderRadius: 6
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            callbacks: {
+              label: function(ctx) {
+                const item = chartMandals[ctx.dataIndex] || {};
+                return ' Attendance: ' + ctx.raw + '% (' + (item.present || 0) + '/' + (item.children || 0) + ' children)';
+              }
+            }
+          }
+        },
+        scales: {
+          x: { grid: { display: false } },
+          y: { min: 0, max: 100, title: { display: true, text: '%' } }
+        }
+      }
+    });
   }
 });
 </script>

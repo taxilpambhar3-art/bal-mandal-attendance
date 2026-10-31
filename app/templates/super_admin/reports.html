@@ -266,87 +266,93 @@
 
 {% block scripts %}
 <script>
-const weekRows = {{ week_rows | tojson }};
-const drillRows = {{ drill | tojson }};
+document.addEventListener("DOMContentLoaded", function() {
+  const weekRows = {{ (week_rows or []) | tojson }};
+  const drillRows = {{ (drill or []) | tojson }};
 
-// 1. Consolidated Weekly Mixed Chart
-const ctxSuperWeekly = document.getElementById('superWeeklyChart').getContext('2d');
-new Chart(ctxSuperWeekly, {
-  type: 'bar',
-  data: {
-    labels: weekRows.map(w => 'Week ' + w.week),
-    datasets: [
-      {
-        type: 'line',
-        label: 'Attendance Rate (%)',
-        data: weekRows.map(w => w.rate),
-        borderColor: '#3b82f6',
-        backgroundColor: 'rgba(59, 130, 246, 0.15)',
-        borderWidth: 3,
-        tension: 0.35,
-        fill: true,
-        yAxisID: 'yRate'
+  // 1. Consolidated Weekly Mixed Chart
+  const canvasSuperWeekly = document.getElementById('superWeeklyChart');
+  if (typeof Chart !== 'undefined' && canvasSuperWeekly) {
+    new Chart(canvasSuperWeekly.getContext('2d'), {
+      type: 'bar',
+      data: {
+        labels: weekRows.map(w => 'Week ' + w.week),
+        datasets: [
+          {
+            type: 'line',
+            label: 'Attendance Rate (%)',
+            data: weekRows.map(w => w.rate),
+            borderColor: '#3b82f6',
+            backgroundColor: 'rgba(59, 130, 246, 0.15)',
+            borderWidth: 3,
+            tension: 0.35,
+            fill: true,
+            yAxisID: 'yRate'
+          },
+          {
+            type: 'bar',
+            label: 'Total Present Children (Count)',
+            data: weekRows.map(w => w.present),
+            backgroundColor: 'rgba(30, 58, 138, 0.8)',
+            borderRadius: 8,
+            barPercentage: 0.55,
+            yAxisID: 'yCount'
+          }
+        ]
       },
-      {
-        type: 'bar',
-        label: 'Total Present Children (Count)',
-        data: weekRows.map(w => w.present),
-        backgroundColor: 'rgba(30, 58, 138, 0.8)',
-        borderRadius: 8,
-        barPercentage: 0.55,
-        yAxisID: 'yCount'
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { position: 'top' }
+        },
+        scales: {
+          x: { grid: { display: false } },
+          yCount: {
+            type: 'linear',
+            position: 'left',
+            title: { display: true, text: 'Present Count' },
+            min: 0,
+            grid: { color: '#f1f5f9' }
+          },
+          yRate: {
+            type: 'linear',
+            position: 'right',
+            title: { display: true, text: 'Percentage (%)' },
+            min: 0,
+            max: 100,
+            grid: { display: false }
+          }
+        }
       }
-    ]
-  },
-  options: {
-    responsive: true,
-    maintainAspectRatio: false,
-    plugins: {
-      legend: { position: 'top' }
-    },
-    scales: {
-      x: { grid: { display: false } },
-      yCount: {
-        type: 'linear',
-        position: 'left',
-        title: { display: true, text: 'Present Count' },
-        min: 0,
-        grid: { color: '#f1f5f9' }
-      },
-      yRate: {
-        type: 'linear',
-        position: 'right',
-        title: { display: true, text: 'Percentage (%)' },
-        min: 0,
-        max: 100,
-        grid: { display: false }
-      }
-    }
+    });
   }
-});
 
-// 2. Mandal Performance Horizontal Bar Chart
-const ctxDrill = document.getElementById('superDrillChart').getContext('2d');
-new Chart(ctxDrill, {
-  type: 'bar',
-  data: {
-    labels: drillRows.map(d => d.mandal),
-    datasets: [{
-      label: 'Attendance %',
-      data: drillRows.map(d => d.rate),
-      backgroundColor: 'rgba(16, 185, 129, 0.8)',
-      borderRadius: 6
-    }]
-  },
-  options: {
-    indexAxis: 'y',
-    responsive: true,
-    maintainAspectRatio: false,
-    plugins: { legend: { display: false } },
-    scales: {
-      x: { min: 0, max: 100, title: { display: true, text: '%' } },
-      y: { grid: { display: false } }
-    }
+  // 2. Mandal Performance Horizontal Bar Chart
+  const canvasDrill = document.getElementById('superDrillChart');
+  if (typeof Chart !== 'undefined' && canvasDrill) {
+    new Chart(canvasDrill.getContext('2d'), {
+      type: 'bar',
+      data: {
+        labels: drillRows.map(d => d.mandal),
+        datasets: [{
+          label: 'Attendance %',
+          data: drillRows.map(d => d.rate),
+          backgroundColor: 'rgba(16, 185, 129, 0.8)',
+          borderRadius: 6
+        }]
+      },
+      options: {
+        indexAxis: 'y',
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: {
+          x: { min: 0, max: 100, title: { display: true, text: '%' } },
+          y: { grid: { display: false } }
+        }
+      }
+    });
   }
 });
 

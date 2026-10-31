@@ -184,40 +184,46 @@
 
 {% block scripts %}
 <script>
-const weekStats = {{ week_stats | tojson }};
-const ctxDash = document.getElementById('sanchalakDashChart').getContext('2d');
-
-new Chart(ctxDash, {
-  type: 'line',
-  data: {
-    labels: weekStats.map(s => 'Week ' + s.week),
-    datasets: [{
-      label: 'Attendance %',
-      data: weekStats.map(s => s.rate),
-      borderColor: '#f59e0b',
-      backgroundColor: 'rgba(245, 158, 11, 0.15)',
-      borderWidth: 3,
-      fill: true,
-      tension: 0.35,
-      pointBackgroundColor: '#f59e0b',
-      pointRadius: 5
-    }]
-  },
-  options: {
-    responsive: true,
-    maintainAspectRatio: false,
-    plugins: {
-      legend: { display: false },
-      tooltip: {
-        callbacks: {
-          label: ctx => ' ' + ctx.raw + '% Attendance (' + weekStats[ctx.dataIndex].present + ' children)'
+document.addEventListener("DOMContentLoaded", function() {
+  const weekStats = {{ (week_stats or []) | tojson }};
+  const canvasDash = document.getElementById('sanchalakDashChart');
+  if (typeof Chart !== 'undefined' && canvasDash && Array.isArray(weekStats)) {
+    new Chart(canvasDash.getContext('2d'), {
+      type: 'line',
+      data: {
+        labels: weekStats.map(s => 'Week ' + s.week),
+        datasets: [{
+          label: 'Attendance %',
+          data: weekStats.map(s => s.rate),
+          borderColor: '#f59e0b',
+          backgroundColor: 'rgba(245, 158, 11, 0.15)',
+          borderWidth: 3,
+          fill: true,
+          tension: 0.35,
+          pointBackgroundColor: '#f59e0b',
+          pointRadius: 5
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            callbacks: {
+              label: ctx => {
+                const item = weekStats[ctx.dataIndex] || {};
+                return ' ' + ctx.raw + '% Attendance (' + (item.present || 0) + ' children)';
+              }
+            }
+          }
+        },
+        scales: {
+          x: { grid: { display: false } },
+          y: { min: 0, max: 100, title: { display: true, text: '%' } }
         }
       }
-    },
-    scales: {
-      x: { grid: { display: false } },
-      y: { min: 0, max: 100, title: { display: true, text: '%' } }
-    }
+    });
   }
 });
 </script>

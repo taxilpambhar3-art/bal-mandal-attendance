@@ -423,30 +423,34 @@
 
 {% block scripts %}
 <script>
-const weekStats = {{ week_stats | tojson }};
-const ctxSuperDash = document.getElementById('superDashChart').getContext('2d');
+document.addEventListener("DOMContentLoaded", function() {
+  const weekStats = {{ (week_stats or []) | tojson }};
+  const canvasSuperDash = document.getElementById('superDashChart');
 
-new Chart(ctxSuperDash, {
-  type: 'bar',
-  data: {
-    labels: weekStats.map(s => 'W' + s.week),
-    datasets: [{
-      label: 'Attendance %',
-      data: weekStats.map(s => s.rate),
-      backgroundColor: 'rgba(59, 130, 246, 0.85)',
-      hoverBackgroundColor: 'rgba(29, 78, 216, 1)',
-      borderRadius: 6,
-      barPercentage: 0.6
-    }]
-  },
-  options: {
-    responsive: true,
-    maintainAspectRatio: false,
-    plugins: { legend: { display: false } },
-    scales: {
-      x: { grid: { display: false } },
-      y: { min: 0, max: 100, title: { display: true, text: '%' } }
-    }
+  if (typeof Chart !== 'undefined' && canvasSuperDash && Array.isArray(weekStats)) {
+    new Chart(canvasSuperDash.getContext('2d'), {
+      type: 'bar',
+      data: {
+        labels: weekStats.map(s => 'W' + s.week),
+        datasets: [{
+          label: 'Attendance %',
+          data: weekStats.map(s => s.rate),
+          backgroundColor: 'rgba(59, 130, 246, 0.85)',
+          hoverBackgroundColor: 'rgba(29, 78, 216, 1)',
+          borderRadius: 6,
+          barPercentage: 0.6
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: {
+          x: { grid: { display: false } },
+          y: { min: 0, max: 100, title: { display: true, text: '%' } }
+        }
+      }
+    });
   }
 });
 </script>

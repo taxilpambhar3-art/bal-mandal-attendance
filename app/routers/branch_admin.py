@@ -116,6 +116,17 @@ def dashboard(
         else []
     )
 
+    chart_mandals = [
+        {
+            "id": r["mandal"].id,
+            "name": r["mandal"].name,
+            "children": r["children"],
+            "present": r["present"],
+            "rate": r["rate"],
+        }
+        for r in mandal_rows
+    ]
+
     return templates.TemplateResponse(
         "branch_admin/dashboard.html",
         _ctx(
@@ -128,6 +139,7 @@ def dashboard(
             present=present,
             rate=rate,
             mandal_rows=mandal_rows,
+            chart_mandals=chart_mandals,
             today_scans=today_scans,
         ),
     )
@@ -1154,7 +1166,26 @@ def reports(
         )
 
     comparison = []
+    chart_comparison = []
     target_mandals = [m for m in mandals if m.id in active_bm_ids]
+
+    if week_val:
+        sessions_count = 1
+    elif year_val == info["year"] and month_val == info["month"]:
+        sessions_count = max(info["week_number"], 1)
+    else:
+        distinct_w = (
+            db.query(func.count(func.distinct(Attendance.week_number)))
+            .filter(
+                Attendance.bal_mandal_id.in_(active_bm_ids),
+                Attendance.year == year_val,
+                Attendance.month == month_val,
+            )
+            .scalar()
+            or 0
+        ) if active_bm_ids else 0
+        sessions_count = max(distinct_w, 1)
+
     for m in target_mandals:
         kids = db.query(Child).filter(Child.bal_mandal_id == m.id, Child.is_active.is_(True)).count()
         pq = db.query(func.count(Attendance.id)).filter(
@@ -1165,12 +1196,23 @@ def reports(
         if week_val:
             pq = pq.filter(Attendance.week_number == week_val)
         p = pq.scalar() or 0
+        expected_total = kids * sessions_count
+        rate = min(100.0, round((p / expected_total) * 100, 1)) if expected_total else 0
         comparison.append(
             {
                 "mandal": m,
                 "children": kids,
                 "present": p,
-                "rate": round((p / kids) * 100, 1) if kids else 0,
+                "rate": rate,
+            }
+        )
+        chart_comparison.append(
+            {
+                "id": m.id,
+                "name": m.name,
+                "children": kids,
+                "present": p,
+                "rate": rate,
             }
         )
 
@@ -1187,6 +1229,7 @@ def reports(
             month_label=f"{gujarati_month(month_val)} {year_val}",
             week_rows=week_rows,
             comparison=comparison,
+            chart_comparison=chart_comparison,
             mandals=mandals,
             selected_mandal=m_id,
         ),

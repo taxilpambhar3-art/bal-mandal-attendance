@@ -237,8 +237,9 @@
             <button type="button" id="modalSnapBtn" class="btn btn-warning fw-bold flex-grow-1">
               <i class="bi bi-camera-fill me-1"></i>Capture Photo
             </button>
-            <button type="button" id="modalFlipBtn" class="btn btn-outline-secondary" title="Switch Camera">
-              <i class="bi bi-arrow-clockwise"></i>
+            <button type="button" id="modalFlipBtn" class="btn btn-outline-secondary fw-semibold d-inline-flex align-items-center gap-1 px-3" title="Switch Front / Rear Camera">
+              <i class="bi bi-arrow-repeat"></i>
+              <span id="modalFlipBtnText">Rear Cam</span>
             </button>
           </div>
 
@@ -329,7 +330,7 @@ async function startModalCamera() {
     const isMobile = window.innerWidth < 768 || /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
     const stream = await navigator.mediaDevices.getUserMedia({
       video: {
-        facingMode: modalFacing,
+        facingMode: { ideal: modalFacing },
         width: { ideal: isMobile ? 480 : 640 },
         height: { ideal: isMobile ? 640 : 480 }
       },
@@ -337,6 +338,9 @@ async function startModalCamera() {
     });
     modalStream = stream;
     modalVideo.srcObject = stream;
+    modalVideo.style.transform = modalFacing === 'user' ? 'scaleX(-1)' : 'scaleX(1)';
+    const flipText = document.getElementById('modalFlipBtnText');
+    if (flipText) flipText.textContent = modalFacing === 'user' ? 'Rear Cam' : 'Front Cam';
   } catch (err) {
     console.warn('Camera error:', err);
   }

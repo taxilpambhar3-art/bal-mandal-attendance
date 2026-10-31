@@ -11,8 +11,11 @@ def week_number_for(d: date) -> int:
 
 
 def week_date_range(year: int, month: int, week: int) -> tuple[date, date]:
-    start_day = (week - 1) * 7 + 1
-    end_day = min(week * 7, monthrange(year, month)[1])
+    max_days = monthrange(year, month)[1]
+    start_day = min((week - 1) * 7 + 1, max_days)
+    end_day = min(week * 7, max_days)
+    if start_day > end_day:
+        start_day = end_day
     return date(year, month, start_day), date(year, month, end_day)
 
 

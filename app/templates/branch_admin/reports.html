@@ -264,90 +264,93 @@
 
 {% block scripts %}
 <script>
-const mandalLabels = [{% for c in comparison %}"{{ c.mandal.name }}",{% endfor %}];
-const mandalRates = [{% for c in comparison %}{{ c.rate }},{% endfor %}];
-const mandalPresents = [{% for c in comparison %}{{ c.present }},{% endfor %}];
+document.addEventListener("DOMContentLoaded", function() {
+  const chartComparison = {{ (chart_comparison or []) | tojson }};
+  const weekRows = {{ (week_rows or []) | tojson }};
 
-const weekLabels = [{% for w in week_rows %}"Week {{ w.week }}",{% endfor %}];
-const weekRates = [{% for w in week_rows %}{{ w.rate }},{% endfor %}];
-
-// 1. Mandal Comparison Chart (Horizontal Bar)
-const ctxMandal = document.getElementById('mandalComparisonChart').getContext('2d');
-new Chart(ctxMandal, {
-  type: 'bar',
-  data: {
-    labels: mandalLabels,
-    datasets: [{
-      label: 'Attendance Rate (%)',
-      data: mandalRates,
-      backgroundColor: 'rgba(16, 185, 129, 0.8)',
-      hoverBackgroundColor: 'rgba(5, 150, 105, 1)',
-      borderRadius: 8,
-      barPercentage: 0.6
-    }]
-  },
-  options: {
-    responsive: true,
-    maintainAspectRatio: false,
-    plugins: {
-      legend: { display: false },
-      tooltip: {
-        callbacks: {
-          label: function(ctx) {
-            return ' Attendance: ' + ctx.raw + '% (' + mandalPresents[ctx.dataIndex] + ' children)';
-          }
-        }
-      }
-    },
-    scales: {
-      x: {
-        grid: { display: false }
+  // 1. Mandal Comparison Chart (Horizontal Bar)
+  const canvasMandal = document.getElementById('mandalComparisonChart');
+  if (typeof Chart !== 'undefined' && canvasMandal) {
+    new Chart(canvasMandal.getContext('2d'), {
+      type: 'bar',
+      data: {
+        labels: chartComparison.map(c => c.name),
+        datasets: [{
+          label: 'Attendance Rate (%)',
+          data: chartComparison.map(c => c.rate),
+          backgroundColor: 'rgba(16, 185, 129, 0.8)',
+          hoverBackgroundColor: 'rgba(5, 150, 105, 1)',
+          borderRadius: 8,
+          barPercentage: 0.6
+        }]
       },
-      y: {
-        min: 0,
-        max: 100,
-        title: { display: true, text: 'Percentage (%)' }
-      }
-    }
-  }
-});
-
-// 2. Branch Weekly Trend Line Chart
-const ctxTrend = document.getElementById('branchWeeklyTrendChart').getContext('2d');
-new Chart(ctxTrend, {
-  type: 'line',
-  data: {
-    labels: weekLabels,
-    datasets: [{
-      label: 'Average Attendance %',
-      data: weekRates,
-      borderColor: '#0284c7',
-      backgroundColor: 'rgba(2, 132, 199, 0.12)',
-      borderWidth: 3,
-      fill: true,
-      tension: 0.35,
-      pointBackgroundColor: '#0284c7',
-      pointRadius: 5,
-      pointHoverRadius: 7
-    }]
-  },
-  options: {
-    responsive: true,
-    maintainAspectRatio: false,
-    plugins: {
-      legend: { display: false },
-      tooltip: {
-        callbacks: {
-          label: function(ctx) {
-            return ' Average Attendance: ' + ctx.raw + '%';
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            callbacks: {
+              label: function(ctx) {
+                const item = chartComparison[ctx.dataIndex] || {};
+                return ' Attendance: ' + ctx.raw + '% (' + (item.present || 0) + ' children)';
+              }
+            }
+          }
+        },
+        scales: {
+          x: {
+            grid: { display: false }
+          },
+          y: {
+            min: 0,
+            max: 100,
+            title: { display: true, text: 'Percentage (%)' }
           }
         }
       }
-    },
-    scales: {
-      x: { grid: { display: false } },
-      y: { min: 0, max: 100, title: { display: true, text: '%' } }
-    }
+    });
+  }
+
+  // 2. Branch Weekly Trend Line Chart
+  const canvasTrend = document.getElementById('branchWeeklyTrendChart');
+  if (typeof Chart !== 'undefined' && canvasTrend) {
+    new Chart(canvasTrend.getContext('2d'), {
+      type: 'line',
+      data: {
+        labels: weekRows.map(w => 'Week ' + w.week),
+        datasets: [{
+          label: 'Average Attendance %',
+          data: weekRows.map(w => w.rate),
+          borderColor: '#0284c7',
+          backgroundColor: 'rgba(2, 132, 199, 0.12)',
+          borderWidth: 3,
+          fill: true,
+          tension: 0.35,
+          pointBackgroundColor: '#0284c7',
+          pointRadius: 5,
+          pointHoverRadius: 7
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            callbacks: {
+              label: function(ctx) {
+                return ' Average Attendance: ' + ctx.raw + '%';
+              }
+            }
+          }
+        },
+        scales: {
+          x: { grid: { display: false } },
+          y: { min: 0, max: 100, title: { display: true, text: '%' } }
+        }
+      }
+    });
   }
 });
 

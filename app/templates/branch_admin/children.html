@@ -239,8 +239,9 @@
             <button type="button" class="btn btn-outline-secondary" id="modalRetakeBtn" style="display:none;" onclick="retakeModalPhoto()">
               <i class="bi bi-arrow-counterclockwise me-1"></i>Retake
             </button>
-            <button type="button" id="modalFlipBtn" class="btn btn-outline-secondary" title="Switch Camera" onclick="flipModalCamera()">
-              <i class="bi bi-arrow-clockwise"></i>
+            <button type="button" id="modalFlipBtn" class="btn btn-outline-secondary fw-semibold d-inline-flex align-items-center gap-1 px-3" title="Switch Front / Rear Camera" onclick="flipModalCamera()">
+              <i class="bi bi-arrow-repeat"></i>
+              <span id="modalFlipBtnText">Rear Cam</span>
             </button>
           </div>
 
@@ -347,11 +348,14 @@ async function startModalCamera() {
       video: {
         width: { ideal: isMobile ? 480 : 640 },
         height: { ideal: isMobile ? 640 : 480 },
-        facingMode: modalFacing
+        facingMode: { ideal: modalFacing }
       },
       audio: false
     });
     modalVideo.srcObject = modalStream;
+    modalVideo.style.transform = modalFacing === 'user' ? 'scaleX(-1)' : 'scaleX(1)';
+    const flipText = document.getElementById('modalFlipBtnText');
+    if (flipText) flipText.textContent = modalFacing === 'user' ? 'Rear Cam' : 'Front Cam';
   } catch (err) {
     console.error('Camera error in modal:', err);
   }

@@ -239,32 +239,36 @@
 
 {% block scripts %}
 <script>
-const weekStats = {{ week_stats | tojson }};
-const ctx = document.getElementById('branchWeeklyChart').getContext('2d');
+document.addEventListener("DOMContentLoaded", function() {
+  const weekStats = {{ (week_stats or []) | tojson }};
+  const canvas = document.getElementById('branchWeeklyChart');
 
-new Chart(ctx, {
-  type: 'bar',
-  data: {
-    labels: weekStats.map(s => 'Week ' + s.week),
-    datasets: [{
-      label: 'Attendance %',
-      data: weekStats.map(s => s.rate),
-      backgroundColor: 'rgba(59, 130, 246, 0.85)',
-      hoverBackgroundColor: 'rgba(29, 78, 216, 1)',
-      borderRadius: 6,
-      barPercentage: 0.5
-    }]
-  },
-  options: {
-    responsive: true,
-    maintainAspectRatio: false,
-    plugins: {
-      legend: { display: false }
-    },
-    scales: {
-      x: { grid: { display: false } },
-      y: { min: 0, max: 100, title: { display: true, text: 'Attendance Rate (%)' } }
-    }
+  if (typeof Chart !== 'undefined' && canvas && Array.isArray(weekStats)) {
+    new Chart(canvas.getContext('2d'), {
+      type: 'bar',
+      data: {
+        labels: weekStats.map(s => 'Week ' + s.week),
+        datasets: [{
+          label: 'Attendance %',
+          data: weekStats.map(s => s.rate),
+          backgroundColor: 'rgba(59, 130, 246, 0.85)',
+          hoverBackgroundColor: 'rgba(29, 78, 216, 1)',
+          borderRadius: 6,
+          barPercentage: 0.5
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false }
+        },
+        scales: {
+          x: { grid: { display: false } },
+          y: { min: 0, max: 100, title: { display: true, text: 'Attendance Rate (%)' } }
+        }
+      }
+    });
   }
 });
 </script>

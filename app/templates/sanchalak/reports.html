@@ -258,134 +258,140 @@
 
 {% block scripts %}
 <script>
-// Data from server
-const weekData = {{ week_rows | tojson }};
-const totalKids = {{ total }};
-const totalPresent = {{ total_present_sum }};
-const totalPossible = totalKids * 5;
-const totalAbsent = Math.max(totalPossible - totalPresent, 0);
+document.addEventListener("DOMContentLoaded", function() {
+  // Data from server
+  const weekData = {{ (week_rows or []) | tojson }};
+  const totalKids = {{ total or 0 }};
+  const totalPresent = {{ total_present_sum or 0 }};
+  const totalPossible = totalKids * 5;
+  const totalAbsent = Math.max(totalPossible - totalPresent, 0);
 
-const labels = weekData.map(w => 'Week ' + w.week);
-const presentCounts = weekData.map(w => w.present);
-const rates = weekData.map(w => w.rate);
+  const labels = weekData.map(w => 'Week ' + w.week);
+  const presentCounts = weekData.map(w => w.present);
+  const rates = weekData.map(w => w.rate);
 
-// 1. Weekly Attendance Mixed Bar + Line Chart
-const ctxWeekly = document.getElementById('weeklyAttendanceChart').getContext('2d');
-new Chart(ctxWeekly, {
-  type: 'bar',
-  data: {
-    labels: labels,
-    datasets: [
-      {
-        type: 'line',
-        label: 'Attendance Rate (%)',
-        data: rates,
-        borderColor: '#f59e0b',
-        backgroundColor: 'rgba(245, 158, 11, 0.15)',
-        borderWidth: 3,
-        tension: 0.35,
-        fill: true,
-        pointBackgroundColor: '#f59e0b',
-        pointRadius: 5,
-        pointHoverRadius: 7,
-        yAxisID: 'yRate'
+  // 1. Weekly Attendance Mixed Bar + Line Chart
+  const canvasWeekly = document.getElementById('weeklyAttendanceChart');
+  if (typeof Chart !== 'undefined' && canvasWeekly) {
+    new Chart(canvasWeekly.getContext('2d'), {
+      type: 'bar',
+      data: {
+        labels: labels,
+        datasets: [
+          {
+            type: 'line',
+            label: 'Attendance Rate (%)',
+            data: rates,
+            borderColor: '#f59e0b',
+            backgroundColor: 'rgba(245, 158, 11, 0.15)',
+            borderWidth: 3,
+            tension: 0.35,
+            fill: true,
+            pointBackgroundColor: '#f59e0b',
+            pointRadius: 5,
+            pointHoverRadius: 7,
+            yAxisID: 'yRate'
+          },
+          {
+            type: 'bar',
+            label: 'Present Children Count',
+            data: presentCounts,
+            backgroundColor: 'rgba(37, 99, 235, 0.8)',
+            hoverBackgroundColor: 'rgba(29, 78, 216, 1)',
+            borderRadius: 8,
+            barPercentage: 0.55,
+            yAxisID: 'yCount'
+          }
+        ]
       },
-      {
-        type: 'bar',
-        label: 'Present Children Count',
-        data: presentCounts,
-        backgroundColor: 'rgba(37, 99, 235, 0.8)',
-        hoverBackgroundColor: 'rgba(29, 78, 216, 1)',
-        borderRadius: 8,
-        barPercentage: 0.55,
-        yAxisID: 'yCount'
-      }
-    ]
-  },
-  options: {
-    responsive: true,
-    maintainAspectRatio: false,
-    interaction: {
-      mode: 'index',
-      intersect: false,
-    },
-    plugins: {
-      legend: {
-        position: 'top',
-        labels: {
-          font: { family: "'Plus Jakarta Sans', sans-serif", weight: '600' }
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        interaction: {
+          mode: 'index',
+          intersect: false,
+        },
+        plugins: {
+          legend: {
+            position: 'top',
+            labels: {
+              font: { family: "'Plus Jakarta Sans', sans-serif", weight: '600' }
+            }
+          },
+          tooltip: {
+            padding: 12,
+            backgroundColor: 'rgba(15, 23, 42, 0.9)',
+            titleFont: { family: "'Plus Jakarta Sans', sans-serif", size: 13, weight: 'bold' },
+            bodyFont: { family: "'Plus Jakarta Sans', sans-serif", size: 12 },
+            callbacks: {
+              label: function(context) {
+                if (context.dataset.yAxisID === 'yRate') {
+                  return ' Attendance Rate: ' + context.parsed.y + '%';
+                } else {
+                  return ' Present: ' + context.parsed.y + ' children';
+                }
+              }
+            }
+          }
+        },
+        scales: {
+          x: {
+            grid: { display: false }
+          },
+          yCount: {
+            type: 'linear',
+            position: 'left',
+            title: { display: true, text: 'Present Children' },
+            min: 0,
+            suggestedMax: Math.max(...(presentCounts.length ? presentCounts : [0]), 10) + 2,
+            grid: { color: '#f1f5f9' }
+          },
+          yRate: {
+            type: 'linear',
+            position: 'right',
+            title: { display: true, text: 'Percentage (%)' },
+            min: 0,
+            max: 100,
+            grid: { display: false }
+          }
         }
+      }
+    });
+  }
+
+  // 2. Attendance Ratio Doughnut Chart
+  const canvasRatio = document.getElementById('ratioChart');
+  if (typeof Chart !== 'undefined' && canvasRatio) {
+    new Chart(canvasRatio.getContext('2d'), {
+      type: 'doughnut',
+      data: {
+        labels: ['Present', 'Absent'],
+        datasets: [{
+          data: [totalPresent, totalAbsent],
+          backgroundColor: ['#10b981', '#ef4444'],
+          hoverBackgroundColor: ['#059669', '#dc2626'],
+          borderWidth: 2,
+          borderColor: '#ffffff'
+        }]
       },
-      tooltip: {
-        padding: 12,
-        backgroundColor: 'rgba(15, 23, 42, 0.9)',
-        titleFont: { family: "'Plus Jakarta Sans', sans-serif", size: 13, weight: 'bold' },
-        bodyFont: { family: "'Plus Jakarta Sans', sans-serif", size: 12 },
-        callbacks: {
-          label: function(context) {
-            if (context.dataset.yAxisID === 'yRate') {
-              return ' Attendance Rate: ' + context.parsed.y + '%';
-            } else {
-              return ' Present: ' + context.parsed.y + ' children';
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        cutout: '72%',
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            callbacks: {
+              label: function(context) {
+                const val = context.raw || 0;
+                const pct = totalPossible > 0 ? Math.round((val / totalPossible) * 100) : 0;
+                return ' ' + context.label + ': ' + val + ' (' + pct + '%)';
+              }
             }
           }
         }
       }
-    },
-    scales: {
-      x: {
-        grid: { display: false }
-      },
-      yCount: {
-        type: 'linear',
-        position: 'left',
-        title: { display: true, text: 'Present Children' },
-        min: 0,
-        suggestedMax: Math.max(...presentCounts, 10) + 2,
-        grid: { color: '#f1f5f9' }
-      },
-      yRate: {
-        type: 'linear',
-        position: 'right',
-        title: { display: true, text: 'Percentage (%)' },
-        min: 0,
-        max: 100,
-        grid: { display: false }
-      }
-    }
-  }
-});
-
-// 2. Attendance Ratio Doughnut Chart
-const ctxRatio = document.getElementById('ratioChart').getContext('2d');
-new Chart(ctxRatio, {
-  type: 'doughnut',
-  data: {
-    labels: ['Present', 'Absent'],
-    datasets: [{
-      data: [totalPresent, totalAbsent],
-      backgroundColor: ['#10b981', '#ef4444'],
-      hoverBackgroundColor: ['#059669', '#dc2626'],
-      borderWidth: 2,
-      borderColor: '#ffffff'
-    }]
-  },
-  options: {
-    responsive: true,
-    maintainAspectRatio: false,
-    cutout: '72%',
-    plugins: {
-      legend: { display: false },
-      tooltip: {
-        callbacks: {
-          label: function(context) {
-            const val = context.raw || 0;
-            const pct = totalPossible > 0 ? Math.round((val / totalPossible) * 100) : 0;
-            return ' ' + context.label + ': ' + val + ' (' + pct + '%)';
-          }
-        }
-      }
-    }
+    });
   }
 });
 
