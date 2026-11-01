@@ -131,7 +131,12 @@
               <span class="badge bg-secondary-subtle text-secondary border" style="font-size:10px;">Archived</span>
               {% endif %}
             </div>
-            <span class="badge bg-light text-secondary border d-block mt-1" style="width:fit-content; font-size:10.5px;">{{ r.child.gender or 'Male' }}</span>
+            <div class="d-flex align-items-center gap-1 mt-1 flex-wrap">
+              <span class="badge bg-light text-secondary border" style="font-size:10.5px;">{{ r.child.gender or 'Male' }}</span>
+              {% if r.child.position == 'Monitor' %}
+              <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle fw-semibold" style="font-size:10.5px;"><i class="bi bi-award-fill text-warning me-1"></i>Monitor</span>
+              {% endif %}
+            </div>
           </td>
           <td>
             <span class="badge bg-primary-subtle text-primary border border-primary-subtle font-monospace">{{ r.child.child_code }}</span>

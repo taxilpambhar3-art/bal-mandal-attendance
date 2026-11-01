@@ -84,6 +84,7 @@ class Child(Base):
     dob_str: Mapped[Optional[str]] = mapped_column(String(12), nullable=True, default="")
     age: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
     gender: Mapped[Optional[str]] = mapped_column(String(10), nullable=True, default="Male")
+    position: Mapped[Optional[str]] = mapped_column(String(30), nullable=True, default="Student")
     standard: Mapped[Optional[str]] = mapped_column(String(20), nullable=True, default="")
     address: Mapped[Optional[str]] = mapped_column(Text, nullable=True, default="")
     guardian_name: Mapped[Optional[str]] = mapped_column(String(120), nullable=True)

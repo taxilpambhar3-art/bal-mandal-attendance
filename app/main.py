@@ -125,6 +125,7 @@ def on_startup():
                     "dob": "DATE",
                     "dob_str": "VARCHAR(12) DEFAULT ''",
                     "gender": "VARCHAR(10) DEFAULT 'Male'",
+                    "position": "VARCHAR(30) DEFAULT 'Student'",
                     "standard": "VARCHAR(20) DEFAULT ''",
                     "address": "TEXT DEFAULT ''",
                     "uses_bus": "BOOLEAN DEFAULT 0",
@@ -137,6 +138,13 @@ def on_startup():
                 conn.commit()
             except Exception as e:
                 print("Migration warning:", e)
+    elif engine.dialect.name == "postgresql":
+        with engine.connect() as conn:
+            try:
+                conn.exec_driver_sql("ALTER TABLE children ADD COLUMN IF NOT EXISTS position VARCHAR(30) DEFAULT 'Student'")
+                conn.commit()
+            except Exception as e:
+                print("Postgres migration warning:", e)
     db = SessionLocal()
     try:
         seed_if_empty(db)
@@ -147,6 +155,8 @@ def on_startup():
         except Exception as e:
             print("Password heal warning:", e)
         # Backfill legacy children if needed
+        for c in db.query(Child).filter((Child.position.is_(None)) | (Child.position == "")).all():
+            c.position = "Student"
         legacy = db.query(Child).filter((Child.first_name == "") | (Child.first_name.is_(None))).all()
         for c in legacy:
             if c.name:

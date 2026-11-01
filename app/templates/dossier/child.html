@@ -87,6 +87,9 @@
       <div class="d-flex align-items-center gap-2 flex-wrap mb-1">
         <h4 class="fw-bold text-dark mb-0">{{ child.name }}</h4>
         <span class="badge bg-light text-secondary border">{{ child.gender or 'Male' }}</span>
+        {% if child.position == 'Monitor' %}
+        <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle fw-semibold"><i class="bi bi-award-fill text-warning me-1"></i>Monitor</span>
+        {% endif %}
         {% if child.standard %}
         <span class="badge badge-soft-info fs-6">{{ child.standard }}</span>
         {% endif %}

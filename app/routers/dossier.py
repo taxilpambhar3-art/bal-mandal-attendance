@@ -135,6 +135,7 @@ def api_child_dossier(
             "father_name": child.father_name or "",
             "surname": child.surname or "",
             "gender": child.gender or "Male",
+            "position": child.position or "Student",
             "standard": child.standard or "Not specified",
             "dob": child.dob.strftime("%d/%m/%Y") if child.dob else (child.dob_str or "—"),
             "dob_str": child.dob_str or "",

@@ -27,6 +27,8 @@ STANDARDS = [
     "College / Graduate",
 ]
 
+POSITIONS = ["Student", "Monitor"]
+
 
 def parse_dob_strict(dob_str: Optional[str]) -> tuple[Optional[date], Optional[str], Optional[int]]:
     """Parse strictly DD/MM/YYYY format and return (date_obj, formatted_str, calculated_age)."""
@@ -89,6 +91,7 @@ def validate_child_form_data(
     bal_mandal_id: Optional[int],
     uses_bus: bool = False,
     bus_route: str = "",
+    position: str = "Student",
 ) -> tuple[bool, str]:
     """Validate all child enrollment/edit fields on server-side. Returns (is_valid, error_msg)."""
     # 1. First Name
@@ -137,6 +140,11 @@ def validate_child_form_data(
     std = (standard or "").strip()
     if not std or std not in STANDARDS:
         return False, "Please select a valid Annual Grade / Standard from the options."
+
+    # 6b. Position (Student or Monitor)
+    pos = (position or "Student").strip()
+    if pos not in POSITIONS:
+        return False, "Position must be either 'Student' or 'Monitor'."
 
     # 7. Mobile Number
     mob = re.sub(r"[^0-9]", "", mobile_number or "")

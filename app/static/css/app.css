@@ -88,6 +88,8 @@ body {
    ========================================================================== */
 .appnav {
   background: var(--nav-bg, linear-gradient(135deg, #0f172a 0%, #1e3a8a 50%, #2563eb 100%));
+  background-size: 200% 200%;
+  animation: navShimmer 8s ease-in-out infinite;
   color: #ffffff;
   padding: 12px 24px;
   display: flex;
@@ -100,6 +102,12 @@ body {
   box-shadow: 0 4px 20px -2px rgba(15, 23, 42, 0.15), 0 1px 0 rgba(255, 255, 255, 0.12) inset;
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
+}
+
+@keyframes navShimmer {
+  0%   { background-position: 0% 50%; }
+  50%  { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
 }
 
 .appnav .brand {

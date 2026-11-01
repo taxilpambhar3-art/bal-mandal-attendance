@@ -465,6 +465,7 @@ def child_add_submit(
     bal_mandal_id: str = Form(...),
     mobile_number: str = Form(...),
     gender: str = Form("Male"),
+    position: str = Form("Student"),
     standard: str = Form(""),
     address: str = Form(""),
     uses_bus: bool = Form(False),
@@ -484,6 +485,7 @@ def child_add_submit(
         "surname": surname,
         "dob_str": dob_str,
         "gender": gender,
+        "position": position,
         "standard": standard,
         "address": address,
         "mobile_number": mobile_number,
@@ -506,6 +508,7 @@ def child_add_submit(
         bal_mandal_id=m_id,
         uses_bus=uses_bus,
         bus_route=bus_route,
+        position=position,
     )
     if not is_valid:
         return templates.TemplateResponse(
@@ -537,6 +540,7 @@ def child_add_submit(
         dob_str=dob_clean or dob_str.strip(),
         age=calculated_age,
         gender=gender.strip() or "Male",
+        position=position.strip() if position else "Student",
         standard=standard.strip(),
         address=address.strip(),
         guardian_name=fath or None,
@@ -586,6 +590,7 @@ def child_edit_submit(
     bal_mandal_id: str = Form(...),
     mobile_number: str = Form(...),
     gender: str = Form("Male"),
+    position: str = Form("Student"),
     standard: str = Form(""),
     address: str = Form(""),
     uses_bus: bool = Form(False),
@@ -612,6 +617,7 @@ def child_edit_submit(
         bal_mandal_id=m_id,
         uses_bus=uses_bus,
         bus_route=bus_route,
+        position=position,
     )
     if not is_valid:
         return templates.TemplateResponse(
@@ -640,6 +646,7 @@ def child_edit_submit(
     child.dob_str = dob_clean or dob_str.strip()
     child.age = calculated_age
     child.gender = gender.strip() or "Male"
+    child.position = position.strip() if position else "Student"
     child.standard = standard.strip()
     child.address = address.strip()
     child.guardian_name = fath or None

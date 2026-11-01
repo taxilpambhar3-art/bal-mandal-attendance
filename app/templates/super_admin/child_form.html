@@ -52,9 +52,9 @@
           </div>
         </div>
 
-        <!-- Row 2: Date of Birth, Gender, Standard/Grade -->
+        <!-- Row 2: Date of Birth (Strict DD/MM/YYYY), Gender, Standard/Grade, Student Position -->
         <div class="row g-3 mb-3">
-          <div class="col-md-4">
+          <div class="col-md-3">
             <div class="d-flex justify-content-between align-items-center mb-1">
               <label class="form-label small fw-bold text-secondary mb-0">
                 <i class="bi bi-calendar-date text-primary me-1"></i>Date of Birth <span class="text-danger">*</span>
@@ -71,7 +71,7 @@
             <small class="text-muted" style="font-size:11px;">Format: DD/MM/YYYY (Auto calculates age)</small>
           </div>
 
-          <div class="col-md-4">
+          <div class="col-md-3">
             <label class="form-label small fw-bold text-secondary mb-1">Gender <span class="text-danger">*</span></label>
             <select name="gender" id="genderInput" class="form-select" required>
               <option value="Male" {% if (child and child.gender == 'Male') or (form_data and form_data.gender == 'Male') %}selected{% endif %}>Male</option>
@@ -79,7 +79,7 @@
             </select>
           </div>
 
-          <div class="col-md-4">
+          <div class="col-md-3">
             <label class="form-label small fw-bold text-secondary mb-1">
               <i class="bi bi-mortarboard-fill text-success me-1"></i>Annual Grade (Standard) <span class="text-danger">*</span>
             </label>
@@ -90,6 +90,17 @@
               {% endfor %}
             </select>
             <div class="invalid-feedback">Please select an annual grade.</div>
+          </div>
+
+          <div class="col-md-3">
+            <label class="form-label small fw-bold text-secondary mb-1">
+              <i class="bi bi-award-fill text-warning me-1"></i>Student Position <span class="text-danger">*</span>
+            </label>
+            <select name="position" id="positionInput" class="form-select" required>
+              <option value="Student" {% if (child and child.position == 'Student') or (form_data and form_data.position == 'Student') or (not child and not form_data) %}selected{% endif %}>Student</option>
+              <option value="Monitor" {% if (child and child.position == 'Monitor') or (form_data and form_data.position == 'Monitor') %}selected{% endif %}>Monitor</option>
+            </select>
+            <small class="text-muted" style="font-size:11px;">Student or Monitor</small>
           </div>
         </div>
 
