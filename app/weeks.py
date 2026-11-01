@@ -1,8 +1,21 @@
 from __future__ import annotations
-"""Month-local week numbering: Week 1–5 resets every month."""
+"""Month-local week numbering and Indian Standard Time (IST) utilities: Week 1–5 resets every month."""
 
-from datetime import date, datetime
 from calendar import monthrange
+from datetime import date, datetime, timedelta, timezone
+
+# Indian Standard Time (IST) is UTC+05:30
+IST = timezone(timedelta(hours=5, minutes=30), name="IST")
+
+
+def ist_now() -> datetime:
+    """Current naive datetime in Indian Standard Time (IST, UTC+05:30) for DB storage."""
+    return datetime.now(IST).replace(tzinfo=None)
+
+
+def ist_today() -> date:
+    """Current date in Indian Standard Time (IST)."""
+    return datetime.now(IST).date()
 
 
 def week_number_for(d: date) -> int:
@@ -20,7 +33,7 @@ def week_date_range(year: int, month: int, week: int) -> tuple[date, date]:
 
 
 def current_week_info(today: date | None = None) -> dict:
-    today = today or date.today()
+    today = today or ist_today()
     week = week_number_for(today)
     start, end = week_date_range(today.year, today.month, week)
     return {
@@ -54,6 +67,19 @@ def gujarati_month(month: int) -> str:
 
 
 def format_dt(dt: datetime | None) -> str:
+    """Format datetime as IST time (e.g. '11:45 AM')."""
     if not dt:
         return "—"
+    if dt.tzinfo is not None:
+        dt = dt.astimezone(IST)
     return dt.strftime("%I:%M %p").lstrip("0")
+
+
+def format_dt_full(dt: datetime | None) -> str:
+    """Format datetime as IST date & time (e.g. '01 Nov 2026, 11:45 AM')."""
+    if not dt:
+        return "—"
+    if dt.tzinfo is not None:
+        dt = dt.astimezone(IST)
+    return dt.strftime("%d %b %Y, ") + dt.strftime("%I:%M %p").lstrip("0")
+

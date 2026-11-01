@@ -16,6 +16,7 @@ from sqlalchemy import (
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from .database import Base
+from .weeks import ist_now
 
 
 class User(Base):
@@ -31,7 +32,7 @@ class User(Base):
     branch_id: Mapped[Optional[int]] = mapped_column(ForeignKey("branches.id"), nullable=True)
     bal_mandal_id: Mapped[Optional[int]] = mapped_column(ForeignKey("bal_mandals.id"), nullable=True)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=ist_now)
 
     branch = relationship("Branch", back_populates="admins", foreign_keys=[branch_id])
     bal_mandal = relationship("BalMandal", back_populates="sanchalak", foreign_keys=[bal_mandal_id])
@@ -47,7 +48,7 @@ class Branch(Base):
     phone: Mapped[Optional[str]] = mapped_column(String(30), nullable=True)
     address: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=ist_now)
 
     admins = relationship("User", back_populates="branch", foreign_keys="User.branch_id")
     bal_mandals = relationship("BalMandal", back_populates="branch")
@@ -62,7 +63,7 @@ class BalMandal(Base):
     weekday: Mapped[str] = mapped_column(String(20))  # Gujarati day name
     meeting_time: Mapped[Optional[time]] = mapped_column(Time, nullable=True)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=ist_now)
 
     branch = relationship("Branch", back_populates="bal_mandals")
     sanchalak = relationship("User", back_populates="bal_mandal", foreign_keys="User.bal_mandal_id", uselist=False)
@@ -93,7 +94,7 @@ class Child(Base):
     face_photo: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
     face_descriptor: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=ist_now)
 
     bal_mandal = relationship("BalMandal", back_populates="children")
     attendances = relationship("Attendance", back_populates="child")
@@ -112,7 +113,7 @@ class Attendance(Base):
     year: Mapped[int] = mapped_column(Integer)
     month: Mapped[int] = mapped_column(Integer)  # 1-12
     week_number: Mapped[int] = mapped_column(Integer)  # 1-5 within month
-    scanned_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    scanned_at: Mapped[datetime] = mapped_column(DateTime, default=ist_now)
     scan_photo: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
     status: Mapped[str] = mapped_column(String(20), default="present")
     marked_by: Mapped[Optional[int]] = mapped_column(ForeignKey("users.id"), nullable=True)
@@ -126,5 +127,5 @@ class StoredPhoto(Base):
 
     filename: Mapped[str] = mapped_column(String(255), primary_key=True)
     data_b64: Mapped[str] = mapped_column(Text)
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=ist_now)
 

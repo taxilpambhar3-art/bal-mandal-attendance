@@ -13,7 +13,7 @@ from ..auth import hash_password
 from ..database import get_db, UPLOAD_DIR
 from ..deps import role_required, safe_int
 from ..models import Attendance, BalMandal, Branch, Child, User
-from ..weeks import current_week_info, gujarati_month
+from ..weeks import current_week_info, format_dt, gujarati_month, ist_today
 from ..child_utils import STANDARDS, promote_standard, parse_dob_strict, validate_child_form_data
 
 router = APIRouter(prefix="/super-admin", tags=["super-admin"])
@@ -947,7 +947,7 @@ def promote_all_children_standards(
 ):
     children = db.query(Child).filter(Child.is_active.is_(True)).all()
     count = 0
-    today = date.today()
+    today = ist_today()
     for c in children:
         if c.standard:
             c.standard = promote_standard(c.standard)

@@ -7,6 +7,7 @@ from datetime import date, datetime
 from pathlib import Path
 from typing import Optional
 from PIL import Image, ImageOps
+from .weeks import ist_today
 
 STANDARDS = [
     "Jr KG",
@@ -34,7 +35,7 @@ def parse_dob_strict(dob_str: Optional[str]) -> tuple[Optional[date], Optional[s
     cleaned = dob_str.strip().replace("-", "/")
     try:
         dt = datetime.strptime(cleaned, "%d/%m/%Y").date()
-        today = date.today()
+        today = ist_today()
         if dt > today:
             return None, "", None
         age = today.year - dt.year - ((today.month, today.day) < (dt.month, dt.day))

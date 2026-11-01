@@ -17,7 +17,7 @@ from .deps import AuthRedirect
 from .models import Attendance, BalMandal, Branch, Child, StoredPhoto, User
 from .routers import auth, branch_admin, dossier, sanchalak, spotlight, super_admin
 from .seed import seed_if_empty
-from .weeks import current_week_info, format_dt, gujarati_month, week_number_for
+from .weeks import current_week_info, format_dt, gujarati_month, ist_today, week_number_for
 
 BASE_DIR = Path(__file__).resolve().parent
 UPLOAD_DIR = BASE_DIR / "static" / "uploads"
@@ -164,7 +164,7 @@ def on_startup():
             if not c.mobile_number:
                 c.mobile_number = "9876543210"
             if not c.dob_str and c.age:
-                birth_year = date.today().year - c.age
+                birth_year = ist_today().year - c.age
                 c.dob_str = f"15/06/{birth_year}"
                 c.dob = date(birth_year, 6, 15)
             if not c.standard and c.age:

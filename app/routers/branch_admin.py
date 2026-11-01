@@ -15,7 +15,7 @@ from ..database import UPLOAD_DIR, get_db
 from ..deps import role_required, safe_int
 from ..face_matcher import compare_face_photos
 from ..models import Attendance, BalMandal, Child, User
-from ..weeks import current_week_info, gujarati_month
+from ..weeks import current_week_info, format_dt, gujarati_month, ist_now, ist_today
 from ..child_utils import STANDARDS, parse_dob_strict, promote_standard, validate_child_form_data
 
 router = APIRouter(prefix="/branch-admin", tags=["branch-admin"])
@@ -676,7 +676,7 @@ def promote_branch_children_standards(
     bm_ids = [m.id for m in mandals]
     children = db.query(Child).filter(Child.bal_mandal_id.in_(bm_ids), Child.is_active.is_(True)).all()
     count = 0
-    today = date.today()
+    today = ist_today()
     for c in children:
         if c.standard:
             c.standard = promote_standard(c.standard)
@@ -900,7 +900,7 @@ def face_scan_submit(
     )
     if existing:
         att = existing
-        att.scanned_at = datetime.utcnow()
+        att.scanned_at = ist_now()
         if live_photo_name:
             att.scan_photo = live_photo_name
         att.status = "present"
@@ -913,7 +913,7 @@ def face_scan_submit(
             year=week["year"],
             month=week["month"],
             week_number=week["week_number"],
-            scanned_at=datetime.utcnow(),
+            scanned_at=ist_now(),
             scan_photo=live_photo_name,
             status="present",
             marked_by=user.id,
@@ -945,7 +945,7 @@ def face_scan_submit(
             "mandal_name": child.bal_mandal.name if child.bal_mandal else "",
         },
         "live_photo": live_photo_name,
-        "scanned_at_str": datetime.utcnow().strftime("%I:%M %p"),
+        "scanned_at_str": format_dt(att.scanned_at),
         "today_total": today_total,
         "message": "Attendance marked successfully!",
     })
@@ -981,7 +981,7 @@ def manual_attendance_submit(
             year=week["year"],
             month=week["month"],
             week_number=week["week_number"],
-            scanned_at=datetime.utcnow(),
+            scanned_at=ist_now(),
             status="present",
             marked_by=user.id,
         )

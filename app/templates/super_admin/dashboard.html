@@ -400,7 +400,7 @@
           </td>
           <td><b>{{ a.attendance_date.strftime('%d-%m-%Y') }}</b></td>
           <td>
-            <span class="text-secondary">{{ a.scanned_at.strftime('%I:%M %p') if a.scanned_at else '—' }}</span>
+            <span class="text-secondary">{{ format_dt(a.scanned_at) }}</span>
           </td>
           <td>
             <span class="badge badge-soft-success">

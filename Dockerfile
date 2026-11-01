@@ -16,6 +16,7 @@ COPY . .
 
 # Set default port and run command
 ENV PORT=8000
+ENV TZ=Asia/Kolkata
 EXPOSE 8000
 
 CMD ["sh", "-c", "uvicorn app.main:app --host 0.0.0.0 --port ${PORT}"]
