@@ -14,7 +14,7 @@ from datetime import date
 from .auth import ROLE_HOME, ROLE_LABEL, ROLE_THEME, heal_password_hashes
 from .database import Base, SessionLocal, engine, DATA_DIR
 from .deps import AuthRedirect
-from .models import Attendance, BalMandal, Branch, Child, StoredPhoto, User
+from .models import Attendance, BalMandal, Branch, Child, Event, StoredPhoto, User
 from .routers import auth, branch_admin, dossier, sanchalak, spotlight, super_admin
 from .seed import seed_if_empty
 from .weeks import current_week_info, format_dt, gujarati_month, ist_today, week_number_for

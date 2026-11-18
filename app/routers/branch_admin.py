@@ -7,14 +7,14 @@ from datetime import time as time_cls
 from fastapi import APIRouter, Depends, Form, Request
 from fastapi.responses import JSONResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
-from sqlalchemy import func
+from sqlalchemy import func, or_
 from sqlalchemy.orm import Session, joinedload
 
 from ..auth import hash_password
 from ..database import UPLOAD_DIR, get_db
 from ..deps import role_required, safe_int
 from ..face_matcher import compare_face_photos
-from ..models import Attendance, BalMandal, Child, User
+from ..models import Attendance, BalMandal, Child, Event, User
 from ..weeks import current_week_info, format_dt, gujarati_month, ist_now, ist_today
 from ..child_utils import STANDARDS, parse_dob_strict, promote_standard, validate_child_form_data
 
@@ -127,6 +127,19 @@ def dashboard(
         for r in mandal_rows
     ]
 
+    upcoming_events = (
+        db.query(Event)
+        .options(joinedload(Event.bal_mandal), joinedload(Event.creator))
+        .filter(
+            Event.is_active.is_(True),
+            Event.event_date >= ist_today(),
+            or_(Event.branch_id.is_(None), Event.branch_id == user.branch_id),
+        )
+        .order_by(Event.event_date.asc(), Event.event_time.asc())
+        .limit(6)
+        .all()
+    )
+
     return templates.TemplateResponse(
         "branch_admin/dashboard.html",
         _ctx(
@@ -141,6 +154,8 @@ def dashboard(
             mandal_rows=mandal_rows,
             chart_mandals=chart_mandals,
             today_scans=today_scans,
+            upcoming_events=upcoming_events,
+            mandals=mandals,
         ),
     )
 
@@ -1319,5 +1334,111 @@ def child_reactivate(
         child.is_active = True
         db.commit()
     return RedirectResponse("/branch-admin/children?reactivated=1", status_code=303)
+
+
+# --- EVENTS & SCHEDULES MANAGEMENT ---
+@router.get("/events")
+def events_list(
+    request: Request,
+    user: User = Depends(role_required("branch_admin")),
+    db: Session = Depends(get_db),
+    mandal_id: str | None = None,
+    filter_type: str | None = None,
+):
+    m_id = safe_int(mandal_id)
+    today = ist_today()
+    query = (
+        db.query(Event)
+        .options(joinedload(Event.bal_mandal), joinedload(Event.creator))
+        .filter(
+            Event.is_active.is_(True),
+            or_(Event.branch_id.is_(None), Event.branch_id == user.branch_id),
+        )
+    )
+    if m_id:
+        query = query.filter(Event.bal_mandal_id == m_id)
+
+    if filter_type == "past":
+        query = query.filter(Event.event_date < today).order_by(Event.event_date.desc(), Event.event_time.desc())
+    elif filter_type == "all":
+        query = query.order_by(Event.event_date.desc(), Event.event_time.desc())
+    else:
+        query = query.filter(Event.event_date >= today).order_by(Event.event_date.asc(), Event.event_time.asc())
+
+    events = query.all()
+    mandals = db.query(BalMandal).filter(BalMandal.branch_id == user.branch_id).order_by(BalMandal.name).all()
+
+    return templates.TemplateResponse(
+        "branch_admin/events.html",
+        _ctx(
+            request,
+            user,
+            active="events",
+            events=events,
+            mandals=mandals,
+            selected_mandal=m_id,
+            filter_type=filter_type or "upcoming",
+            today=today,
+        ),
+    )
+
+
+@router.post("/events/add")
+def event_add(
+    request: Request,
+    user: User = Depends(role_required("branch_admin")),
+    db: Session = Depends(get_db),
+    title: str = Form(...),
+    event_date: str = Form(...),
+    event_time: str = Form(""),
+    event_type: str = Form("Special Sabha"),
+    bal_mandal_id: str | None = Form(None),
+    location: str = Form(""),
+    description: str = Form(""),
+    next_url: str = Form("/branch-admin/events"),
+):
+    try:
+        e_date = date.fromisoformat(event_date.strip())
+    except (ValueError, TypeError):
+        e_date = ist_today()
+
+    m_id = safe_int(bal_mandal_id) if bal_mandal_id and bal_mandal_id != "all" else None
+
+    new_event = Event(
+        title=title.strip(),
+        description=description.strip() if description else "",
+        event_date=e_date,
+        event_time=event_time.strip() if event_time else "",
+        event_type=event_type.strip() if event_type else "Special Sabha",
+        location=location.strip() if location else "",
+        branch_id=user.branch_id,
+        bal_mandal_id=m_id,
+        target_role="all",
+        created_by_id=user.id,
+        is_active=True,
+    )
+    db.add(new_event)
+    db.commit()
+    redirect_to = next_url if next_url and next_url.startswith("/") else "/branch-admin/events"
+    sep = "&" if "?" in redirect_to else "?"
+    return RedirectResponse(f"{redirect_to}{sep}event_created=1", status_code=303)
+
+
+@router.post("/events/{event_id}/delete")
+def event_delete(
+    event_id: int,
+    request: Request,
+    user: User = Depends(role_required("branch_admin")),
+    db: Session = Depends(get_db),
+    next_url: str = Form("/branch-admin/events"),
+):
+    evt = db.get(Event, event_id)
+    if evt and (evt.created_by_id == user.id or evt.branch_id == user.branch_id):
+        db.delete(evt)
+        db.commit()
+    redirect_to = next_url if next_url and next_url.startswith("/") else "/branch-admin/events"
+    sep = "&" if "?" in redirect_to else "?"
+    return RedirectResponse(f"{redirect_to}{sep}event_deleted=1", status_code=303)
+
 
 

@@ -130,3 +130,26 @@ class StoredPhoto(Base):
     data_b64: Mapped[str] = mapped_column(Text)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=ist_now)
 
+
+class Event(Base):
+    __tablename__ = "events"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    title: Mapped[str] = mapped_column(String(150))
+    description: Mapped[Optional[str]] = mapped_column(Text, nullable=True, default="")
+    event_date: Mapped[date] = mapped_column(Date, index=True)
+    event_time: Mapped[Optional[str]] = mapped_column(String(30), nullable=True, default="")
+    event_type: Mapped[str] = mapped_column(String(50), default="Special Sabha")
+    location: Mapped[Optional[str]] = mapped_column(String(150), nullable=True, default="")
+    branch_id: Mapped[Optional[int]] = mapped_column(ForeignKey("branches.id"), nullable=True)
+    bal_mandal_id: Mapped[Optional[int]] = mapped_column(ForeignKey("bal_mandals.id"), nullable=True)
+    created_by_id: Mapped[int] = mapped_column(ForeignKey("users.id"))
+    target_role: Mapped[str] = mapped_column(String(30), default="all")  # all | branch_admin | sanchalak
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=ist_now)
+
+    branch = relationship("Branch", foreign_keys=[branch_id])
+    bal_mandal = relationship("BalMandal", foreign_keys=[bal_mandal_id])
+    creator = relationship("User", foreign_keys=[created_by_id])
+
+

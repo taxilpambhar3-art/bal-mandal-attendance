@@ -6,13 +6,13 @@ from datetime import date
 from fastapi import APIRouter, Depends, Form, Request
 from fastapi.responses import RedirectResponse
 from fastapi.templating import Jinja2Templates
-from sqlalchemy import func
+from sqlalchemy import func, or_
 from sqlalchemy.orm import Session, joinedload
 
 from ..auth import hash_password
 from ..database import get_db, UPLOAD_DIR
 from ..deps import role_required, safe_int
-from ..models import Attendance, BalMandal, Branch, Child, User
+from ..models import Attendance, BalMandal, Branch, Child, Event, User
 from ..weeks import current_week_info, format_dt, gujarati_month, ist_today
 from ..child_utils import STANDARDS, promote_standard, parse_dob_strict, validate_child_form_data
 
@@ -164,6 +164,16 @@ def dashboard(
         )
         week_stats.append({"week": w, "present": p, "rate": round((p / total_children) * 100) if total_children else 0})
 
+    upcoming_events = (
+        db.query(Event)
+        .options(joinedload(Event.branch), joinedload(Event.bal_mandal), joinedload(Event.creator))
+        .filter(Event.is_active.is_(True), Event.event_date >= ist_today())
+        .order_by(Event.event_date.asc(), Event.event_time.asc())
+        .limit(6)
+        .all()
+    )
+    all_mandals = db.query(BalMandal).order_by(BalMandal.name).all()
+
     return templates.TemplateResponse(
         "super_admin/dashboard.html",
         _ctx(
@@ -180,6 +190,9 @@ def dashboard(
             rate=rate,
             branch_rows=branch_rows,
             week_stats=week_stats,
+            upcoming_events=upcoming_events,
+            branches=branches,
+            all_mandals=all_mandals,
         ),
     )
 
@@ -1266,5 +1279,165 @@ def attendance_delete(
         db.delete(att)
         db.commit()
     return RedirectResponse("/super-admin/attendance", status_code=303)
+
+
+# --- EVENTS & SCHEDULES MANAGEMENT ---
+@router.get("/events")
+def events_list(
+    request: Request,
+    user: User = Depends(role_required("super_admin")),
+    db: Session = Depends(get_db),
+    branch_id: str | None = None,
+    filter_type: str | None = None,
+):
+    b_id = safe_int(branch_id)
+    query = db.query(Event).options(
+        joinedload(Event.branch),
+        joinedload(Event.bal_mandal),
+        joinedload(Event.creator),
+    ).filter(Event.is_active.is_(True))
+
+    if b_id:
+        query = query.filter(Event.branch_id == b_id)
+
+    today = ist_today()
+    if filter_type == "past":
+        query = query.filter(Event.event_date < today).order_by(Event.event_date.desc(), Event.event_time.desc())
+    elif filter_type == "all":
+        query = query.order_by(Event.event_date.desc(), Event.event_time.desc())
+    else:
+        query = query.filter(Event.event_date >= today).order_by(Event.event_date.asc(), Event.event_time.asc())
+
+    events = query.all()
+    branches = db.query(Branch).order_by(Branch.name).all()
+    mandals = db.query(BalMandal).order_by(BalMandal.name).all()
+
+    return templates.TemplateResponse(
+        "super_admin/events.html",
+        _ctx(
+            request,
+            user,
+            active="events",
+            events=events,
+            branches=branches,
+            mandals=mandals,
+            selected_branch=b_id,
+            filter_type=filter_type or "upcoming",
+            today=today,
+        ),
+    )
+
+
+@router.post("/events/add")
+def event_add(
+    request: Request,
+    user: User = Depends(role_required("super_admin")),
+    db: Session = Depends(get_db),
+    title: str = Form(...),
+    event_date: str = Form(...),
+    event_time: str = Form(""),
+    event_type: str = Form("Special Sabha"),
+    branch_id: str | None = Form(None),
+    bal_mandal_id: str | None = Form(None),
+    target_role: str = Form("all"),
+    location: str = Form(""),
+    description: str = Form(""),
+    next_url: str = Form("/super-admin/events"),
+):
+    try:
+        e_date = date.fromisoformat(event_date.strip())
+    except (ValueError, TypeError):
+        e_date = ist_today()
+
+    b_id = safe_int(branch_id) if branch_id and branch_id != "all" else None
+    m_id = safe_int(bal_mandal_id) if bal_mandal_id and bal_mandal_id != "all" else None
+
+    new_event = Event(
+        title=title.strip(),
+        description=description.strip() if description else "",
+        event_date=e_date,
+        event_time=event_time.strip() if event_time else "",
+        event_type=event_type.strip() if event_type else "Special Sabha",
+        location=location.strip() if location else "",
+        branch_id=b_id,
+        bal_mandal_id=m_id,
+        target_role=target_role.strip() if target_role else "all",
+        created_by_id=user.id,
+        is_active=True,
+    )
+    db.add(new_event)
+    db.commit()
+    redirect_to = next_url if next_url and next_url.startswith("/") else "/super-admin/events"
+    sep = "&" if "?" in redirect_to else "?"
+    return RedirectResponse(f"{redirect_to}{sep}event_created=1", status_code=303)
+
+
+@router.post("/events/{event_id}/delete")
+def event_delete(
+    event_id: int,
+    request: Request,
+    user: User = Depends(role_required("super_admin")),
+    db: Session = Depends(get_db),
+    next_url: str = Form("/super-admin/events"),
+):
+    evt = db.get(Event, event_id)
+    if evt:
+        db.delete(evt)
+        db.commit()
+    redirect_to = next_url if next_url and next_url.startswith("/") else "/super-admin/events"
+    sep = "&" if "?" in redirect_to else "?"
+    return RedirectResponse(f"{redirect_to}{sep}event_deleted=1", status_code=303)
+
+
+@router.post("/users/quick-add")
+def user_quick_add(
+    request: Request,
+    user: User = Depends(role_required("super_admin")),
+    db: Session = Depends(get_db),
+    role: str = Form(...),
+    full_name: str = Form(...),
+    username: str = Form(...),
+    password: str = Form(...),
+    mobile: str = Form(""),
+    branch_id: str | None = Form(None),
+    bal_mandal_id: str | None = Form(None),
+    next_url: str = Form("/super-admin/users"),
+):
+    clean_username = username.strip().lower()
+    clean_role = role.strip()
+    if clean_role not in ["branch_admin", "sanchalak"]:
+        clean_role = "branch_admin"
+
+    existing = db.query(User).filter(User.username == clean_username).first()
+    if existing:
+        redirect_to = next_url if next_url and next_url.startswith("/") else "/super-admin/users"
+        sep = "&" if "?" in redirect_to else "?"
+        return RedirectResponse(f"{redirect_to}{sep}error=username_exists", status_code=303)
+
+    b_id = safe_int(branch_id)
+    m_id = safe_int(bal_mandal_id)
+    if clean_role == "sanchalak" and m_id:
+        m = db.get(BalMandal, m_id)
+        if m and not b_id:
+            b_id = m.branch_id
+
+    pwd = password.strip()
+    new_user = User(
+        username=clean_username,
+        password_hash=hash_password(pwd),
+        plain_password=pwd,
+        full_name=full_name.strip() or clean_username,
+        mobile=mobile.strip() if mobile else None,
+        role=clean_role,
+        branch_id=b_id,
+        bal_mandal_id=m_id if clean_role == "sanchalak" else None,
+        is_active=True,
+    )
+    db.add(new_user)
+    db.commit()
+    redirect_to = next_url if next_url and next_url.startswith("/") else "/super-admin/users"
+    sep = "&" if "?" in redirect_to else "?"
+    return RedirectResponse(f"{redirect_to}{sep}user_created=1", status_code=303)
+
 
 
