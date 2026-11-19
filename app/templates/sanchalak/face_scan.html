@@ -2,6 +2,46 @@
 {% block title %}Face Scan Attendance — Bal Mandal{% endblock %}
 {% block sidenav %}{% include "sanchalak/_nav.html" %}{% endblock %}
 {% block content %}
+{% if event %}
+<!-- Special Event Top Announcement Banner -->
+<div class="panel p-3 mb-3 rounded-4 shadow-sm border bg-warning-subtle border-warning position-relative" style="border-left: 6px solid #f59e0b !important;">
+  <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+    <div>
+      <div class="d-flex align-items-center gap-2 mb-1 flex-wrap">
+        <span class="badge bg-warning text-dark fw-bold px-2 py-1">
+          <i class="bi bi-star-fill text-dark me-1"></i>SPECIAL EVENT ATTENDANCE / વિશેષ કાર્યક્રમ હાજરી
+        </span>
+        <span class="badge bg-white text-dark border">{{ event.event_type }}</span>
+        {% if not event.branch_id %}
+        <span class="badge bg-primary text-white"><i class="bi bi-shield-check me-1"></i>Super Admin Statewide</span>
+        {% endif %}
+        {% if event.is_completed %}
+        <span class="badge bg-success text-white"><i class="bi bi-check-circle-fill me-1"></i>Completed</span>
+        {% endif %}
+      </div>
+      <h5 class="fw-bold text-dark mb-0 d-flex align-items-center gap-2">
+        <i class="bi bi-camera-video-fill text-warning"></i>
+        <span>{{ event.title }}</span>
+      </h5>
+      <div class="small text-muted d-flex flex-wrap gap-3 align-items-center mt-1">
+        <span><i class="bi bi-calendar-event text-danger me-1"></i><b>{{ event.event_date.strftime('%d %B %Y') }}</b></span>
+        {% if event.event_time %}<span><i class="bi bi-clock-fill text-warning me-1"></i>{{ event.event_time }}</span>{% endif %}
+        {% if event.location %}<span><i class="bi bi-geo-alt-fill text-secondary me-1"></i>{{ event.location }}</span>{% endif %}
+      </div>
+    </div>
+    <div class="d-flex align-items-center gap-2">
+      <div class="bg-white px-3 py-2 rounded-3 border text-center shadow-xs">
+        <div class="fs-5 fw-bold text-success">{{ today_list|length }} <span class="fs-6 text-muted">/ {{ children|length }}</span></div>
+        <small class="text-muted fw-semibold">Event Attended</small>
+      </div>
+      <a href="/sanchalak/dashboard" class="btn btn-outline-dark btn-sm fw-bold shadow-xs">
+        <i class="bi bi-arrow-left me-1"></i>Back to Dashboard
+      </a>
+    </div>
+  </div>
+</div>
+{% endif %}
+
 <div class="face-scan-header d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
   <div>
     <h6 class="fw-bold mb-0">
@@ -244,17 +284,18 @@
         <input type="hidden" name="photo_data" id="photoData">
         <input type="hidden" name="client_verified" id="clientVerified">
         <input type="hidden" name="client_score" id="clientScore">
+        <input type="hidden" name="event_id" id="eventIdInput" value="{{ event.id if event else '' }}">
 
         <!-- Child Selector Dropdown -->
         <div class="mb-3">
           <label class="form-label small fw-bold text-secondary d-flex justify-content-between align-items-center">
             <span>Child Recognition Mode:</span>
-            <small class="text-primary fw-normal">Auto-Detect or select a specific child</small>
+            <small class="text-primary fw-normal">{% if event %}<b class="text-warning">Event Mode: {{ event.title }}</b>{% else %}Auto-Detect or select a specific child{% endif %}</small>
           </label>
           <select name="child_id" id="childSelect" class="form-select" onchange="onChildSelectionChange()">
             <option value="auto" selected>Auto-Detect Any Child in Mandal</option>
             {% if pending %}
-              <optgroup label="Remaining Children ({{ pending|length }})">
+              <optgroup label="{% if event %}Remaining for Event ({{ pending|length }}){% else %}Remaining Children ({{ pending|length }}){% endif %}">
                 {% for c in pending %}
                 <option value="{{ c.id }}" data-name="{{ c.name }}" data-code="{{ c.child_code }}" data-photo="{{ c.face_photo or '' }}" data-descriptor="{{ c.face_descriptor or '' }}">
                   {{ c.name }} ({{ c.child_code }}) {% if not c.face_photo %}[No Photo]{% endif %}
@@ -313,7 +354,7 @@
     <div class="panel h-100">
       <div class="d-flex justify-content-between align-items-center mb-3">
         <h6 class="mb-0 text-secondary">
-          <i class="bi bi-check2-circle text-success me-1"></i>Present Today (Verified)
+          <i class="bi bi-check2-circle text-success me-1"></i>{% if event %}Present for Event (Verified){% else %}Present Today (Verified){% endif %}
         </h6>
         <span class="badge badge-soft-success fw-bold" id="todayCountBadge">{{ today_list|length }}</span>
       </div>
@@ -1036,8 +1077,10 @@
       formData.append('child_id', pendingPromptData.childId);
       formData.append('client_verified', 'true');
       formData.append('client_score', pendingPromptData.score);
+      const activeEvtId = document.getElementById('eventIdInput')?.value;
+      if (activeEvtId) formData.append('event_id', activeEvtId);
 
-      const resp = await fetch('/sanchalak/face-scan?ajax=1', {
+      const resp = await fetch('/sanchalak/face-scan?ajax=1' + (activeEvtId ? '&event_id=' + encodeURIComponent(activeEvtId) : ''), {
         method: 'POST',
         body: formData,
         headers: { 'X-Requested-With': 'XMLHttpRequest' }
@@ -1175,8 +1218,10 @@
       formData.append('child_id', targetChildId);
       formData.append('client_verified', clientVerified);
       formData.append('client_score', score);
+      const activeEvtId = document.getElementById('eventIdInput')?.value;
+      if (activeEvtId) formData.append('event_id', activeEvtId);
 
-      const resp = await fetch('/sanchalak/face-scan?ajax=1', {
+      const resp = await fetch('/sanchalak/face-scan?ajax=1' + (activeEvtId ? '&event_id=' + encodeURIComponent(activeEvtId) : ''), {
         method: 'POST',
         body: formData,
         headers: {

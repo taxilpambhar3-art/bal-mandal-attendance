@@ -107,8 +107,8 @@
               {% endif %}
             </td>
             <td class="text-end">
-              <a href="/branch-admin/events/{{ evt.id }}/attendance" class="btn btn-outline-success btn-sm py-1 px-2" title="Record Event Attendance">
-                <i class="bi bi-calendar-check-fill"></i>
+              <a href="/branch-admin/face-scan?event_id={{ evt.id }}" class="btn btn-outline-success btn-sm py-1 px-2 fw-semibold" title="Face Scan Event Attendance">
+                <i class="bi bi-camera-video-fill me-1"></i>Face Scan
               </a>
               {% if evt.is_completed %}
               <form method="post" action="/branch-admin/events/{{ evt.id }}/uncomplete" class="d-inline">

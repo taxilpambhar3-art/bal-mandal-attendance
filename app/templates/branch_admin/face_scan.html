@@ -2,6 +2,47 @@
 {% block title %}Face Scan Attendance Kiosk — Branch Admin{% endblock %}
 {% block sidenav %}{% include "branch_admin/_nav.html" %}{% endblock %}
 {% block content %}
+{% if event %}
+<!-- Special Event Top Announcement Banner -->
+<div class="panel p-3 mb-3 rounded-4 shadow-sm border bg-warning-subtle border-warning position-relative" style="border-left: 6px solid #f59e0b !important;">
+  <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+    <div>
+      <div class="d-flex align-items-center gap-2 mb-1 flex-wrap">
+        <span class="badge bg-warning text-dark fw-bold px-2 py-1">
+          <i class="bi bi-star-fill text-dark me-1"></i>SPECIAL EVENT ATTENDANCE / વિશેષ કાર્યક્રમ હાજરી
+        </span>
+        <span class="badge bg-white text-dark border">{{ event.event_type }}</span>
+        {% if not event.branch_id %}
+        <span class="badge bg-primary text-white"><i class="bi bi-shield-check me-1"></i>Super Admin Statewide</span>
+        {% endif %}
+        {% if event.is_completed %}
+        <span class="badge bg-success text-white"><i class="bi bi-check-circle-fill me-1"></i>Completed</span>
+        {% endif %}
+      </div>
+      <h5 class="fw-bold text-dark mb-0 d-flex align-items-center gap-2">
+        <i class="bi bi-camera-video-fill text-warning"></i>
+        <span>{{ event.title }}</span>
+      </h5>
+      <div class="small text-muted d-flex flex-wrap gap-3 align-items-center mt-1">
+        <span><i class="bi bi-calendar-event text-danger me-1"></i><b>{{ event.event_date.strftime('%d %B %Y') }}</b></span>
+        {% if event.event_time %}<span><i class="bi bi-clock-fill text-warning me-1"></i>{{ event.event_time }}</span>{% endif %}
+        {% if event.location %}<span><i class="bi bi-geo-alt-fill text-secondary me-1"></i>{{ event.location }}</span>{% endif %}
+      </div>
+    </div>
+    <div class="d-flex align-items-center gap-2">
+      <div class="bg-white px-3 py-2 rounded-3 border text-center shadow-xs">
+        <div class="fs-5 fw-bold text-success">{{ today_list|length }} <span class="fs-6 text-muted">/ {{ children|length }}</span></div>
+        <small class="text-muted fw-semibold">Event Attended</small>
+      </div>
+      <a href="/branch-admin/dashboard" class="btn btn-outline-dark btn-sm fw-bold shadow-xs">
+        <i class="bi bi-arrow-left me-1"></i>Back to Dashboard
+      </a>
+    </div>
+  </div>
+</div>
+{% endif %}
+<input type="hidden" name="event_id" id="eventIdInput" value="{{ event.id if event else '' }}">
+
 <div class="face-scan-header d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
   <div>
     <h5 class="fw-bold mb-0">
@@ -15,7 +56,7 @@
     <!-- Mandal Switcher Dropdown -->
     <div class="d-flex align-items-center gap-1 bg-light py-1 px-3 border rounded-pill shadow-sm">
       <span class="text-secondary small fw-bold"><i class="bi bi-diagram-3-fill text-primary me-1"></i>Mandal:</span>
-      <select id="mandalSelector" class="form-select form-select-sm border-0 bg-transparent fw-bold text-dark py-0 ps-1 pe-4" style="width:auto;cursor:pointer;font-size:12px;" onchange="window.location.href='/branch-admin/face-scan' + (this.value ? '?mandal_id=' + this.value : '')">
+      <select id="mandalSelector" class="form-select form-select-sm border-0 bg-transparent fw-bold text-dark py-0 ps-1 pe-4" style="width:auto;cursor:pointer;font-size:12px;" onchange="window.location.href='/branch-admin/face-scan?' + (this.value ? 'mandal_id=' + this.value : '') + '{% if event %}&event_id={{ event.id }}{% endif %}'">
         <option value="" {% if not selected_mandal %}selected{% endif %}>All Bal Mandals</option>
         {% for m in mandals %}
         <option value="{{ m.id }}" {% if selected_mandal and selected_mandal.id == m.id %}selected{% endif %}>
@@ -272,7 +313,7 @@
       <div>
         <div class="d-flex justify-content-between align-items-center mb-3">
           <h6 class="mb-0 fw-bold">
-            <i class="bi bi-check2-circle text-success me-1"></i>Today's Attendance List
+            <i class="bi bi-check2-circle text-success me-1"></i>{% if event %}Event Attendance List{% else %}Today's Attendance List{% endif %}
           </h6>
           <span class="badge badge-soft-success px-3 py-2 fw-bold" id="todayCountBadge">
             Total Present: {{ today_list|length }}
@@ -863,15 +904,17 @@ window.confirmPromptAttendance = async function() {
   isPromptOpen = false;
 
   const selectedMandalId = document.getElementById('mandalSelector')?.value;
+  const activeEvtId = document.getElementById('eventIdInput')?.value;
   const formData = new FormData();
   formData.append('photo_data', pendingPromptData.photoData);
   formData.append('child_id', pendingPromptData.childId);
   formData.append('client_verified', 'true');
   formData.append('client_score', pendingPromptData.score);
   if (selectedMandalId) formData.append('mandal_id', selectedMandalId);
+  if (activeEvtId) formData.append('event_id', activeEvtId);
 
   try {
-    const res = await fetch('/branch-admin/face-scan?ajax=1', {
+    const res = await fetch('/branch-admin/face-scan?ajax=1' + (activeEvtId ? '&event_id=' + encodeURIComponent(activeEvtId) : ''), {
       method: 'POST',
       body: formData,
       headers: { 'X-Requested-With': 'XMLHttpRequest' }
@@ -954,14 +997,16 @@ async function captureAndVerify() {
       const score = distanceToConfidence(bestMatch.distance);
 
       const selectedMandalId = document.getElementById('mandalSelector')?.value;
+      const activeEvtId = document.getElementById('eventIdInput')?.value;
       const formData = new FormData();
       formData.append('photo_data', photoData);
       formData.append('child_id', matchedChildId);
       formData.append('client_verified', 'true');
       formData.append('client_score', score);
       if (selectedMandalId) formData.append('mandal_id', selectedMandalId);
+      if (activeEvtId) formData.append('event_id', activeEvtId);
 
-      const res = await fetch('/branch-admin/face-scan?ajax=1', {
+      const res = await fetch('/branch-admin/face-scan?ajax=1' + (activeEvtId ? '&event_id=' + encodeURIComponent(activeEvtId) : ''), {
         method: 'POST',
         body: formData,
         headers: { 'X-Requested-With': 'XMLHttpRequest' }

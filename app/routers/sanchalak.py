@@ -185,17 +185,35 @@ def face_scan(
     request: Request,
     user: User = Depends(role_required("sanchalak")),
     db: Session = Depends(get_db),
+    event_id: str | None = None,
 ):
-    week = current_week_info()
-    today_list = (
-        db.query(Attendance)
-        .filter(
-            Attendance.bal_mandal_id == user.bal_mandal_id,
-            Attendance.attendance_date == week["date"],
+    e_id = safe_int(event_id)
+    event = db.get(Event, e_id) if e_id else None
+
+    if event:
+        target_date = event.event_date
+        week = current_week_info(target_date)
+        today_list = (
+            db.query(Attendance)
+            .filter(
+                Attendance.bal_mandal_id == user.bal_mandal_id,
+                or_(Attendance.event_id == event.id, Attendance.attendance_date == target_date),
+            )
+            .order_by(Attendance.scanned_at.desc())
+            .all()
         )
-        .order_by(Attendance.scanned_at.desc())
-        .all()
-    )
+    else:
+        week = current_week_info()
+        today_list = (
+            db.query(Attendance)
+            .filter(
+                Attendance.bal_mandal_id == user.bal_mandal_id,
+                Attendance.attendance_date == week["date"],
+            )
+            .order_by(Attendance.scanned_at.desc())
+            .all()
+        )
+
     children = (
         db.query(Child)
         .filter(Child.bal_mandal_id == user.bal_mandal_id, Child.is_active.is_(True))
@@ -213,6 +231,7 @@ def face_scan(
             today_list=today_list,
             children=children,
             pending=pending,
+            event=event,
             result=None,
             error=None,
         ),
@@ -226,10 +245,20 @@ def face_scan_submit(
     db: Session = Depends(get_db),
     photo_data: str = Form(""),
     child_id: str = Form(...),
+    event_id: str | None = Form(None),
     client_verified: str | None = Form(None),
     client_score: str | None = Form(None),
 ):
-    week = current_week_info()
+    e_id = safe_int(event_id) or safe_int(request.query_params.get("event_id"))
+    event = db.get(Event, e_id) if e_id else None
+
+    if event:
+        target_date = event.event_date
+        week = current_week_info(target_date)
+    else:
+        target_date = ist_today()
+        week = current_week_info(target_date)
+
     live_photo_name = _save_data_url(photo_data, prefix="scan_live")
     live_path = UPLOAD_DIR / (live_photo_name or "")
 
@@ -425,11 +454,22 @@ def face_scan_submit(
             )
 
     # If MATCHED -> Mark attendance as PRESENT
-    existing = (
-        db.query(Attendance)
-        .filter(Attendance.child_id == child.id, Attendance.attendance_date == week["date"])
-        .first()
-    )
+    if event:
+        existing = (
+            db.query(Attendance)
+            .filter(
+                Attendance.child_id == child.id,
+                or_(Attendance.event_id == event.id, Attendance.attendance_date == target_date),
+            )
+            .first()
+        )
+    else:
+        existing = (
+            db.query(Attendance)
+            .filter(Attendance.child_id == child.id, Attendance.attendance_date == week["date"])
+            .first()
+        )
+
     if existing:
         att = existing
         att.scanned_at = ist_now()
@@ -437,11 +477,18 @@ def face_scan_submit(
             att.scan_photo = live_photo_name
         att.status = "present"
         att.marked_by = user.id
+        if event:
+            att.event_id = event.id
+            att.attendance_date = target_date
+            att.year = week["year"]
+            att.month = week["month"]
+            att.week_number = week["week_number"]
     else:
         att = Attendance(
             child_id=child.id,
-            bal_mandal_id=user.bal_mandal_id,
-            attendance_date=week["date"],
+            bal_mandal_id=child.bal_mandal_id or user.bal_mandal_id,
+            event_id=event.id if event else None,
+            attendance_date=target_date,
             year=week["year"],
             month=week["month"],
             week_number=week["week_number"],
@@ -454,19 +501,32 @@ def face_scan_submit(
     db.commit()
 
     if is_ajax:
-        today_total = (
-            db.query(Attendance)
-            .filter(
-                Attendance.bal_mandal_id == user.bal_mandal_id,
-                Attendance.attendance_date == week["date"],
+        if event:
+            today_total = (
+                db.query(Attendance)
+                .filter(
+                    Attendance.bal_mandal_id == user.bal_mandal_id,
+                    or_(Attendance.event_id == event.id, Attendance.attendance_date == target_date),
+                    Attendance.status == "present",
+                )
+                .count()
             )
-            .count()
-        )
+        else:
+            today_total = (
+                db.query(Attendance)
+                .filter(
+                    Attendance.bal_mandal_id == user.bal_mandal_id,
+                    Attendance.attendance_date == week["date"],
+                    Attendance.status == "present",
+                )
+                .count()
+            )
         return JSONResponse({
             "success": True,
             "is_match": True,
             "confidence": match_result["confidence"],
             "attendance_id": att.id,
+            "event_id": event.id if event else None,
             "child": {
                 "id": child.id,
                 "name": child.name,
@@ -479,8 +539,11 @@ def face_scan_submit(
             "live_photo": live_photo_name,
             "scanned_at_str": format_dt(att.scanned_at),
             "today_total": today_total,
-            "message": "Attendance marked successfully!",
+            "message": f"Attendance marked for {child.name}!" + (f" ({event.title})" if event else ""),
         })
+
+    if event:
+        return RedirectResponse(f"/sanchalak/face-scan?event_id={event.id}", status_code=303)
 
     return templates.TemplateResponse(
         "sanchalak/face_result.html",
@@ -1266,43 +1329,9 @@ def event_uncomplete(
 @router.get("/events/{event_id}/attendance")
 def event_attendance_view(
     event_id: int,
-    request: Request,
     user: User = Depends(role_required("sanchalak")),
-    db: Session = Depends(get_db),
 ):
-    evt = db.get(Event, event_id)
-    if not evt:
-        return RedirectResponse("/sanchalak/dashboard", status_code=303)
-
-    children = (
-        db.query(Child)
-        .filter(Child.bal_mandal_id == user.bal_mandal_id, Child.is_active.is_(True))
-        .order_by(Child.name)
-        .all()
-    )
-
-    records = (
-        db.query(Attendance)
-        .filter(
-            Attendance.bal_mandal_id == user.bal_mandal_id,
-            Attendance.attendance_date == evt.event_date,
-        )
-        .all()
-    )
-    present_child_ids = {a.child_id for a in records if a.status == "present"}
-
-    return templates.TemplateResponse(
-        "sanchalak/event_attendance.html",
-        _ctx(
-            request,
-            user,
-            active="events",
-            event=evt,
-            children=children,
-            present_child_ids=present_child_ids,
-            records=records,
-        ),
-    )
+    return RedirectResponse(f"/sanchalak/face-scan?event_id={event_id}", status_code=303)
 
 
 @router.post("/events/{event_id}/attendance")
