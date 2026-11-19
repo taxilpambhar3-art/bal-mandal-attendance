@@ -3,7 +3,7 @@
 <!-- Top App Navigation -->
 <div class="appnav" style="--nav-bg: {{ ROLE_THEME[user.role] }}; background: {{ ROLE_THEME[user.role] }};">
   <!-- Mobile Hamburger Button -->
-  <button class="btn btn-link text-white d-md-none p-1 me-2 border-0 shadow-none text-decoration-none" 
+  <button class="d-md-none text-white border-0 bg-transparent p-1 me-2 shadow-none text-decoration-none" 
           type="button" 
           data-bs-toggle="offcanvas" 
           data-bs-target="#mobileOffcanvasNav" 
@@ -67,7 +67,7 @@
     </div>
     <div class="p-3 border-top mt-auto bg-light rounded-3">
       <div class="small text-muted mb-2">Signed in as <b>{{ user.username }}</b></div>
-      <a href="/logout" class="btn btn-danger btn-sm w-100 fw-bold py-2">
+      <a href="/logout" class="btn btn-outline-secondary btn-sm w-100 fw-semibold text-danger border-danger-subtle">
         <i class="bi bi-box-arrow-right me-1"></i> Sign Out
       </a>
     </div>
@@ -112,7 +112,7 @@
       <i class="bi bi-calendar-check"></i>
       <span>Reports</span>
     </a>
-    <button type="button" class="bottom-nav-item btn border-0 p-0" data-bs-toggle="offcanvas" data-bs-target="#mobileOffcanvasNav">
+    <button type="button" class="bottom-nav-item border-0 p-0" data-bs-toggle="offcanvas" data-bs-target="#mobileOffcanvasNav">
       <i class="bi bi-grid"></i>
       <span>Menu</span>
     </button>
@@ -133,7 +133,7 @@
       <i class="bi bi-people"></i>
       <span>Children</span>
     </a>
-    <button type="button" class="bottom-nav-item btn border-0 p-0" data-bs-toggle="offcanvas" data-bs-target="#mobileOffcanvasNav">
+    <button type="button" class="bottom-nav-item border-0 p-0" data-bs-toggle="offcanvas" data-bs-target="#mobileOffcanvasNav">
       <i class="bi bi-grid"></i>
       <span>Menu</span>
     </button>
@@ -154,7 +154,7 @@
       <i class="bi bi-camera-video"></i>
       <span>Live Scans</span>
     </a>
-    <button type="button" class="bottom-nav-item btn border-0 p-0" data-bs-toggle="offcanvas" data-bs-target="#mobileOffcanvasNav">
+    <button type="button" class="bottom-nav-item border-0 p-0" data-bs-toggle="offcanvas" data-bs-target="#mobileOffcanvasNav">
       <i class="bi bi-grid"></i>
       <span>Menu</span>
     </button>
@@ -178,7 +178,7 @@
         <div id="spotlightLoader" class="spinner-border spinner-border-sm text-primary me-2 d-none" role="status">
           <span class="visually-hidden">Loading...</span>
         </div>
-        <button type="button" id="spotlightClearBtn" class="btn btn-sm btn-link text-muted p-1 text-decoration-none d-none" onclick="clearSpotlightInput()">
+        <button type="button" id="spotlightClearBtn" class="border-0 bg-transparent text-muted p-1 text-decoration-none d-none" onclick="clearSpotlightInput()" aria-label="Clear search">
           <i class="bi bi-x-circle-fill fs-5"></i>
         </button>
         <button type="button" class="btn-close me-1" data-bs-dismiss="modal" aria-label="Close"></button>
@@ -216,7 +216,7 @@
       <!-- Modal Header -->
       <div class="p-3 px-4 border-bottom d-flex align-items-center justify-content-between bg-light-subtle">
         <div class="d-flex align-items-center gap-2 flex-grow-1 overflow-hidden me-2">
-          <button type="button" id="dossierBackBtn" class="btn btn-sm btn-outline-secondary py-1 px-2 d-none" onclick="dossierBack()" title="Back to previous dossier">
+          <button type="button" id="dossierBackBtn" class="btn btn-outline-secondary btn-sm d-none" onclick="dossierBack()" title="Back to previous dossier">
             <i class="bi bi-arrow-left me-1"></i>Back
           </button>
           <span id="dossierBadge" class="badge bg-danger-subtle text-danger border border-danger-subtle px-2 py-1 font-monospace" style="font-size: 11px;">
@@ -227,10 +227,10 @@
           </h6>
         </div>
         <div class="d-flex align-items-center gap-2 flex-shrink-0">
-          <button type="button" class="btn btn-outline-dark btn-sm py-1 px-2" onclick="printDossierModal()" title="Print Dossier">
+          <button type="button" class="btn btn-outline-secondary btn-sm" onclick="printDossierModal()" title="Print Dossier">
             <i class="bi bi-printer"></i>
           </button>
-          <a id="dossierNewTabLink" href="#" target="_blank" class="btn btn-outline-secondary btn-sm py-1 px-2" title="Open full dossier in new tab">
+          <a id="dossierNewTabLink" href="#" target="_blank" class="btn btn-outline-secondary btn-sm" title="Open full dossier in new tab">
             <i class="bi bi-box-arrow-up-right"></i>
           </a>
           <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
@@ -859,9 +859,9 @@ function renderChildDossierModal(c) {
             Gender: <b>${escapeHtml(c.gender)}</b>
           </div>
           <div class="d-flex gap-2 flex-wrap">
-            ${c.call_url ? `<a href="${c.call_url}" class="btn btn-sm btn-outline-primary py-1 px-2 fw-semibold" style="font-size:11px;"><i class="bi bi-telephone-fill me-1"></i>Call (${escapeHtml(c.mobile_number)})</a>` : ''}
-            ${c.whatsapp_url ? `<a href="${c.whatsapp_url}" target="_blank" class="btn btn-sm btn-success py-1 px-2 fw-semibold" style="font-size:11px;"><i class="bi bi-whatsapp me-1"></i>WhatsApp</a>` : ''}
-            ${c.edit_url ? `<a href="${c.edit_url}" class="btn btn-sm btn-outline-secondary py-1 px-2 fw-semibold" style="font-size:11px;"><i class="bi bi-pencil-square me-1"></i>Edit Profile</a>` : ''}
+            ${c.call_url ? `<a href="${c.call_url}" class="btn btn-outline-primary btn-sm fw-semibold"><i class="bi bi-telephone-fill me-1"></i>Call (${escapeHtml(c.mobile_number)})</a>` : ''}
+            ${c.whatsapp_url ? `<a href="${c.whatsapp_url}" target="_blank" class="btn btn-outline-secondary btn-sm fw-semibold"><i class="bi bi-whatsapp text-success me-1"></i>WhatsApp</a>` : ''}
+            ${c.edit_url ? `<a href="${c.edit_url}" class="btn btn-outline-secondary btn-sm fw-semibold"><i class="bi bi-pencil-square me-1"></i>Edit Profile</a>` : ''}
           </div>
         </div>
       </div>
@@ -1035,7 +1035,7 @@ function renderMandalDossierModal(m) {
           </div>
         </div>
         <div>
-          ${m.edit_url ? `<a href="${m.edit_url}" class="btn btn-sm btn-outline-secondary fw-semibold py-1 px-2" style="font-size:11.5px;"><i class="bi bi-pencil-square me-1"></i>Edit Mandal</a>` : ''}
+          ${m.edit_url ? `<a href="${m.edit_url}" class="btn btn-outline-secondary btn-sm fw-semibold"><i class="bi bi-pencil-square me-1"></i>Edit Mandal</a>` : ''}
         </div>
       </div>
 
@@ -1051,8 +1051,8 @@ function renderMandalDossierModal(m) {
           </div>
         </div>
         <div class="d-flex gap-2">
-          ${m.sanchalak && m.sanchalak.call_url ? `<a href="${m.sanchalak.call_url}" class="btn btn-sm btn-outline-primary py-1 px-2 fw-semibold" style="font-size:11px;"><i class="bi bi-telephone-fill me-1"></i>Call</a>` : ''}
-          ${m.sanchalak && m.sanchalak.whatsapp_url ? `<a href="${m.sanchalak.whatsapp_url}" target="_blank" class="btn btn-sm btn-success py-1 px-2 fw-semibold" style="font-size:11px;"><i class="bi bi-whatsapp me-1"></i>WhatsApp</a>` : ''}
+          ${m.sanchalak && m.sanchalak.call_url ? `<a href="${m.sanchalak.call_url}" class="btn btn-outline-primary btn-sm fw-semibold"><i class="bi bi-telephone-fill me-1"></i>Call</a>` : ''}
+          ${m.sanchalak && m.sanchalak.whatsapp_url ? `<a href="${m.sanchalak.whatsapp_url}" target="_blank" class="btn btn-outline-secondary btn-sm fw-semibold"><i class="bi bi-whatsapp text-success me-1"></i>WhatsApp</a>` : ''}
         </div>
       </div>
     </div>
@@ -1167,7 +1167,7 @@ function renderBranchDossierModal(b) {
           </p>
         </div>
         <div>
-          ${b.edit_url ? `<a href="${b.edit_url}" class="btn btn-sm btn-outline-secondary fw-semibold py-1 px-2" style="font-size:11.5px;"><i class="bi bi-pencil-square me-1"></i>Edit Branch</a>` : ''}
+          ${b.edit_url ? `<a href="${b.edit_url}" class="btn btn-outline-secondary btn-sm fw-semibold"><i class="bi bi-pencil-square me-1"></i>Edit Branch</a>` : ''}
         </div>
       </div>
     </div>

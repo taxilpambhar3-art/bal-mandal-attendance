@@ -539,6 +539,19 @@ table.mock tbody tr:hover {
   box-shadow: 0 4px 12px -2px rgba(172, 43, 49, 0.35);
 }
 
+.btn-outline-secondary {
+  color: #475569;
+  border-color: #cbd5e1;
+  background-color: transparent;
+}
+.btn-outline-secondary:hover,
+.btn-outline-secondary:focus,
+.btn-outline-secondary:active {
+  background-color: #f1f5f9;
+  border-color: #94a3b8;
+  color: #1e293b !important;
+}
+
 .hover-card {
   transition: all 0.2s ease;
 }

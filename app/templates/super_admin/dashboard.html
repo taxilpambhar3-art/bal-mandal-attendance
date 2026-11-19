@@ -12,16 +12,16 @@
     </small>
   </div>
   <div class="d-flex gap-2 flex-wrap">
-    <button type="button" class="btn btn-primary btn-sm fw-bold shadow-sm px-3 py-2" data-bs-toggle="modal" data-bs-target="#addEventModal">
+    <button type="button" class="btn btn-primary btn-sm fw-semibold" data-bs-toggle="modal" data-bs-target="#addEventModal">
       <i class="bi bi-calendar-plus-fill me-1"></i>Add Event
     </button>
-    <button type="button" class="btn btn-outline-primary btn-sm fw-semibold shadow-sm px-3 py-2 bg-white" data-bs-toggle="modal" data-bs-target="#addUserModal">
+    <button type="button" class="btn btn-outline-primary btn-sm fw-semibold" data-bs-toggle="modal" data-bs-target="#addUserModal">
       <i class="bi bi-person-plus-fill me-1"></i>Add Staff
     </button>
-    <a href="/super-admin/branches/add" class="btn btn-outline-primary btn-sm fw-semibold shadow-sm px-3 py-2 bg-white">
+    <a href="/super-admin/branches/add" class="btn btn-outline-primary btn-sm fw-semibold">
       <i class="bi bi-building-add me-1"></i>Add Branch
     </a>
-    <a href="/super-admin/credentials" class="btn btn-outline-secondary btn-sm fw-semibold shadow-sm px-3 py-2 bg-white">
+    <a href="/super-admin/credentials" class="btn btn-outline-secondary btn-sm fw-semibold">
       <i class="bi bi-key-fill text-secondary me-1"></i>Login ID & Passwords
     </a>
   </div>
@@ -75,23 +75,23 @@
 
   <!-- Action Buttons on Top Banner (Grouped together with proximity) -->
   <div class="d-flex align-items-center gap-2 flex-wrap pt-2 border-top">
-    <a href="/super-admin/events/{{ featured_event.id }}/attendance" class="btn btn-primary btn-sm fw-bold shadow-sm px-3 py-2">
+    <a href="/super-admin/events/{{ featured_event.id }}/attendance" class="btn btn-primary btn-sm fw-semibold">
       <i class="bi bi-bar-chart-fill me-1"></i>View Event Attendance Report
     </a>
-    <a href="/super-admin/events" class="btn btn-outline-primary btn-sm fw-semibold bg-white px-3 py-2">
+    <a href="/super-admin/events" class="btn btn-outline-primary btn-sm fw-semibold">
       <i class="bi bi-calendar-range me-1"></i>All Events
     </a>
     {% if featured_event.is_completed %}
     <form method="post" action="/super-admin/events/{{ featured_event.id }}/uncomplete" class="d-inline">
       <input type="hidden" name="next_url" value="/super-admin/dashboard">
-      <button type="submit" class="btn btn-outline-secondary btn-sm px-3 py-2" title="Reopen event">
+      <button type="submit" class="btn btn-outline-secondary btn-sm fw-semibold" title="Reopen event">
         <i class="bi bi-arrow-counterclockwise me-1"></i>Reopen
       </button>
     </form>
     {% else %}
     <form method="post" action="/super-admin/events/{{ featured_event.id }}/complete" onsubmit="return confirm('Mark this event as completed?');" class="d-inline">
       <input type="hidden" name="next_url" value="/super-admin/dashboard">
-      <button type="submit" class="btn btn-primary btn-sm fw-bold shadow-sm px-3 py-2">
+      <button type="submit" class="btn btn-primary btn-sm fw-semibold">
         <i class="bi bi-check-circle-fill me-1"></i>Mark Completed (પૂર્ણ કરો)
       </button>
     </form>
@@ -181,8 +181,8 @@
           <small class="text-muted" style="font-size:12px;">By: {{ evt.creator.full_name if evt.creator else 'Admin' }}</small>
           <form method="post" action="/super-admin/events/{{ evt.id }}/delete" onsubmit="return confirm('Delete this event?');" class="d-inline">
             <input type="hidden" name="next_url" value="/super-admin/dashboard">
-            <button type="submit" class="btn btn-link text-danger p-0 text-decoration-none" title="Delete Event" style="font-size:12px;">
-              <i class="bi bi-trash"></i>
+            <button type="submit" class="btn btn-outline-secondary btn-sm" title="Delete Event" aria-label="Delete Event">
+              <i class="bi bi-trash text-danger"></i>
             </button>
           </form>
         </div>
@@ -364,11 +364,11 @@
               <i class="bi bi-person-badge text-primary me-1"></i>Admin: <b>{{ r.admin.full_name if r.admin else 'Not Assigned' }}</b>{% if r.admin and r.admin.mobile %} ({{ r.admin.mobile }}){% endif %}
             </small>
           </div>
-          <div class="d-flex gap-1">
-            <a href="javascript:void(0)" onclick="openDossier('branch', {{ r.branch.id }})" class="btn btn-sm btn-outline-danger fw-semibold py-1 px-2" style="font-size:12px;" title="Open Branch Dossier">
+          <div class="d-flex gap-2">
+            <a href="javascript:void(0)" onclick="openDossier('branch', {{ r.branch.id }})" class="btn btn-outline-secondary btn-sm fw-semibold" title="Open Branch Dossier">
               <i class="bi bi-file-earmark-person me-1"></i>Dossier
             </a>
-            <a href="/super-admin/branches/{{ r.branch.id }}/summary" class="btn btn-sm btn-outline-primary fw-semibold py-1 px-2" style="font-size:12px;">
+            <a href="/super-admin/branches/{{ r.branch.id }}/summary" class="btn btn-outline-primary btn-sm fw-semibold">
               Summary <i class="bi bi-arrow-right-short"></i>
             </a>
           </div>
@@ -689,8 +689,8 @@ document.addEventListener("DOMContentLoaded", function() {
           </div>
         </div>
         <div class="modal-footer bg-light rounded-bottom-3 py-2">
-          <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
-          <button type="submit" class="btn btn-primary btn-sm fw-bold px-4">
+          <button type="button" class="btn btn-outline-secondary btn-sm fw-semibold" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-primary btn-sm fw-semibold">
             <i class="bi bi-check-circle-fill me-1"></i>Save & Publish Event
           </button>
         </div>
@@ -764,8 +764,8 @@ document.addEventListener("DOMContentLoaded", function() {
           </div>
         </div>
         <div class="modal-footer bg-light rounded-bottom-3 py-2">
-          <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
-          <button type="submit" class="btn btn-primary btn-sm fw-bold px-4">
+          <button type="button" class="btn btn-outline-secondary btn-sm fw-semibold" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-primary btn-sm fw-semibold">
             <i class="bi bi-check-circle-fill me-1"></i>Create Account
           </button>
         </div>
