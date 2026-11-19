@@ -174,6 +174,30 @@ def dashboard(
     )
     all_mandals = db.query(BalMandal).order_by(BalMandal.name).all()
 
+    featured_event = (
+        db.query(Event)
+        .options(joinedload(Event.creator), joinedload(Event.branch), joinedload(Event.bal_mandal))
+        .filter(Event.is_active.is_(True))
+        .order_by(Event.is_completed.asc(), Event.event_date.asc(), Event.event_time.asc())
+        .first()
+    )
+    featured_event_stats = None
+    if featured_event:
+        evt_present_count = (
+            db.query(func.count(Attendance.id))
+            .filter(
+                Attendance.attendance_date == featured_event.event_date,
+                Attendance.status == "present",
+            )
+            .scalar()
+            or 0
+        )
+        featured_event_stats = {
+            "present_count": evt_present_count,
+            "total_children": total_children,
+            "rate": min(round((evt_present_count / total_children) * 100, 1), 100.0) if total_children else 0,
+        }
+
     return templates.TemplateResponse(
         "super_admin/dashboard.html",
         _ctx(
@@ -191,6 +215,8 @@ def dashboard(
             branch_rows=branch_rows,
             week_stats=week_stats,
             upcoming_events=upcoming_events,
+            featured_event=featured_event,
+            featured_event_stats=featured_event_stats,
             branches=branches,
             all_mandals=all_mandals,
         ),
@@ -1438,6 +1464,100 @@ def user_quick_add(
     redirect_to = next_url if next_url and next_url.startswith("/") else "/super-admin/users"
     sep = "&" if "?" in redirect_to else "?"
     return RedirectResponse(f"{redirect_to}{sep}user_created=1", status_code=303)
+
+
+@router.post("/events/{event_id}/complete")
+def event_complete(
+    event_id: int,
+    request: Request,
+    user: User = Depends(role_required("super_admin")),
+    db: Session = Depends(get_db),
+    next_url: str = Form("/super-admin/dashboard"),
+):
+    evt = db.get(Event, event_id)
+    if evt:
+        evt.is_completed = True
+        evt.completed_at = ist_now()
+        evt.completed_by_id = user.id
+        db.commit()
+    redirect_to = next_url if next_url and next_url.startswith("/") else "/super-admin/dashboard"
+    sep = "&" if "?" in redirect_to else "?"
+    return RedirectResponse(f"{redirect_to}{sep}event_completed=1", status_code=303)
+
+
+@router.post("/events/{event_id}/uncomplete")
+def event_uncomplete(
+    event_id: int,
+    request: Request,
+    user: User = Depends(role_required("super_admin")),
+    db: Session = Depends(get_db),
+    next_url: str = Form("/super-admin/dashboard"),
+):
+    evt = db.get(Event, event_id)
+    if evt:
+        evt.is_completed = False
+        evt.completed_at = None
+        db.commit()
+    redirect_to = next_url if next_url and next_url.startswith("/") else "/super-admin/dashboard"
+    sep = "&" if "?" in redirect_to else "?"
+    return RedirectResponse(f"{redirect_to}{sep}event_reopened=1", status_code=303)
+
+
+@router.get("/events/{event_id}/attendance")
+def event_attendance_view(
+    event_id: int,
+    request: Request,
+    user: User = Depends(role_required("super_admin")),
+    db: Session = Depends(get_db),
+    branch_id: str | None = None,
+):
+    evt = db.get(Event, event_id)
+    if not evt:
+        return RedirectResponse("/super-admin/dashboard", status_code=303)
+
+    branches = db.query(Branch).order_by(Branch.name).all()
+    b_id = safe_int(branch_id) or (branches[0].id if branches else None)
+
+    records = []
+    if b_id:
+        mandals = db.query(BalMandal).filter(BalMandal.branch_id == b_id).all()
+        bm_ids = [m.id for m in mandals]
+        records = (
+            db.query(Attendance)
+            .options(joinedload(Attendance.child), joinedload(Attendance.bal_mandal))
+            .filter(
+                Attendance.bal_mandal_id.in_(bm_ids),
+                Attendance.attendance_date == evt.event_date,
+                Attendance.status == "present",
+            )
+            .order_by(Attendance.scanned_at.desc())
+            .all()
+        ) if bm_ids else []
+
+    total_event_present = (
+        db.query(func.count(Attendance.id))
+        .filter(Attendance.attendance_date == evt.event_date, Attendance.status == "present")
+        .scalar()
+        or 0
+    )
+
+    total_children = db.query(Child).filter(Child.is_active.is_(True)).count()
+
+    return templates.TemplateResponse(
+        "super_admin/event_attendance.html",
+        _ctx(
+            request,
+            user,
+            active="events",
+            event=evt,
+            branches=branches,
+            selected_branch=b_id,
+            records=records,
+            total_event_present=total_event_present,
+            total_children=total_children,
+        ),
+    )
+
 
 
 

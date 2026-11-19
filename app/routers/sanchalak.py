@@ -112,6 +112,38 @@ def dashboard(
         .all()
     )
 
+    # Top Featured Event (Super Admin or Mandal Special Event)
+    featured_event = (
+        db.query(Event)
+        .options(joinedload(Event.creator), joinedload(Event.branch))
+        .filter(
+            Event.is_active.is_(True),
+            or_(
+                Event.branch_id.is_(None),
+                (Event.branch_id == branch_id) & (or_(Event.bal_mandal_id.is_(None), Event.bal_mandal_id == user.bal_mandal_id)),
+            ),
+        )
+        .order_by(Event.is_completed.asc(), Event.event_date.asc(), Event.event_time.asc())
+        .first()
+    )
+    featured_event_stats = None
+    if featured_event:
+        evt_present_count = (
+            db.query(func.count(Attendance.id))
+            .filter(
+                Attendance.bal_mandal_id == user.bal_mandal_id,
+                Attendance.attendance_date == featured_event.event_date,
+                Attendance.status == "present",
+            )
+            .scalar()
+            or 0
+        )
+        featured_event_stats = {
+            "present_count": evt_present_count,
+            "total_children": total,
+            "rate": min(round((evt_present_count / total) * 100, 1), 100.0) if total else 0,
+        }
+
     return templates.TemplateResponse(
         "sanchalak/dashboard.html",
         _ctx(
@@ -125,6 +157,8 @@ def dashboard(
             week_stats=week_stats,
             today_present=today_present,
             upcoming_events=upcoming_events,
+            featured_event=featured_event,
+            featured_event_stats=featured_event_stats,
         ),
     )
 
@@ -1173,5 +1207,146 @@ def event_delete(
     redirect_to = next_url if next_url and next_url.startswith("/") else "/sanchalak/events"
     sep = "&" if "?" in redirect_to else "?"
     return RedirectResponse(f"{redirect_to}{sep}event_deleted=1", status_code=303)
+
+
+@router.post("/events/{event_id}/complete")
+def event_complete(
+    event_id: int,
+    request: Request,
+    user: User = Depends(role_required("sanchalak")),
+    db: Session = Depends(get_db),
+    next_url: str = Form("/sanchalak/dashboard"),
+):
+    evt = db.get(Event, event_id)
+    if evt:
+        evt.is_completed = True
+        evt.completed_at = ist_now()
+        evt.completed_by_id = user.id
+        db.commit()
+    redirect_to = next_url if next_url and next_url.startswith("/") else "/sanchalak/dashboard"
+    sep = "&" if "?" in redirect_to else "?"
+    return RedirectResponse(f"{redirect_to}{sep}event_completed=1", status_code=303)
+
+
+@router.post("/events/{event_id}/uncomplete")
+def event_uncomplete(
+    event_id: int,
+    request: Request,
+    user: User = Depends(role_required("sanchalak")),
+    db: Session = Depends(get_db),
+    next_url: str = Form("/sanchalak/dashboard"),
+):
+    evt = db.get(Event, event_id)
+    if evt:
+        evt.is_completed = False
+        evt.completed_at = None
+        db.commit()
+    redirect_to = next_url if next_url and next_url.startswith("/") else "/sanchalak/dashboard"
+    sep = "&" if "?" in redirect_to else "?"
+    return RedirectResponse(f"{redirect_to}{sep}event_reopened=1", status_code=303)
+
+
+@router.get("/events/{event_id}/attendance")
+def event_attendance_view(
+    event_id: int,
+    request: Request,
+    user: User = Depends(role_required("sanchalak")),
+    db: Session = Depends(get_db),
+):
+    evt = db.get(Event, event_id)
+    if not evt:
+        return RedirectResponse("/sanchalak/dashboard", status_code=303)
+
+    children = (
+        db.query(Child)
+        .filter(Child.bal_mandal_id == user.bal_mandal_id, Child.is_active.is_(True))
+        .order_by(Child.name)
+        .all()
+    )
+
+    records = (
+        db.query(Attendance)
+        .filter(
+            Attendance.bal_mandal_id == user.bal_mandal_id,
+            Attendance.attendance_date == evt.event_date,
+        )
+        .all()
+    )
+    present_child_ids = {a.child_id for a in records if a.status == "present"}
+
+    return templates.TemplateResponse(
+        "sanchalak/event_attendance.html",
+        _ctx(
+            request,
+            user,
+            active="events",
+            event=evt,
+            children=children,
+            present_child_ids=present_child_ids,
+            records=records,
+        ),
+    )
+
+
+@router.post("/events/{event_id}/attendance")
+async def event_attendance_submit(
+    event_id: int,
+    request: Request,
+    user: User = Depends(role_required("sanchalak")),
+    db: Session = Depends(get_db),
+):
+    evt = db.get(Event, event_id)
+    if not evt:
+        return RedirectResponse("/sanchalak/dashboard", status_code=303)
+
+    form_data = await request.form()
+    submitted_child_ids = set()
+    for key, val in form_data.multi_items():
+        if key == "child_ids":
+            try:
+                submitted_child_ids.add(int(val))
+            except (ValueError, TypeError):
+                pass
+
+    all_children = (
+        db.query(Child)
+        .filter(Child.bal_mandal_id == user.bal_mandal_id, Child.is_active.is_(True))
+        .all()
+    )
+
+    target_date = evt.event_date
+    w_num = week_number_for(target_date)
+
+    for child in all_children:
+        existing = (
+            db.query(Attendance)
+            .filter(Attendance.child_id == child.id, Attendance.attendance_date == target_date)
+            .first()
+        )
+        if child.id in submitted_child_ids:
+            if existing:
+                existing.status = "present"
+                existing.event_id = evt.id
+                existing.marked_by = user.id
+            else:
+                att = Attendance(
+                    child_id=child.id,
+                    bal_mandal_id=user.bal_mandal_id,
+                    attendance_date=target_date,
+                    year=target_date.year,
+                    month=target_date.month,
+                    week_number=w_num,
+                    status="present",
+                    event_id=evt.id,
+                    marked_by=user.id,
+                )
+                db.add(att)
+        else:
+            if existing:
+                db.delete(existing)
+
+    db.commit()
+    return RedirectResponse(f"/sanchalak/events/{event_id}/attendance?saved=1", status_code=303)
+
 
 

@@ -118,9 +118,11 @@ class Attendance(Base):
     scan_photo: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
     status: Mapped[str] = mapped_column(String(20), default="present")
     marked_by: Mapped[Optional[int]] = mapped_column(ForeignKey("users.id"), nullable=True)
+    event_id: Mapped[Optional[int]] = mapped_column(ForeignKey("events.id"), nullable=True)
 
     child = relationship("Child", back_populates="attendances")
     bal_mandal = relationship("BalMandal", back_populates="attendances")
+    event = relationship("Event", foreign_keys=[event_id])
 
 
 class StoredPhoto(Base):
@@ -145,11 +147,16 @@ class Event(Base):
     bal_mandal_id: Mapped[Optional[int]] = mapped_column(ForeignKey("bal_mandals.id"), nullable=True)
     created_by_id: Mapped[int] = mapped_column(ForeignKey("users.id"))
     target_role: Mapped[str] = mapped_column(String(30), default="all")  # all | branch_admin | sanchalak
+    is_completed: Mapped[bool] = mapped_column(Boolean, default=False)
+    completed_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+    completed_by_id: Mapped[Optional[int]] = mapped_column(ForeignKey("users.id"), nullable=True)
+    completed_notes: Mapped[Optional[str]] = mapped_column(Text, nullable=True, default="")
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=ist_now)
 
     branch = relationship("Branch", foreign_keys=[branch_id])
     bal_mandal = relationship("BalMandal", foreign_keys=[bal_mandal_id])
     creator = relationship("User", foreign_keys=[created_by_id])
+    completed_by = relationship("User", foreign_keys=[completed_by_id])
 
 

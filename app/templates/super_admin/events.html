@@ -61,14 +61,14 @@
           <th>Branch & Bal Mandal</th>
           <th>Audience</th>
           <th>Location</th>
-          <th>Created By</th>
+          <th>Status</th>
           <th class="text-end">Actions</th>
         </tr>
       </thead>
       <tbody>
         {% if events %}
           {% for evt in events %}
-          <tr>
+          <tr class="{{ 'table-success bg-opacity-10' if evt.is_completed else '' }}">
             <td>
               <div class="fw-bold text-dark">{{ evt.title }}</div>
               {% if evt.description %}
@@ -109,9 +109,31 @@
               <small class="text-muted">{{ evt.location or '—' }}</small>
             </td>
             <td>
-              <small class="text-muted">{{ evt.creator.full_name if evt.creator else 'Admin' }}</small>
+              {% if evt.is_completed %}
+              <span class="badge bg-success text-white"><i class="bi bi-check-circle-fill me-1"></i>Completed</span>
+              {% else %}
+              <span class="badge bg-secondary-subtle text-secondary">Upcoming</span>
+              {% endif %}
             </td>
             <td class="text-end">
+              <a href="/super-admin/events/{{ evt.id }}/attendance" class="btn btn-outline-primary btn-sm py-1 px-2" title="View Event Attendance">
+                <i class="bi bi-bar-chart-fill"></i>
+              </a>
+              {% if evt.is_completed %}
+              <form method="post" action="/super-admin/events/{{ evt.id }}/uncomplete" class="d-inline">
+                <input type="hidden" name="next_url" value="/super-admin/events">
+                <button type="submit" class="btn btn-success btn-sm py-1 px-2" title="Completed (Click to Reopen)">
+                  <i class="bi bi-check-circle-fill"></i>
+                </button>
+              </form>
+              {% else %}
+              <form method="post" action="/super-admin/events/{{ evt.id }}/complete" onsubmit="return confirm('Mark this event as completed?');" class="d-inline">
+                <input type="hidden" name="next_url" value="/super-admin/events">
+                <button type="submit" class="btn btn-outline-success btn-sm py-1 px-2" title="Mark Completed">
+                  <i class="bi bi-check-circle"></i>
+                </button>
+              </form>
+              {% endif %}
               <form method="post" action="/super-admin/events/{{ evt.id }}/delete" onsubmit="return confirm('Delete this event?');" class="d-inline">
                 <input type="hidden" name="next_url" value="/super-admin/events">
                 <button type="submit" class="btn btn-outline-danger btn-sm py-1 px-2" title="Delete Event">

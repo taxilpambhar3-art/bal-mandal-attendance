@@ -140,6 +140,35 @@ def dashboard(
         .all()
     )
 
+    featured_event = (
+        db.query(Event)
+        .options(joinedload(Event.bal_mandal), joinedload(Event.creator), joinedload(Event.branch))
+        .filter(
+            Event.is_active.is_(True),
+            or_(Event.branch_id.is_(None), Event.branch_id == user.branch_id),
+        )
+        .order_by(Event.is_completed.asc(), Event.event_date.asc(), Event.event_time.asc())
+        .first()
+    )
+    featured_event_stats = None
+    if featured_event:
+        bm_ids = [m.id for m in mandals]
+        evt_present_count = (
+            db.query(func.count(Attendance.id))
+            .filter(
+                Attendance.bal_mandal_id.in_(bm_ids),
+                Attendance.attendance_date == featured_event.event_date,
+                Attendance.status == "present",
+            )
+            .scalar()
+            or 0
+        ) if bm_ids else 0
+        featured_event_stats = {
+            "present_count": evt_present_count,
+            "total_children": total_children,
+            "rate": min(round((evt_present_count / total_children) * 100, 1), 100.0) if total_children else 0,
+        }
+
     return templates.TemplateResponse(
         "branch_admin/dashboard.html",
         _ctx(
@@ -155,6 +184,8 @@ def dashboard(
             chart_mandals=chart_mandals,
             today_scans=today_scans,
             upcoming_events=upcoming_events,
+            featured_event=featured_event,
+            featured_event_stats=featured_event_stats,
             mandals=mandals,
         ),
     )
@@ -1439,6 +1470,157 @@ def event_delete(
     redirect_to = next_url if next_url and next_url.startswith("/") else "/branch-admin/events"
     sep = "&" if "?" in redirect_to else "?"
     return RedirectResponse(f"{redirect_to}{sep}event_deleted=1", status_code=303)
+
+
+@router.post("/events/{event_id}/complete")
+def event_complete(
+    event_id: int,
+    request: Request,
+    user: User = Depends(role_required("branch_admin")),
+    db: Session = Depends(get_db),
+    next_url: str = Form("/branch-admin/dashboard"),
+):
+    evt = db.get(Event, event_id)
+    if evt:
+        evt.is_completed = True
+        evt.completed_at = ist_now()
+        evt.completed_by_id = user.id
+        db.commit()
+    redirect_to = next_url if next_url and next_url.startswith("/") else "/branch-admin/dashboard"
+    sep = "&" if "?" in redirect_to else "?"
+    return RedirectResponse(f"{redirect_to}{sep}event_completed=1", status_code=303)
+
+
+@router.post("/events/{event_id}/uncomplete")
+def event_uncomplete(
+    event_id: int,
+    request: Request,
+    user: User = Depends(role_required("branch_admin")),
+    db: Session = Depends(get_db),
+    next_url: str = Form("/branch-admin/dashboard"),
+):
+    evt = db.get(Event, event_id)
+    if evt:
+        evt.is_completed = False
+        evt.completed_at = None
+        db.commit()
+    redirect_to = next_url if next_url and next_url.startswith("/") else "/branch-admin/dashboard"
+    sep = "&" if "?" in redirect_to else "?"
+    return RedirectResponse(f"{redirect_to}{sep}event_reopened=1", status_code=303)
+
+
+@router.get("/events/{event_id}/attendance")
+def event_attendance_view(
+    event_id: int,
+    request: Request,
+    user: User = Depends(role_required("branch_admin")),
+    db: Session = Depends(get_db),
+    mandal_id: str | None = None,
+):
+    evt = db.get(Event, event_id)
+    if not evt:
+        return RedirectResponse("/branch-admin/dashboard", status_code=303)
+
+    mandals = db.query(BalMandal).filter(BalMandal.branch_id == user.branch_id).order_by(BalMandal.name).all()
+    selected_m_id = safe_int(mandal_id) or (mandals[0].id if mandals else None)
+
+    children = []
+    records = []
+    present_child_ids = set()
+    if selected_m_id:
+        children = (
+            db.query(Child)
+            .filter(Child.bal_mandal_id == selected_m_id, Child.is_active.is_(True))
+            .order_by(Child.name)
+            .all()
+        )
+        records = (
+            db.query(Attendance)
+            .filter(
+                Attendance.bal_mandal_id == selected_m_id,
+                Attendance.attendance_date == evt.event_date,
+            )
+            .all()
+        )
+        present_child_ids = {a.child_id for a in records if a.status == "present"}
+
+    return templates.TemplateResponse(
+        "branch_admin/event_attendance.html",
+        _ctx(
+            request,
+            user,
+            active="events",
+            event=evt,
+            mandals=mandals,
+            selected_mandal=selected_m_id,
+            children=children,
+            present_child_ids=present_child_ids,
+            records=records,
+        ),
+    )
+
+
+@router.post("/events/{event_id}/attendance")
+async def event_attendance_submit(
+    event_id: int,
+    request: Request,
+    user: User = Depends(role_required("branch_admin")),
+    db: Session = Depends(get_db),
+    bal_mandal_id: int = Form(...),
+):
+    evt = db.get(Event, event_id)
+    if not evt:
+        return RedirectResponse("/branch-admin/dashboard", status_code=303)
+
+    form_data = await request.form()
+    submitted_child_ids = set()
+    for key, val in form_data.multi_items():
+        if key == "child_ids":
+            try:
+                submitted_child_ids.add(int(val))
+            except (ValueError, TypeError):
+                pass
+
+    all_children = (
+        db.query(Child)
+        .filter(Child.bal_mandal_id == bal_mandal_id, Child.is_active.is_(True))
+        .all()
+    )
+
+    target_date = evt.event_date
+    w_num = week_number_for(target_date)
+
+    for child in all_children:
+        existing = (
+            db.query(Attendance)
+            .filter(Attendance.child_id == child.id, Attendance.attendance_date == target_date)
+            .first()
+        )
+        if child.id in submitted_child_ids:
+            if existing:
+                existing.status = "present"
+                existing.event_id = evt.id
+                existing.marked_by = user.id
+            else:
+                att = Attendance(
+                    child_id=child.id,
+                    bal_mandal_id=bal_mandal_id,
+                    attendance_date=target_date,
+                    year=target_date.year,
+                    month=target_date.month,
+                    week_number=w_num,
+                    status="present",
+                    event_id=evt.id,
+                    marked_by=user.id,
+                )
+                db.add(att)
+        else:
+            if existing:
+                db.delete(existing)
+
+    db.commit()
+    return RedirectResponse(f"/branch-admin/events/{event_id}/attendance?mandal_id={bal_mandal_id}&saved=1", status_code=303)
+
 
 
 

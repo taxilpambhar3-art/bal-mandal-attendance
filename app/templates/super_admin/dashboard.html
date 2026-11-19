@@ -27,6 +27,83 @@
   </div>
 </div>
 
+{% if featured_event %}
+<!-- Top Priority Event Announcement Banner (Super Admin) -->
+<div class="panel p-3 mb-4 rounded-4 shadow-sm border position-relative {% if featured_event.is_completed %}bg-success-subtle border-success{% else %}bg-white border-primary{% endif %}" style="border-left: 6px solid #3b82f6 !important;">
+  <div class="d-flex justify-content-between align-items-start flex-wrap gap-2 mb-2">
+    <div>
+      <div class="d-flex align-items-center gap-2 mb-1 flex-wrap">
+        <span class="badge bg-primary text-white fw-bold px-2 py-1">
+          <i class="bi bi-star-fill text-warning me-1"></i>FEATURED EVENT / કાર્યક્રમ
+        </span>
+        <span class="badge bg-light text-dark border">{{ featured_event.event_type }}</span>
+        {% if not featured_event.branch_id %}
+        <span class="badge bg-info-subtle text-info border">Statewide (All Branches)</span>
+        {% else %}
+        <span class="badge bg-light text-dark border">{{ featured_event.branch.name if featured_event.branch else 'Branch' }}</span>
+        {% endif %}
+        {% if featured_event.is_completed %}
+        <span class="badge bg-success text-white"><i class="bi bi-check-circle-fill me-1"></i>Completed (પૂર્ણ થયેલ)</span>
+        {% elif featured_event.event_date == week.date %}
+        <span class="badge bg-danger text-white"><i class="bi bi-broadcast me-1"></i>Today's Event!</span>
+        {% endif %}
+      </div>
+      <h4 class="fw-bold text-dark mb-1 d-flex align-items-center gap-2">
+        <span>{{ featured_event.title }}</span>
+      </h4>
+      <div class="small text-muted d-flex flex-wrap gap-3 align-items-center mb-1">
+        <span><i class="bi bi-calendar-check-fill text-danger me-1"></i><b>{{ featured_event.event_date.strftime('%d %B %Y') }}</b></span>
+        {% if featured_event.event_time %}<span><i class="bi bi-clock-fill text-warning me-1"></i><b>{{ featured_event.event_time }}</b></span>{% endif %}
+        {% if featured_event.location %}<span><i class="bi bi-geo-alt-fill text-secondary me-1"></i>{{ featured_event.location }}</span>{% endif %}
+        <span><i class="bi bi-person-fill text-primary me-1"></i>Created by: <b>{{ featured_event.creator.full_name if featured_event.creator else 'Super Admin' }}</b></span>
+      </div>
+    </div>
+    <!-- Attendance Counter Card -->
+    {% if featured_event_stats %}
+    <div class="p-2 px-3 bg-white border rounded-3 text-center shadow-xs">
+      <div class="fs-4 fw-bold text-primary">{{ featured_event_stats.present_count }} <span class="fs-6 text-muted">/ {{ featured_event_stats.total_children }}</span></div>
+      <small class="text-muted fw-semibold">Statewide Attendance ({{ featured_event_stats.rate }}%)</small>
+    </div>
+    {% endif %}
+  </div>
+
+  {% if featured_event.description %}
+  <div class="p-2 px-3 bg-light rounded-3 border small text-dark mb-3">
+    <i class="bi bi-megaphone-fill text-primary me-1"></i><b>Instructions / Details:</b> {{ featured_event.description }}
+  </div>
+  {% endif %}
+
+  <!-- Action Buttons on Top Banner -->
+  <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 pt-2 border-top">
+    <div class="d-flex gap-2 flex-wrap">
+      <a href="/super-admin/events/{{ featured_event.id }}/attendance" class="btn btn-primary btn-sm fw-bold shadow-sm px-3 py-2">
+        <i class="bi bi-bar-chart-fill me-1"></i>View Event Attendance Report
+      </a>
+      <a href="/super-admin/events" class="btn btn-outline-primary btn-sm fw-semibold bg-white border px-3 py-2">
+        <i class="bi bi-calendar-range me-1"></i>All Events
+      </a>
+    </div>
+    <div class="d-flex gap-2">
+      {% if featured_event.is_completed %}
+      <form method="post" action="/super-admin/events/{{ featured_event.id }}/uncomplete">
+        <input type="hidden" name="next_url" value="/super-admin/dashboard">
+        <button type="submit" class="btn btn-outline-secondary btn-sm" title="Reopen event">
+          <i class="bi bi-arrow-counterclockwise me-1"></i>Reopen
+        </button>
+      </form>
+      {% else %}
+      <form method="post" action="/super-admin/events/{{ featured_event.id }}/complete" onsubmit="return confirm('Mark this event as completed?');">
+        <input type="hidden" name="next_url" value="/super-admin/dashboard">
+        <button type="submit" class="btn btn-success btn-sm fw-bold shadow-sm px-3 py-2">
+          <i class="bi bi-check-circle-fill me-1"></i>Mark Completed (પૂર્ણ કરો)
+        </button>
+      </form>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endif %}
+
 <!-- Super Admin Spotlight Search Banner -->
 <div class="panel p-3 mb-4 bg-white border shadow-sm rounded-3" style="border-left: 4px solid #3b82f6 !important;">
   <div class="row align-items-center g-3">

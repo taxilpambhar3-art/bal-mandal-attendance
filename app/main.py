@@ -135,6 +135,30 @@ def on_startup():
                 for col_name, col_def in new_cols.items():
                     if cols and col_name not in cols:
                         conn.exec_driver_sql(f"ALTER TABLE children ADD COLUMN {col_name} {col_def}")
+
+                # events table columns migration
+                try:
+                    e_cols = [r[1] for r in conn.exec_driver_sql("PRAGMA table_info(events)").fetchall()]
+                    e_new_cols = {
+                        "is_completed": "BOOLEAN DEFAULT 0",
+                        "completed_at": "DATETIME DEFAULT NULL",
+                        "completed_by_id": "INTEGER DEFAULT NULL",
+                        "completed_notes": "TEXT DEFAULT ''",
+                    }
+                    for c_name, c_def in e_new_cols.items():
+                        if e_cols and c_name not in e_cols:
+                            conn.exec_driver_sql(f"ALTER TABLE events ADD COLUMN {c_name} {c_def}")
+                except Exception as e:
+                    print("Events migration warning:", e)
+
+                # attendance table columns migration
+                try:
+                    a_cols = [r[1] for r in conn.exec_driver_sql("PRAGMA table_info(attendance)").fetchall()]
+                    if a_cols and "event_id" not in a_cols:
+                        conn.exec_driver_sql("ALTER TABLE attendance ADD COLUMN event_id INTEGER DEFAULT NULL")
+                except Exception as e:
+                    print("Attendance migration warning:", e)
+
                 conn.commit()
             except Exception as e:
                 print("Migration warning:", e)

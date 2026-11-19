@@ -1,0 +1,150 @@
+{% extends "partials/shell.html" %}
+{% block title %}Event Attendance Report — Super Admin{% endblock %}
+{% block sidenav %}{% include "super_admin/_nav.html" %}{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+  <div>
+    <div class="d-flex align-items-center gap-2 mb-1">
+      <a href="/super-admin/dashboard" class="btn btn-outline-secondary btn-sm py-1 px-2">
+        <i class="bi bi-arrow-left"></i>
+      </a>
+      <h5 class="fw-bold mb-0 text-dark">
+        <i class="bi bi-calendar2-check-fill text-primary me-2"></i>Special Event Attendance Report
+      </h5>
+    </div>
+    <small class="text-muted">
+      Statewide Consolidated Report · Date: <b>{{ event.event_date.strftime('%d %B %Y') }}</b> · Time: <b>{{ event.event_time or 'Scheduled' }}</b>
+    </small>
+  </div>
+  <div class="d-flex gap-2 align-items-center">
+    {% if event.is_completed %}
+    <span class="badge bg-success-subtle text-success border border-success-subtle px-3 py-2 fw-bold fs-6">
+      <i class="bi bi-check-circle-fill me-1"></i>Event Completed
+    </span>
+    <form method="post" action="/super-admin/events/{{ event.id }}/uncomplete">
+      <input type="hidden" name="next_url" value="/super-admin/events/{{ event.id }}/attendance?branch_id={{ selected_branch }}">
+      <button type="submit" class="btn btn-outline-secondary btn-sm">Reopen</button>
+    </form>
+    {% else %}
+    <form method="post" action="/super-admin/events/{{ event.id }}/complete" onsubmit="return confirm('Mark this event as completed?');">
+      <input type="hidden" name="next_url" value="/super-admin/events/{{ event.id }}/attendance?branch_id={{ selected_branch }}">
+      <button type="submit" class="btn btn-success btn-sm fw-bold shadow-sm px-3 py-2">
+        <i class="bi bi-check-all me-1"></i>Mark Event as Completed
+      </button>
+    </form>
+    {% endif %}
+  </div>
+</div>
+
+<!-- Event Info Banner -->
+<div class="panel p-3 mb-4 bg-white border rounded-3 shadow-sm" style="border-left: 4px solid #3b82f6 !important;">
+  <div class="d-flex justify-content-between align-items-start flex-wrap gap-2 mb-2">
+    <div>
+      <div class="d-flex align-items-center gap-2 mb-1 flex-wrap">
+        <span class="badge bg-primary-subtle text-primary border border-primary-subtle">{{ event.event_type }}</span>
+        {% if not event.branch_id %}
+        <span class="badge bg-info-subtle text-info border">Statewide Event</span>
+        {% else %}
+        <span class="badge bg-light text-dark border">{{ event.branch.name if event.branch else 'Branch Event' }}</span>
+        {% endif %}
+      </div>
+      <h5 class="fw-bold text-dark mb-1">{{ event.title }}</h5>
+      <div class="small text-muted d-flex flex-wrap gap-3 align-items-center">
+        <span><i class="bi bi-calendar-event text-danger me-1"></i>{{ event.event_date.strftime('%A, %d %B %Y') }}</span>
+        {% if event.event_time %}<span><i class="bi bi-clock-fill text-warning me-1"></i>{{ event.event_time }}</span>{% endif %}
+        {% if event.location %}<span><i class="bi bi-geo-alt-fill text-secondary me-1"></i>{{ event.location }}</span>{% endif %}
+      </div>
+    </div>
+    <div class="text-end">
+      <div class="fs-4 fw-bold text-primary">{{ total_event_present }} <span class="fs-6 text-muted">/ {{ total_children }}</span></div>
+      <small class="text-muted">Total Balaks Present Statewide</small>
+    </div>
+  </div>
+  {% if event.description %}
+  <div class="p-2 px-3 bg-light rounded-2 border small text-secondary mt-2">
+    <i class="bi bi-info-circle text-primary me-1"></i><b>Instructions:</b> {{ event.description }}
+  </div>
+  {% endif %}
+</div>
+
+<!-- Branch Selector -->
+<div class="panel py-2 px-3 mb-3 bg-white border rounded-3 shadow-sm d-flex align-items-center justify-content-between flex-wrap gap-2">
+  <div class="d-flex align-items-center gap-2">
+    <label class="form-label mb-0 fw-bold small text-secondary">Filter by Branch:</label>
+    <select class="form-select form-select-sm" style="width: auto;" onchange="window.location.href='/super-admin/events/{{ event.id }}/attendance?branch_id=' + this.value">
+      {% for b in branches %}
+      <option value="{{ b.id }}" {% if selected_branch == b.id %}selected{% endif %}>{{ b.name }} ({{ b.city }})</option>
+      {% endfor %}
+    </select>
+  </div>
+  <div class="small text-muted">
+    Attendees recorded in this branch: <b>{{ records|length }}</b>
+  </div>
+</div>
+
+<!-- Attendees Table -->
+<div class="panel p-0 overflow-hidden bg-white border rounded-3 shadow-sm">
+  <div class="table-responsive">
+    <table class="table mock table-hover align-middle mb-0">
+      <thead class="bg-light text-secondary">
+        <tr>
+          <th style="width: 50px;" class="text-center">#</th>
+          <th>Child Details</th>
+          <th>Bal Mandal</th>
+          <th>Standard</th>
+          <th>Guardian Mobile</th>
+          <th>Marked At</th>
+          <th class="text-end">Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% if records %}
+          {% for att in records %}
+          <tr>
+            <td class="text-center text-muted small">{{ loop.index }}</td>
+            <td>
+              <div class="d-flex align-items-center gap-2">
+                {% if att.child and att.child.face_photo %}
+                <img src="/static/uploads/{{ att.child.face_photo }}" class="rounded-circle border" style="width: 38px; height: 38px; object-fit: cover;" onerror="this.src='/static/img/avatar-placeholder.svg'">
+                {% else %}
+                <div class="rounded-circle bg-light border text-secondary d-flex align-items-center justify-content-center" style="width: 38px; height: 38px;">
+                  <i class="bi bi-person"></i>
+                </div>
+                {% endif %}
+                <div>
+                  <div class="fw-bold text-dark">{{ att.child.name if att.child else '—' }}</div>
+                  <small class="text-muted"><span class="badge bg-light text-dark border">{{ att.child.child_code if att.child else '' }}</span></small>
+                </div>
+              </div>
+            </td>
+            <td>
+              <span class="badge bg-light text-dark border">{{ att.bal_mandal.name if att.bal_mandal else '—' }}</span>
+            </td>
+            <td>
+              <span class="badge bg-light text-dark border">{{ att.child.standard if att.child and att.child.standard else '—' }}</span>
+            </td>
+            <td>
+              <small class="text-muted">{{ att.child.mobile_number if att.child and att.child.mobile_number else '—' }}</small>
+            </td>
+            <td>
+              <small class="text-muted"><i class="bi bi-clock me-1"></i>{{ att.scanned_at.strftime('%H:%M') if att.scanned_at else '—' }}</small>
+            </td>
+            <td class="text-end">
+              <span class="badge bg-success-subtle text-success border border-success-subtle px-2 py-1">
+                <i class="bi bi-check-circle-fill me-1"></i>Present
+              </span>
+            </td>
+          </tr>
+          {% endfor %}
+        {% else %}
+          <tr>
+            <td colspan="7" class="text-center py-5 text-muted">
+              <p class="mb-0">No attendance recorded in this branch yet for this event date.</p>
+            </td>
+          </tr>
+        {% endif %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}
