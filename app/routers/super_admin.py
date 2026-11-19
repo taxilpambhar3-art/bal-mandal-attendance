@@ -6,7 +6,7 @@ from datetime import date
 from fastapi import APIRouter, Depends, Form, Request
 from fastapi.responses import RedirectResponse
 from fastapi.templating import Jinja2Templates
-from sqlalchemy import func, or_
+from sqlalchemy import case, func, or_
 from sqlalchemy.orm import Session, joinedload
 
 from ..auth import hash_password
@@ -789,6 +789,7 @@ def mandals_list(
 
 
 @router.get("/users")
+@router.get("/admin-panel")
 def users_list(
     request: Request,
     user: User = Depends(role_required("super_admin")),
@@ -796,6 +797,7 @@ def users_list(
     role: str | None = None,
     branch_id: str | None = None,
     mandal_id: str | None = None,
+    msg: str | None = None,
 ):
     b_id = safe_int(branch_id)
     m_id = safe_int(mandal_id)
@@ -803,15 +805,30 @@ def users_list(
     q = (
         db.query(User)
         .options(joinedload(User.branch), joinedload(User.bal_mandal))
-        .filter(User.role.in_(["branch_admin", "sanchalak"]))
+        .filter(User.role.in_(["super_admin", "branch_admin", "sanchalak"]))
     )
-    if role_val and role_val in ["branch_admin", "sanchalak"]:
+    if role_val and role_val in ["super_admin", "branch_admin", "sanchalak"]:
         q = q.filter(User.role == role_val)
     if b_id:
         q = q.filter(User.branch_id == b_id)
     if m_id:
         q = q.filter(User.bal_mandal_id == m_id)
-    users = q.order_by(User.role, User.full_name).all()
+
+    users = q.order_by(
+        case(
+            (User.role == "super_admin", 1),
+            (User.role == "branch_admin", 2),
+            (User.role == "sanchalak", 3),
+            else_=4,
+        ),
+        User.full_name,
+    ).all()
+
+    total_count = db.query(func.count(User.id)).scalar() or 0
+    super_admin_count = db.query(func.count(User.id)).filter(User.role == "super_admin").scalar() or 0
+    branch_admin_count = db.query(func.count(User.id)).filter(User.role == "branch_admin").scalar() or 0
+    sanchalak_count = db.query(func.count(User.id)).filter(User.role == "sanchalak").scalar() or 0
+
     branches = db.query(Branch).order_by(Branch.name).all()
     mandals = (
         db.query(BalMandal).filter(BalMandal.branch_id == b_id).order_by(BalMandal.name).all()
@@ -830,6 +847,11 @@ def users_list(
             selected_role=role_val,
             selected_branch=b_id,
             selected_mandal=m_id,
+            msg=msg,
+            total_count=total_count,
+            super_admin_count=super_admin_count,
+            branch_admin_count=branch_admin_count,
+            sanchalak_count=sanchalak_count,
         ),
     )
 
@@ -1448,7 +1470,7 @@ def user_quick_add(
 ):
     clean_username = username.strip().lower()
     clean_role = role.strip()
-    if clean_role not in ["branch_admin", "sanchalak"]:
+    if clean_role not in ["super_admin", "branch_admin", "sanchalak"]:
         clean_role = "branch_admin"
 
     existing = db.query(User).filter(User.username == clean_username).first()
@@ -1457,8 +1479,8 @@ def user_quick_add(
         sep = "&" if "?" in redirect_to else "?"
         return RedirectResponse(f"{redirect_to}{sep}error=username_exists", status_code=303)
 
-    b_id = safe_int(branch_id)
-    m_id = safe_int(bal_mandal_id)
+    b_id = safe_int(branch_id) if clean_role != "super_admin" else None
+    m_id = safe_int(bal_mandal_id) if clean_role == "sanchalak" else None
     if clean_role == "sanchalak" and m_id:
         m = db.get(BalMandal, m_id)
         if m and not b_id:
@@ -1473,7 +1495,7 @@ def user_quick_add(
         mobile=mobile.strip() if mobile else None,
         role=clean_role,
         branch_id=b_id,
-        bal_mandal_id=m_id if clean_role == "sanchalak" else None,
+        bal_mandal_id=m_id,
         is_active=True,
     )
     db.add(new_user)
@@ -1481,6 +1503,74 @@ def user_quick_add(
     redirect_to = next_url if next_url and next_url.startswith("/") else "/super-admin/users"
     sep = "&" if "?" in redirect_to else "?"
     return RedirectResponse(f"{redirect_to}{sep}user_created=1", status_code=303)
+
+
+@router.post("/users/{user_id}/edit")
+def user_edit(
+    user_id: int,
+    request: Request,
+    user: User = Depends(role_required("super_admin")),
+    db: Session = Depends(get_db),
+    full_name: str = Form(...),
+    username: str = Form(...),
+    mobile: str = Form(""),
+    role: str = Form(...),
+    branch_id: str | None = Form(None),
+    bal_mandal_id: str | None = Form(None),
+    new_password: str = Form(""),
+    is_active: str = Form("true"),
+    next_url: str = Form("/super-admin/users"),
+):
+    target = db.get(User, user_id)
+    if not target:
+        return RedirectResponse("/super-admin/users?error=not_found", status_code=303)
+
+    clean_username = username.strip().lower()
+    existing = db.query(User).filter(User.username == clean_username, User.id != user_id).first()
+    if existing:
+        redirect_to = next_url if next_url and next_url.startswith("/") else "/super-admin/users"
+        sep = "&" if "?" in redirect_to else "?"
+        return RedirectResponse(f"{redirect_to}{sep}error=username_exists", status_code=303)
+
+    clean_role = role.strip()
+    if clean_role not in ["super_admin", "branch_admin", "sanchalak"]:
+        clean_role = target.role
+
+    if target.id == user.id:
+        clean_role = "super_admin"
+        target.is_active = True
+    else:
+        target.is_active = is_active.lower() in ("true", "1", "yes", "on")
+
+    target.full_name = full_name.strip() or clean_username
+    target.username = clean_username
+    target.mobile = mobile.strip() if mobile else None
+    target.role = clean_role
+
+    if clean_role == "super_admin":
+        target.branch_id = None
+        target.bal_mandal_id = None
+    elif clean_role == "branch_admin":
+        target.branch_id = safe_int(branch_id)
+        target.bal_mandal_id = None
+    elif clean_role == "sanchalak":
+        target.branch_id = safe_int(branch_id)
+        m_id = safe_int(bal_mandal_id)
+        target.bal_mandal_id = m_id
+        if m_id and not target.branch_id:
+            m = db.get(BalMandal, m_id)
+            if m:
+                target.branch_id = m.branch_id
+
+    pwd = new_password.strip()
+    if pwd:
+        target.password_hash = hash_password(pwd)
+        target.plain_password = pwd
+
+    db.commit()
+    redirect_to = next_url if next_url and next_url.startswith("/") else "/super-admin/users"
+    sep = "&" if "?" in redirect_to else "?"
+    return RedirectResponse(f"{redirect_to}{sep}user_updated=1", status_code=303)
 
 
 @router.post("/events/{event_id}/complete")

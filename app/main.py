@@ -274,6 +274,21 @@ def branch_redirect(path: str = ""):
     return RedirectResponse(target, status_code=303)
 
 
+@app.get("/admin")
+@app.get("/admin-panel")
+def admin_redirect(request: Request):
+    user_id = request.session.get("user_id")
+    role = request.session.get("role")
+    if user_id:
+        if role == "super_admin":
+            return RedirectResponse("/super-admin/users", status_code=303)
+        elif role == "branch_admin":
+            return RedirectResponse("/branch-admin/", status_code=303)
+        elif role == "sanchalak":
+            return RedirectResponse("/sanchalak/", status_code=303)
+    return RedirectResponse("/login", status_code=303)
+
+
 @app.get("/health")
 def health():
     info = current_week_info()

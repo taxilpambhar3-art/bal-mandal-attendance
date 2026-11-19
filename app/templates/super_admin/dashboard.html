@@ -744,7 +744,8 @@ document.addEventListener("DOMContentLoaded", function() {
             <div class="col-12">
               <label class="form-label fw-bold small text-secondary">Account Role <span class="text-danger">*</span></label>
               <select name="role" class="form-select" id="quickUserRole" onchange="toggleQuickUserRole(this.value)" required>
-                <option value="branch_admin">Branch Admin</option>
+                <option value="super_admin">Super Admin (Statewide Full Access)</option>
+                <option value="branch_admin" selected>Branch Admin</option>
                 <option value="sanchalak">Bal Mandal Sanchalak</option>
               </select>
             </div>
@@ -769,7 +770,7 @@ document.addEventListener("DOMContentLoaded", function() {
               <input type="text" name="mobile" class="form-control" placeholder="e.g. 9876543210">
             </div>
 
-            <div class="col-12">
+            <div class="col-12" id="quickUserBranchWrap">
               <label class="form-label fw-bold small text-secondary">Assign Branch <span class="text-danger">*</span></label>
               <select name="branch_id" class="form-select" id="quickUserBranch" required>
                 <option value="">-- Select Branch --</option>
@@ -822,9 +823,21 @@ function filterEventMandals(branchId) {
 }
 
 function toggleQuickUserRole(role) {
-  const wrap = document.getElementById('quickUserMandalWrap');
-  if (wrap) {
-    wrap.style.display = (role === 'sanchalak') ? 'block' : 'none';
+  const branchWrap = document.getElementById('quickUserBranchWrap');
+  const branchSelect = document.getElementById('quickUserBranch');
+  const mandalWrap = document.getElementById('quickUserMandalWrap');
+  if (role === 'super_admin') {
+    if (branchWrap) branchWrap.style.display = 'none';
+    if (branchSelect) branchSelect.required = false;
+    if (mandalWrap) mandalWrap.style.display = 'none';
+  } else if (role === 'branch_admin') {
+    if (branchWrap) branchWrap.style.display = 'block';
+    if (branchSelect) branchSelect.required = true;
+    if (mandalWrap) mandalWrap.style.display = 'none';
+  } else {
+    if (branchWrap) branchWrap.style.display = 'block';
+    if (branchSelect) branchSelect.required = true;
+    if (mandalWrap) mandalWrap.style.display = 'block';
   }
 }
 </script>

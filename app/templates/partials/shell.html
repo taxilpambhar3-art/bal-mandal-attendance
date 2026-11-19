@@ -146,9 +146,9 @@
       <i class="bi bi-building"></i>
       <span>Branches</span>
     </a>
-    <a href="/super-admin/users" class="bottom-nav-item {{ 'active' if active=='users' else '' }}">
-      <i class="bi bi-people-fill"></i>
-      <span>Users</span>
+    <a href="/super-admin/users" class="bottom-nav-item {{ 'active' if active in ['users', 'admin_panel'] else '' }}">
+      <i class="bi bi-shield-lock-fill"></i>
+      <span>Admin Panel</span>
     </a>
     <a href="/super-admin/attendance" class="bottom-nav-item {{ 'active' if active=='attendance' else '' }}">
       <i class="bi bi-camera-video"></i>
