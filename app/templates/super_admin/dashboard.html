@@ -4,57 +4,57 @@
 {% block content %}
 <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
   <div>
-    <h5 class="fw-bold mb-1">
+    <h1 class="h5 fw-bold mb-1 text-dark">
       <i class="bi bi-shield-check text-primary me-2"></i>Super Admin — Consolidated Dashboard
-    </h5>
+    </h1>
     <small class="text-muted">
-      Admin: {{ user.full_name }} · {{ week.date.strftime('%d %B %Y') }} · <span class="badge badge-soft-info">{{ week.week_label }} ({{ gujarati_month(week.month) }})</span>
+      Admin: {{ user.full_name }} · {{ week.date.strftime('%d %B %Y') }} · <span class="badge badge-soft-info" style="font-size: 12px;">{{ week.week_label }} ({{ gujarati_month(week.month) }})</span>
     </small>
   </div>
   <div class="d-flex gap-2 flex-wrap">
     <button type="button" class="btn btn-primary btn-sm fw-bold shadow-sm px-3 py-2" data-bs-toggle="modal" data-bs-target="#addEventModal">
       <i class="bi bi-calendar-plus-fill me-1"></i>Add Event
     </button>
-    <button type="button" class="btn btn-success btn-sm fw-bold shadow-sm px-3 py-2" data-bs-toggle="modal" data-bs-target="#addUserModal">
+    <button type="button" class="btn btn-outline-primary btn-sm fw-semibold shadow-sm px-3 py-2 bg-white" data-bs-toggle="modal" data-bs-target="#addUserModal">
       <i class="bi bi-person-plus-fill me-1"></i>Add Staff
     </button>
-    <a href="/super-admin/branches/add" class="btn btn-outline-primary btn-sm fw-bold shadow-sm px-3 py-2 bg-white border">
+    <a href="/super-admin/branches/add" class="btn btn-outline-primary btn-sm fw-semibold shadow-sm px-3 py-2 bg-white">
       <i class="bi bi-building-add me-1"></i>Add Branch
     </a>
-    <a href="/super-admin/credentials" class="btn btn-outline-warning btn-sm fw-bold shadow-sm px-3 py-2 text-dark bg-white border">
-      <i class="bi bi-key-fill text-warning me-1"></i>Login ID & Passwords
+    <a href="/super-admin/credentials" class="btn btn-outline-secondary btn-sm fw-semibold shadow-sm px-3 py-2 bg-white">
+      <i class="bi bi-key-fill text-secondary me-1"></i>Login ID & Passwords
     </a>
   </div>
 </div>
 
 {% if featured_event %}
 <!-- Top Priority Event Announcement Banner (Super Admin) -->
-<div class="panel p-3 mb-4 rounded-4 shadow-sm border position-relative {% if featured_event.is_completed %}bg-success-subtle border-success{% else %}bg-white border-primary{% endif %}" style="border-left: 6px solid #3b82f6 !important;">
+<div class="panel p-3 mb-4 rounded-3 shadow-sm border position-relative {% if featured_event.is_completed %}bg-success-subtle border-success{% else %}bg-white border-primary{% endif %}" style="border-left: 5px solid #AC2B31 !important;">
   <div class="d-flex justify-content-between align-items-start flex-wrap gap-2 mb-2">
     <div>
       <div class="d-flex align-items-center gap-2 mb-1 flex-wrap">
-        <span class="badge bg-primary text-white fw-bold px-2 py-1">
+        <span class="badge bg-primary text-white fw-bold px-2 py-1" style="font-size: 12px;">
           <i class="bi bi-star-fill text-warning me-1"></i>FEATURED EVENT / કાર્યક્રમ
         </span>
-        <span class="badge bg-light text-dark border">{{ featured_event.event_type }}</span>
+        <span class="badge bg-light text-dark border" style="font-size: 12px;">{{ featured_event.event_type }}</span>
         {% if not featured_event.branch_id %}
-        <span class="badge bg-info-subtle text-info border">Statewide (All Branches)</span>
+        <span class="badge bg-info-subtle text-info border" style="font-size: 12px;">Statewide (All Branches)</span>
         {% else %}
-        <span class="badge bg-light text-dark border">{{ featured_event.branch.name if featured_event.branch else 'Branch' }}</span>
+        <span class="badge bg-light text-dark border" style="font-size: 12px;">{{ featured_event.branch.name if featured_event.branch else 'Branch' }}</span>
         {% endif %}
         {% if featured_event.is_completed %}
-        <span class="badge bg-success text-white"><i class="bi bi-check-circle-fill me-1"></i>Completed (પૂર્ણ થયેલ)</span>
+        <span class="badge bg-success text-white" style="font-size: 12px;"><i class="bi bi-check-circle-fill me-1"></i>Completed (પૂર્ણ થયેલ)</span>
         {% elif featured_event.event_date == week.date %}
-        <span class="badge bg-danger text-white"><i class="bi bi-broadcast me-1"></i>Today's Event!</span>
+        <span class="badge bg-danger text-white" style="font-size: 12px;"><i class="bi bi-broadcast me-1"></i>Today's Event!</span>
         {% endif %}
       </div>
       <h4 class="fw-bold text-dark mb-1 d-flex align-items-center gap-2">
         <span>{{ featured_event.title }}</span>
       </h4>
       <div class="small text-muted d-flex flex-wrap gap-3 align-items-center mb-1">
-        <span><i class="bi bi-calendar-check-fill text-danger me-1"></i><b>{{ featured_event.event_date.strftime('%d %B %Y') }}</b></span>
-        {% if featured_event.event_time %}<span><i class="bi bi-clock-fill text-warning me-1"></i><b>{{ featured_event.event_time }}</b></span>{% endif %}
-        {% if featured_event.location %}<span><i class="bi bi-geo-alt-fill text-secondary me-1"></i>{{ featured_event.location }}</span>{% endif %}
+        <span><i class="bi bi-calendar-check-fill text-primary me-1"></i><b>{{ featured_event.event_date.strftime('%d %B %Y') }}</b></span>
+        {% if featured_event.event_time %}<span><i class="bi bi-clock-fill text-muted me-1"></i><b>{{ featured_event.event_time }}</b></span>{% endif %}
+        {% if featured_event.location %}<span><i class="bi bi-geo-alt-fill text-muted me-1"></i>{{ featured_event.location }}</span>{% endif %}
         <span><i class="bi bi-person-fill text-primary me-1"></i>Created by: <b>{{ featured_event.creator.full_name if featured_event.creator else 'Super Admin' }}</b></span>
       </div>
     </div>
@@ -73,130 +73,78 @@
   </div>
   {% endif %}
 
-  <!-- Action Buttons on Top Banner -->
-  <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 pt-2 border-top">
-    <div class="d-flex gap-2 flex-wrap">
-      <a href="/super-admin/events/{{ featured_event.id }}/attendance" class="btn btn-primary btn-sm fw-bold shadow-sm px-3 py-2">
-        <i class="bi bi-bar-chart-fill me-1"></i>View Event Attendance Report
-      </a>
-      <a href="/super-admin/events" class="btn btn-outline-primary btn-sm fw-semibold bg-white border px-3 py-2">
-        <i class="bi bi-calendar-range me-1"></i>All Events
-      </a>
-    </div>
-    <div class="d-flex gap-2">
-      {% if featured_event.is_completed %}
-      <form method="post" action="/super-admin/events/{{ featured_event.id }}/uncomplete">
-        <input type="hidden" name="next_url" value="/super-admin/dashboard">
-        <button type="submit" class="btn btn-outline-secondary btn-sm" title="Reopen event">
-          <i class="bi bi-arrow-counterclockwise me-1"></i>Reopen
-        </button>
-      </form>
-      {% else %}
-      <form method="post" action="/super-admin/events/{{ featured_event.id }}/complete" onsubmit="return confirm('Mark this event as completed?');">
-        <input type="hidden" name="next_url" value="/super-admin/dashboard">
-        <button type="submit" class="btn btn-success btn-sm fw-bold shadow-sm px-3 py-2">
-          <i class="bi bi-check-circle-fill me-1"></i>Mark Completed (પૂર્ણ કરો)
-        </button>
-      </form>
-      {% endif %}
-    </div>
+  <!-- Action Buttons on Top Banner (Grouped together with proximity) -->
+  <div class="d-flex align-items-center gap-2 flex-wrap pt-2 border-top">
+    <a href="/super-admin/events/{{ featured_event.id }}/attendance" class="btn btn-primary btn-sm fw-bold shadow-sm px-3 py-2">
+      <i class="bi bi-bar-chart-fill me-1"></i>View Event Attendance Report
+    </a>
+    <a href="/super-admin/events" class="btn btn-outline-primary btn-sm fw-semibold bg-white px-3 py-2">
+      <i class="bi bi-calendar-range me-1"></i>All Events
+    </a>
+    {% if featured_event.is_completed %}
+    <form method="post" action="/super-admin/events/{{ featured_event.id }}/uncomplete" class="d-inline">
+      <input type="hidden" name="next_url" value="/super-admin/dashboard">
+      <button type="submit" class="btn btn-outline-secondary btn-sm px-3 py-2" title="Reopen event">
+        <i class="bi bi-arrow-counterclockwise me-1"></i>Reopen
+      </button>
+    </form>
+    {% else %}
+    <form method="post" action="/super-admin/events/{{ featured_event.id }}/complete" onsubmit="return confirm('Mark this event as completed?');" class="d-inline">
+      <input type="hidden" name="next_url" value="/super-admin/dashboard">
+      <button type="submit" class="btn btn-primary btn-sm fw-bold shadow-sm px-3 py-2">
+        <i class="bi bi-check-circle-fill me-1"></i>Mark Completed (પૂર્ણ કરો)
+      </button>
+    </form>
+    {% endif %}
   </div>
 </div>
 {% endif %}
-
-<!-- Super Admin Spotlight Search Banner -->
-<div class="panel p-3 mb-4 bg-white border shadow-sm rounded-3" style="border-left: 4px solid #3b82f6 !important;">
-  <div class="row align-items-center g-3">
-    <div class="col-lg-5 col-md-6">
-      <div class="d-flex align-items-center gap-2">
-        <div class="rounded-circle bg-primary-subtle text-primary d-flex align-items-center justify-content-center" style="width:42px;height:42px;">
-          <i class="bi bi-search fs-5"></i>
-        </div>
-        <div>
-          <div class="fw-bold text-dark d-flex align-items-center gap-2">
-            <span>Spotlight Search</span>
-            <span class="badge bg-primary-subtle text-primary border border-primary-subtle" style="font-size:10.5px;">Super Admin</span>
-          </div>
-          <small class="text-muted" style="font-size:11.5px;">Instant search statewide: children, Bal Mandals, branches, admins, passwords & actions</small>
-        </div>
-      </div>
-    </div>
-    <div class="col-lg-7 col-md-6">
-      <div class="spotlight-dashboard-search-wrap position-relative">
-        <div class="input-group shadow-sm rounded-pill overflow-hidden border bg-white">
-          <span class="input-group-text bg-white border-0 ps-3 text-primary"><i class="bi bi-search"></i></span>
-          <input type="text"
-                 id="dashboardSpotlightInput"
-                 class="form-control border-0 bg-white shadow-none ps-2"
-                 placeholder="Search child name, ID (CH-XXXX), mobile, branch, mandal..."
-                 autocomplete="off"
-                 spellcheck="false"
-                 oninput="handleDashboardSpotlightInput(this.value)"
-                 onkeydown="handleDashboardSpotlightKey(event)"
-                 style="font-size: 13.5px;">
-          <button type="button" id="dashboardSpotlightClearBtn" class="btn btn-link text-muted p-1 pe-2 border-0 d-none text-decoration-none" onclick="clearDashboardSpotlight()">
-            <i class="bi bi-x-circle-fill"></i>
-          </button>
-          <button class="btn btn-primary px-3 fw-bold d-flex align-items-center gap-1" type="button" onclick="openSpotlightModal(document.getElementById('dashboardSpotlightInput').value)">
-            <span>Search</span>
-            <kbd class="bg-white text-primary border-0 px-1 rounded ms-1 d-none d-sm-inline" style="font-size:10px;">⌘K</kbd>
-          </button>
-        </div>
-        <!-- Live Floating Results Dropdown -->
-        <div id="dashboardSpotlightDropdown" class="position-absolute w-100 bg-white border rounded-4 shadow-lg p-2 mt-2 d-none overflow-auto" style="z-index: 1050; max-height: 400px; top: 100%; left: 0;"></div>
-      </div>
-    </div>
-  </div>
-</div>
 
 <!-- KPI Cards -->
 <div class="row g-3 mb-4">
   <div class="col-6 col-lg-3">
     <div class="stat-card">
       <div class="ico bg-primary-subtle text-primary"><i class="bi bi-building-fill"></i></div>
-      <h3>{{ total_branches }}</h3>
-      <p>Total Branches (Statewide)</p>
+      <div class="fs-3 fw-bold text-dark lh-1 my-1">{{ total_branches }}</div>
+      <p class="mb-0 text-muted small">Total Branches (Statewide)</p>
     </div>
   </div>
   <div class="col-6 col-lg-3">
     <div class="stat-card">
       <div class="ico bg-success-subtle text-success"><i class="bi bi-diagram-3-fill"></i></div>
-      <h3>{{ total_bm }}</h3>
-      <p>Total Bal Mandals</p>
+      <div class="fs-3 fw-bold text-dark lh-1 my-1">{{ total_bm }}</div>
+      <p class="mb-0 text-muted small">Total Bal Mandals</p>
     </div>
   </div>
   <div class="col-6 col-lg-3">
     <div class="stat-card">
       <div class="ico bg-warning-subtle text-warning"><i class="bi bi-people-fill"></i></div>
-      <h3>{{ total_children }}</h3>
-      <p>Total Enrolled Children</p>
+      <div class="fs-3 fw-bold text-dark lh-1 my-1">{{ total_children }}</div>
+      <p class="mb-0 text-muted small">Total Enrolled Children</p>
     </div>
   </div>
   <div class="col-6 col-lg-3">
     <div class="stat-card">
       <div class="ico bg-info-subtle text-info"><i class="bi bi-graph-up"></i></div>
-      <h3>{{ rate }}%</h3>
-      <p>Attendance Rate This Week</p>
+      <div class="fs-3 fw-bold text-dark lh-1 my-1">{{ rate }}%</div>
+      <p class="mb-0 text-muted small">Attendance Rate This Week</p>
     </div>
   </div>
 </div>
 
 <!-- Upcoming Events & Schedules Panel -->
-<div class="panel p-3 mb-4 bg-white border rounded-3 shadow-sm" style="border-left: 4px solid #8b5cf6 !important;">
+<div class="panel p-3 mb-4 bg-white border rounded-3 shadow-sm" style="border-left: 4px solid #AC2B31 !important;">
   <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
     <div>
-      <h6 class="fw-bold mb-0 text-dark">
+      <h2 class="h6 fw-bold mb-0 text-dark">
         <i class="bi bi-calendar2-event-fill text-primary me-2"></i>Upcoming Events & Schedules
-      </h6>
+      </h2>
       <small class="text-muted" style="font-size:12px;">Statewide and branch-level events, sabhas, shibirs, and exams</small>
     </div>
-    <div class="d-flex gap-2">
+    <div>
       <a href="/super-admin/events" class="btn btn-outline-primary btn-sm fw-semibold">
         <i class="bi bi-calendar-range me-1"></i>View All (Calendar)
       </a>
-      <button type="button" class="btn btn-primary btn-sm fw-bold" data-bs-toggle="modal" data-bs-target="#addEventModal">
-        <i class="bi bi-calendar-plus-fill me-1"></i>Add Event
-      </button>
     </div>
   </div>
 
@@ -206,31 +154,31 @@
     <div class="col-md-6 col-lg-4">
       <div class="card h-100 border shadow-none bg-light-subtle rounded-3 p-3 position-relative">
         <div class="d-flex justify-content-between align-items-start mb-2">
-          <span class="badge bg-primary-subtle text-primary border border-primary-subtle" style="font-size:11px;">
+          <span class="badge bg-primary-subtle text-primary border border-primary-subtle" style="font-size:12px;">
             <i class="bi bi-tag-fill me-1"></i>{{ evt.event_type }}
           </span>
-          <span class="badge bg-white text-dark border shadow-sm" style="font-size:11.5px;">
-            <i class="bi bi-calendar-event text-danger me-1"></i>{{ evt.event_date.strftime('%d %b %Y') }}
+          <span class="badge bg-white text-dark border shadow-sm" style="font-size:12px;">
+            <i class="bi bi-calendar-event text-primary me-1"></i>{{ evt.event_date.strftime('%d %b %Y') }}
           </span>
         </div>
-        <h6 class="fw-bold text-dark mb-1 text-truncate" title="{{ evt.title }}">{{ evt.title }}</h6>
+        <h3 class="h6 fw-bold text-dark mb-1 text-truncate" title="{{ evt.title }}">{{ evt.title }}</h3>
         <div class="small text-muted mb-2 d-flex flex-wrap gap-2 align-items-center" style="font-size:12px;">
           {% if evt.event_time %}
-          <span><i class="bi bi-clock-fill text-warning me-1"></i>{{ evt.event_time }}</span>
+          <span><i class="bi bi-clock-fill text-muted me-1"></i>{{ evt.event_time }}</span>
           {% endif %}
           {% if evt.location %}
-          <span><i class="bi bi-geo-alt-fill text-secondary me-1"></i>{{ evt.location }}</span>
+          <span><i class="bi bi-geo-alt-fill text-muted me-1"></i>{{ evt.location }}</span>
           {% endif %}
         </div>
-        <div class="small text-secondary mb-2" style="font-size:11.5px;">
+        <div class="small text-muted mb-2" style="font-size:12px;">
           <i class="bi bi-building me-1 text-primary"></i>
-          {% if evt.branch %}{{ evt.branch.name }}{% if evt.bal_mandal %} · {{ evt.bal_mandal.name }}{% endif %}{% else %}<span class="badge bg-info-subtle text-info border">Statewide (All Branches)</span>{% endif %}
+          {% if evt.branch %}{{ evt.branch.name }}{% if evt.bal_mandal %} · {{ evt.bal_mandal.name }}{% endif %}{% else %}<span class="badge bg-info-subtle text-info border" style="font-size:12px;">Statewide (All Branches)</span>{% endif %}
         </div>
         {% if evt.description %}
-        <p class="small text-muted mb-2 text-truncate" style="font-size:11.5px;" title="{{ evt.description }}">{{ evt.description }}</p>
+        <p class="small text-muted mb-2 text-truncate" style="font-size:12px;" title="{{ evt.description }}">{{ evt.description }}</p>
         {% endif %}
         <div class="mt-auto pt-2 border-top d-flex justify-content-between align-items-center">
-          <small class="text-muted" style="font-size:10.5px;">By: {{ evt.creator.full_name if evt.creator else 'Admin' }}</small>
+          <small class="text-muted" style="font-size:12px;">By: {{ evt.creator.full_name if evt.creator else 'Admin' }}</small>
           <form method="post" action="/super-admin/events/{{ evt.id }}/delete" onsubmit="return confirm('Delete this event?');" class="d-inline">
             <input type="hidden" name="next_url" value="/super-admin/dashboard">
             <button type="submit" class="btn btn-link text-danger p-0 text-decoration-none" title="Delete Event" style="font-size:12px;">
@@ -246,60 +194,84 @@
   <div class="text-center py-4 text-muted bg-light rounded-3 border border-dashed">
     <i class="bi bi-calendar-plus fs-2 text-secondary d-block mb-1"></i>
     <p class="mb-2 fw-semibold">No upcoming events scheduled yet</p>
-    <button type="button" class="btn btn-outline-primary btn-sm fw-bold" data-bs-toggle="modal" data-bs-target="#addEventModal">
+    <button type="button" class="btn btn-outline-primary btn-sm fw-semibold" data-bs-toggle="modal" data-bs-target="#addEventModal">
       <i class="bi bi-plus-lg me-1"></i>Schedule First Event
     </button>
   </div>
   {% endif %}
 </div>
 
-<!-- Dual Data Explorer Cards (Branch Admin Data & Sanchalak Data) -->
+<!-- Dual Data Explorer Cards (Structured Metric Format to prevent Button Soup) -->
 <div class="row g-3 mb-4">
   <div class="col-md-6">
-    <div class="p-3 bg-white border rounded-3 shadow-sm h-100" style="border-top: 3px solid #3b82f6 !important;">
+    <div class="p-3 bg-white border rounded-3 shadow-sm h-100" style="border-top: 3px solid #AC2B31 !important;">
       <div class="d-flex justify-content-between align-items-center mb-2">
-        <h6 class="mb-0 fw-bold text-primary">
-          <i class="bi bi-building me-2"></i>Branch Admin Data
-        </h6>
-        <span class="badge badge-soft-primary">{{ total_branches }} Branches · {{ total_bm }} Mandals</span>
+        <h2 class="h6 mb-0 fw-bold text-dark">
+          <i class="bi bi-building me-2 text-primary"></i>Branch Admin Data
+        </h2>
+        <span class="badge badge-soft-primary" style="font-size: 12px;">{{ total_branches }} Branches · {{ total_bm }} Mandals</span>
       </div>
       <p class="small text-muted mb-3" style="font-size:12px;">
         Statewide branches, Bal Mandals, admin contacts, and branch performance overview.
       </p>
-      <div class="d-flex gap-2 flex-wrap">
-        <a href="/super-admin/branches" class="btn btn-outline-primary btn-sm py-1 px-3 fw-semibold">
-          <i class="bi bi-building me-1"></i>All Branches ({{ total_branches }})
-        </a>
-        <a href="/super-admin/mandals" class="btn btn-outline-primary btn-sm py-1 px-3 fw-semibold">
-          <i class="bi bi-diagram-3 me-1"></i>All Bal Mandals ({{ total_bm }})
-        </a>
-        <a href="/super-admin/users?role=branch_admin" class="btn btn-outline-primary btn-sm py-1 px-3 fw-semibold">
-          <i class="bi bi-person-badge me-1"></i>Branch Admins ({{ total_admins }})
-        </a>
+      <div class="row g-2">
+        <div class="col-4">
+          <a href="/super-admin/branches" class="text-decoration-none d-block p-2 bg-light rounded-2 border text-center hover-card">
+            <div class="text-primary fs-5 mb-1"><i class="bi bi-building"></i></div>
+            <div class="fw-bold text-dark fs-6">{{ total_branches }}</div>
+            <div class="text-muted small" style="font-size: 12px;">Branches</div>
+          </a>
+        </div>
+        <div class="col-4">
+          <a href="/super-admin/mandals" class="text-decoration-none d-block p-2 bg-light rounded-2 border text-center hover-card">
+            <div class="text-primary fs-5 mb-1"><i class="bi bi-diagram-3"></i></div>
+            <div class="fw-bold text-dark fs-6">{{ total_bm }}</div>
+            <div class="text-muted small" style="font-size: 12px;">Mandals</div>
+          </a>
+        </div>
+        <div class="col-4">
+          <a href="/super-admin/users?role=branch_admin" class="text-decoration-none d-block p-2 bg-light rounded-2 border text-center hover-card">
+            <div class="text-primary fs-5 mb-1"><i class="bi bi-person-badge"></i></div>
+            <div class="fw-bold text-dark fs-6">{{ total_admins }}</div>
+            <div class="text-muted small" style="font-size: 12px;">Admins</div>
+          </a>
+        </div>
       </div>
     </div>
   </div>
   <div class="col-md-6">
     <div class="p-3 bg-white border rounded-3 shadow-sm h-100" style="border-top: 3px solid #10b981 !important;">
       <div class="d-flex justify-content-between align-items-center mb-2">
-        <h6 class="mb-0 fw-bold text-success">
-          <i class="bi bi-person-hearts me-2"></i>Sanchalak Data
-        </h6>
-        <span class="badge badge-soft-success">{{ total_children }} Children · {{ total_sanchalaks }} Sanchalaks</span>
+        <h2 class="h6 mb-0 fw-bold text-dark">
+          <i class="bi bi-person-hearts me-2 text-success"></i>Sanchalak Data
+        </h2>
+        <span class="badge badge-soft-success" style="font-size: 12px;">{{ total_children }} Children · {{ total_sanchalaks }} Sanchalaks</span>
       </div>
       <p class="small text-muted mb-3" style="font-size:12px;">
         All registered children, guardian contacts, face photos, and real-time attendance scans.
       </p>
-      <div class="d-flex gap-2 flex-wrap">
-        <a href="/super-admin/children" class="btn btn-outline-success btn-sm py-1 px-3 fw-semibold">
-          <i class="bi bi-people me-1"></i>All Children ({{ total_children }})
-        </a>
-        <a href="/super-admin/attendance" class="btn btn-outline-success btn-sm py-1 px-3 fw-semibold">
-          <i class="bi bi-camera-video me-1"></i>Live Scans Log
-        </a>
-        <a href="/super-admin/users?role=sanchalak" class="btn btn-outline-success btn-sm py-1 px-3 fw-semibold">
-          <i class="bi bi-person-check me-1"></i>Sanchalaks ({{ total_sanchalaks }})
-        </a>
+      <div class="row g-2">
+        <div class="col-4">
+          <a href="/super-admin/children" class="text-decoration-none d-block p-2 bg-light rounded-2 border text-center hover-card">
+            <div class="text-primary fs-5 mb-1"><i class="bi bi-people"></i></div>
+            <div class="fw-bold text-dark fs-6">{{ total_children }}</div>
+            <div class="text-muted small" style="font-size: 12px;">Children</div>
+          </a>
+        </div>
+        <div class="col-4">
+          <a href="/super-admin/attendance" class="text-decoration-none d-block p-2 bg-light rounded-2 border text-center hover-card">
+            <div class="text-primary fs-5 mb-1"><i class="bi bi-camera-video"></i></div>
+            <div class="fw-bold text-dark fs-6">Live Logs</div>
+            <div class="text-muted small" style="font-size: 12px;">Scans</div>
+          </a>
+        </div>
+        <div class="col-4">
+          <a href="/super-admin/users?role=sanchalak" class="text-decoration-none d-block p-2 bg-light rounded-2 border text-center hover-card">
+            <div class="text-primary fs-5 mb-1"><i class="bi bi-person-check"></i></div>
+            <div class="fw-bold text-dark fs-6">{{ total_sanchalaks }}</div>
+            <div class="text-muted small" style="font-size: 12px;">Sanchalaks</div>
+          </a>
+        </div>
       </div>
     </div>
   </div>
@@ -310,13 +282,13 @@
   <div class="col-lg-7">
     <div class="panel h-100">
       <div class="d-flex justify-content-between align-items-center mb-2">
-        <h6 class="mb-0"><i class="bi bi-bar-chart-line-fill text-info me-2"></i>Last 6 Weeks Attendance Trend</h6>
-        <span class="badge badge-soft-info">Week 1–5 Reset</span>
+        <h2 class="h6 mb-0 fw-bold text-dark"><i class="bi bi-bar-chart-line-fill text-primary me-2"></i>Last 6 Weeks Attendance Trend</h2>
+        <span class="badge badge-soft-info" style="font-size: 12px;">Week 1–5 Reset</span>
       </div>
       <div class="chart-container" style="height: 220px;">
         <canvas id="superDashChart"></canvas>
       </div>
-      <small class="text-muted d-block mt-2" style="font-size: 11px;">
+      <small class="text-muted d-block mt-2" style="font-size: 12px;">
         * Week 1 resets on the 1st of every month.
       </small>
     </div>
@@ -326,12 +298,12 @@
   <div class="col-lg-5">
     <div class="panel h-100">
       <div class="d-flex justify-content-between align-items-center mb-3">
-        <h6 class="mb-0"><i class="bi bi-trophy-fill text-warning me-2"></i>Top Performing Branches</h6>
-        <span class="badge badge-soft-warning">Ranked by %</span>
+        <h2 class="h6 mb-0 fw-bold text-dark"><i class="bi bi-trophy-fill text-warning me-2"></i>Top Performing Branches</h2>
+        <span class="badge badge-soft-warning" style="font-size: 12px;">Ranked by %</span>
       </div>
       {% for r in branch_rows[:3] %}
       <div class="d-flex align-items-center mb-3 p-2 bg-light rounded-3 border">
-        <div class="me-2" style="width: 32px; height: 32px; border-radius: 50%; background: {% if loop.index==1 %}#fef3c7{% elif loop.index==2 %}#e2e8f0{% else %}#fde8d0{% endif %}; color: {% if loop.index==1 %}#92400e{% elif loop.index==2 %}#475569{% else %}#9a3412{% endif %}; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 800; flex:none;">
+        <div class="me-2 rounded-circle bg-light border d-flex align-items-center justify-content-center fw-bold text-dark" style="width: 32px; height: 32px; font-size: 13px; flex:none;">
           {{ loop.index }}
         </div>
         <div class="flex-grow-1">
@@ -339,8 +311,8 @@
             <a href="javascript:void(0)" onclick="openDossier('branch', {{ r.branch.id }})" class="fw-bold text-dark text-decoration-none dossier-link" style="font-size: 13px;" title="Open Branch Dossier">{{ r.branch.name }}</a>
             <small class="fw-bold text-success">{{ r.rate }}%</small>
           </div>
-          <small class="text-muted d-block" style="font-size:10.5px;">
-            <i class="bi bi-geo-alt-fill text-danger me-1"></i>{{ r.branch.city }} ·
+          <small class="text-muted d-block" style="font-size:12px;">
+            <i class="bi bi-geo-alt-fill text-muted me-1"></i>{{ r.branch.city }} ·
             Admin: <b>{{ r.admin.full_name if r.admin else 'Not Assigned' }}</b> ·
             <span class="text-primary fw-semibold">{{ r.mandals }} Mandals</span> ·
             <span class="text-success fw-semibold">{{ r.present }}/{{ r.children }} Present</span>
@@ -362,13 +334,13 @@
 <div class="panel mt-4" id="particularBranchSummarySection">
   <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
     <div>
-      <h6 class="mb-0 fw-bold text-dark fs-6">
+      <h2 class="h6 mb-0 fw-bold text-dark">
         <i class="bi bi-building-check text-primary me-2"></i>Particular Branch Summary
-      </h6>
-      <small class="text-muted">Detailed branch overview of Admins, Bal Mandals, schedules, and attendance metrics.</small>
+      </h2>
+      <small class="text-muted" style="font-size: 12px;">Detailed branch overview of Admins, Bal Mandals, schedules, and attendance metrics.</small>
     </div>
     <div>
-      <span class="badge badge-soft-primary px-3 py-2 fw-bold">
+      <span class="badge badge-soft-primary px-3 py-2 fw-bold" style="font-size: 12px;">
         <i class="bi bi-building me-1"></i>{{ branch_rows|length }} Branches Active
       </span>
     </div>
@@ -377,26 +349,26 @@
   <div class="row g-3">
     {% for r in branch_rows %}
     <div class="col-lg-6">
-      <div class="border rounded-3 p-3 bg-white shadow-sm h-100 position-relative" style="border-left: 4px solid #3b82f6 !important;">
+      <div class="border rounded-3 p-3 bg-white shadow-sm h-100 position-relative" style="border-left: 4px solid #AC2B31 !important;">
         <!-- Header of Branch Card -->
         <div class="d-flex justify-content-between align-items-start mb-2">
           <div>
             <div class="d-flex align-items-center gap-2">
-              <span class="badge bg-primary-subtle text-primary border border-primary-subtle" style="font-size:11px;">{{ r.branch.code }}</span>
-              <h6 class="fw-bold text-dark mb-0 fs-6">
+              <span class="badge bg-primary-subtle text-primary border border-primary-subtle" style="font-size:12px;">{{ r.branch.code }}</span>
+              <h3 class="h6 fw-bold text-dark mb-0">
                 <a href="javascript:void(0)" onclick="openDossier('branch', {{ r.branch.id }})" class="fw-bold text-dark text-decoration-none dossier-link" title="Open Branch Dossier">{{ r.branch.name }}</a>
-              </h6>
+              </h3>
             </div>
-            <small class="text-muted d-block mt-1">
-              <i class="bi bi-geo-alt-fill text-danger me-1"></i>{{ r.branch.city }} ·
+            <small class="text-muted d-block mt-1" style="font-size: 12px;">
+              <i class="bi bi-geo-alt-fill text-muted me-1"></i>{{ r.branch.city }} ·
               <i class="bi bi-person-badge text-primary me-1"></i>Admin: <b>{{ r.admin.full_name if r.admin else 'Not Assigned' }}</b>{% if r.admin and r.admin.mobile %} ({{ r.admin.mobile }}){% endif %}
             </small>
           </div>
           <div class="d-flex gap-1">
-            <a href="javascript:void(0)" onclick="openDossier('branch', {{ r.branch.id }})" class="btn btn-sm btn-outline-danger fw-semibold py-1 px-2" style="font-size:11px;" title="Open Branch Dossier">
+            <a href="javascript:void(0)" onclick="openDossier('branch', {{ r.branch.id }})" class="btn btn-sm btn-outline-danger fw-semibold py-1 px-2" style="font-size:12px;" title="Open Branch Dossier">
               <i class="bi bi-file-earmark-person me-1"></i>Dossier
             </a>
-            <a href="/super-admin/branches/{{ r.branch.id }}/summary" class="btn btn-sm btn-outline-primary fw-semibold py-1 px-2" style="font-size:11px;">
+            <a href="/super-admin/branches/{{ r.branch.id }}/summary" class="btn btn-sm btn-outline-primary fw-semibold py-1 px-2" style="font-size:12px;">
               Summary <i class="bi bi-arrow-right-short"></i>
             </a>
           </div>
@@ -406,25 +378,25 @@
         <div class="row g-2 text-center my-2">
           <div class="col-3">
             <div class="p-2 bg-light rounded-2 border">
-              <small class="text-muted d-block" style="font-size:10px;">Mandals</small>
+              <small class="text-muted d-block" style="font-size:12px;">Mandals</small>
               <b class="text-primary fs-6">{{ r.mandals }}</b>
             </div>
           </div>
           <div class="col-3">
             <div class="p-2 bg-light rounded-2 border">
-              <small class="text-muted d-block" style="font-size:10px;">Children</small>
+              <small class="text-muted d-block" style="font-size:12px;">Children</small>
               <b class="text-dark fs-6">{{ r.children }}</b>
             </div>
           </div>
           <div class="col-3">
             <div class="p-2 bg-light rounded-2 border">
-              <small class="text-muted d-block" style="font-size:10px;">Present</small>
+              <small class="text-muted d-block" style="font-size:12px;">Present</small>
               <b class="text-success fs-6">{{ r.present }}</b>
             </div>
           </div>
           <div class="col-3">
             <div class="p-2 bg-light rounded-2 border">
-              <small class="text-muted d-block" style="font-size:10px;">Attendance %</small>
+              <small class="text-muted d-block" style="font-size:12px;">Attendance %</small>
               <b class="{% if r.rate >= 75 %}text-success{% elif r.rate >= 50 %}text-warning{% else %}text-danger{% endif %} fs-6">{{ r.rate }}%</b>
             </div>
           </div>
@@ -439,14 +411,14 @@
         <!-- Bal Mandals List under this Branch -->
         <div class="mt-2">
           <div class="d-flex justify-content-between align-items-center mb-1">
-            <small class="fw-bold text-secondary" style="font-size:11px;">
+            <small class="fw-bold text-muted" style="font-size:12px;">
               <i class="bi bi-diagram-3 text-primary me-1"></i>Bal Mandals Breakdown:
             </small>
-            <small class="text-muted" style="font-size:10px;">{{ r.mandals_detail|length }} Mandals</small>
+            <small class="text-muted" style="font-size:12px;">{{ r.mandals_detail|length }} Mandals</small>
           </div>
           <div class="table-responsive">
-            <table class="table table-sm table-bordered mb-0 align-middle bg-light" style="font-size:11px;">
-              <thead class="table-white text-muted">
+            <table class="table table-sm table-bordered mb-0 align-middle bg-light" style="font-size:12px;">
+              <thead class="bg-white text-muted">
                 <tr>
                   <th>Mandal</th>
                   <th>Weekday</th>
@@ -465,14 +437,14 @@
                   <td>{{ m.weekday }}</td>
                   <td>{{ m.sanchalak_name }}</td>
                   <td>
-                    <span class="badge {% if m.rate >= 75 %}bg-success{% elif m.rate >= 50 %}bg-warning{% else %}bg-danger{% endif %}" style="font-size:10px;">
+                    <span class="badge {% if m.rate >= 75 %}bg-success{% elif m.rate >= 50 %}bg-warning{% else %}bg-danger{% endif %}" style="font-size:12px;">
                       {{ m.present_count }}/{{ m.children_count }} ({{ m.rate }}%)
                     </span>
                   </td>
                 </tr>
                 {% else %}
                 <tr>
-                  <td colspan="4" class="text-muted text-center py-2" style="font-size:11px;">No Bal Mandals registered</td>
+                  <td colspan="4" class="text-muted text-center py-2" style="font-size:12px;">No Bal Mandals registered</td>
                 </tr>
                 {% endfor %}
               </tbody>
@@ -491,12 +463,12 @@
 <div class="panel mt-4">
   <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
     <div>
-      <h6 class="mb-0 fw-bold text-dark fs-6">
-        <i class="bi bi-camera-reels-fill text-success me-2"></i>Recent Live Face Attendance Scans
-      </h6>
-      <small class="text-muted">Live face camera snapshots and verification timestamps recorded by sanchalaks.</small>
+      <h2 class="h6 mb-0 fw-bold text-dark">
+        <i class="bi bi-camera-reels-fill text-primary me-2"></i>Recent Live Face Attendance Scans
+      </h2>
+      <small class="text-muted" style="font-size: 12px;">Live face camera snapshots and verification timestamps recorded by sanchalaks.</small>
     </div>
-    <a href="/super-admin/attendance" class="btn btn-outline-success btn-sm fw-semibold">
+    <a href="/super-admin/attendance" class="btn btn-outline-primary btn-sm fw-semibold">
       View All Scans <i class="bi bi-arrow-right ms-1"></i>
     </a>
   </div>
@@ -511,7 +483,7 @@
           <th>Bal Mandal</th>
           <th>Date</th>
           <th>Scan Time</th>
-          <th>Status</th>
+          <th class="text-center" style="width: 160px;">Status</th>
         </tr>
       </thead>
       <tbody>
@@ -521,7 +493,7 @@
             {% if a.scan_photo %}
             <img src="/static/uploads/{{ a.scan_photo }}" class="rounded-3 shadow-sm" style="width:40px;height:40px;object-fit:cover;border:2px solid #10b981;" alt="Scan">
             {% elif a.child and a.child.face_photo %}
-            <img src="/static/uploads/{{ a.child.face_photo }}" class="rounded-3 shadow-sm" style="width:40px;height:40px;object-fit:cover;border:2px solid #3b82f6;" alt="Enrolled">
+            <img src="/static/uploads/{{ a.child.face_photo }}" class="rounded-3 shadow-sm" style="width:40px;height:40px;object-fit:cover;border:2px solid #AC2B31;" alt="Enrolled">
             {% else %}
             <div class="rounded-3 bg-light text-secondary d-flex align-items-center justify-content-center border" style="width:40px;height:40px;">
               <i class="bi bi-camera text-muted"></i>
@@ -531,7 +503,7 @@
           <td>
             {% if a.child %}
             <b class="text-dark">{{ a.child.name }}</b>
-            <small class="text-muted d-block">{{ a.child.child_code }}</small>
+            <small class="text-muted d-block" style="font-size:12px;">{{ a.child.child_code }}</small>
             {% else %}
             <span class="text-muted">Unknown</span>
             {% endif %}
@@ -539,15 +511,15 @@
           <td>
             {% if a.bal_mandal and a.bal_mandal.branch %}
             <span class="fw-semibold text-primary">{{ a.bal_mandal.branch.name }}</span>
-            <small class="text-muted d-block">{{ a.bal_mandal.branch.city }}</small>
+            <small class="text-muted d-block" style="font-size:12px;">{{ a.bal_mandal.branch.city }}</small>
             {% else %}
             <span class="text-muted">—</span>
             {% endif %}
           </td>
           <td>
             {% if a.bal_mandal %}
-            <span class="badge bg-light text-dark border">
-              <i class="bi bi-diagram-3 text-success me-1"></i>{{ a.bal_mandal.name }}
+            <span class="badge bg-light text-dark border" style="font-size: 12px;">
+              <i class="bi bi-diagram-3 text-primary me-1"></i>{{ a.bal_mandal.name }}
             </span>
             {% else %}
             <span class="text-muted">—</span>
@@ -555,10 +527,10 @@
           </td>
           <td><b>{{ a.attendance_date.strftime('%d-%m-%Y') }}</b></td>
           <td>
-            <span class="text-secondary">{{ format_dt(a.scanned_at) }}</span>
+            <span class="text-muted" style="font-size: 12px;">{{ format_dt(a.scanned_at) }}</span>
           </td>
-          <td>
-            <span class="badge badge-soft-success">
+          <td class="text-center">
+            <span class="badge badge-soft-success px-2 py-1 fw-bold" style="font-size: 12px;">
               <i class="bi bi-check-circle-fill me-1"></i>Verified Present
             </span>
           </td>
@@ -590,8 +562,8 @@ document.addEventListener("DOMContentLoaded", function() {
         datasets: [{
           label: 'Attendance %',
           data: weekStats.map(s => s.rate),
-          backgroundColor: 'rgba(59, 130, 246, 0.85)',
-          hoverBackgroundColor: 'rgba(29, 78, 216, 1)',
+          backgroundColor: 'rgba(172, 43, 49, 0.85)',
+          hoverBackgroundColor: 'rgba(138, 31, 36, 1)',
           borderRadius: 6,
           barPercentage: 0.6
         }]
@@ -613,8 +585,8 @@ document.addEventListener("DOMContentLoaded", function() {
 <!-- Add Event Modal (Super Admin) -->
 <div class="modal fade" id="addEventModal" tabindex="-1" aria-labelledby="addEventModalLabel" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered modal-lg">
-    <div class="modal-content border-0 shadow-lg rounded-4">
-      <div class="modal-header bg-primary text-white rounded-top-4 py-3">
+    <div class="modal-content border-0 shadow-lg rounded-3">
+      <div class="modal-header bg-primary text-white rounded-top-3 py-3">
         <h5 class="modal-title fw-bold" id="addEventModalLabel">
           <i class="bi bi-calendar-plus-fill me-2"></i>Schedule New Event / Program
         </h5>
@@ -716,7 +688,7 @@ document.addEventListener("DOMContentLoaded", function() {
             </div>
           </div>
         </div>
-        <div class="modal-footer bg-light rounded-bottom-4 py-2">
+        <div class="modal-footer bg-light rounded-bottom-3 py-2">
           <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
           <button type="submit" class="btn btn-primary btn-sm fw-bold px-4">
             <i class="bi bi-check-circle-fill me-1"></i>Save & Publish Event
@@ -730,8 +702,8 @@ document.addEventListener("DOMContentLoaded", function() {
 <!-- Quick Add User Modal (Super Admin) -->
 <div class="modal fade" id="addUserModal" tabindex="-1" aria-labelledby="addUserModalLabel" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered">
-    <div class="modal-content border-0 shadow-lg rounded-4">
-      <div class="modal-header bg-success text-white rounded-top-4 py-3">
+    <div class="modal-content border-0 shadow-lg rounded-3">
+      <div class="modal-header bg-primary text-white rounded-top-3 py-3">
         <h5 class="modal-title fw-bold" id="addUserModalLabel">
           <i class="bi bi-person-plus-fill me-2"></i>Quick Add Staff Account
         </h5>
@@ -791,9 +763,9 @@ document.addEventListener("DOMContentLoaded", function() {
             </div>
           </div>
         </div>
-        <div class="modal-footer bg-light rounded-bottom-4 py-2">
+        <div class="modal-footer bg-light rounded-bottom-3 py-2">
           <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
-          <button type="submit" class="btn btn-success btn-sm fw-bold px-4">
+          <button type="submit" class="btn btn-primary btn-sm fw-bold px-4">
             <i class="bi bi-check-circle-fill me-1"></i>Create Account
           </button>
         </div>
