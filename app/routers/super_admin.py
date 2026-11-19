@@ -13,7 +13,7 @@ from ..auth import hash_password
 from ..database import get_db, UPLOAD_DIR
 from ..deps import role_required, safe_int
 from ..models import Attendance, BalMandal, Branch, Child, Event, User
-from ..weeks import current_week_info, format_dt, gujarati_month, ist_today
+from ..weeks import current_week_info, format_dt, gujarati_month, ist_now, ist_today
 from ..child_utils import STANDARDS, promote_standard, parse_dob_strict, validate_child_form_data
 
 router = APIRouter(prefix="/super-admin", tags=["super-admin"])
