@@ -96,53 +96,70 @@ def dashboard(
 
     mandal = user.bal_mandal
     branch_id = mandal.branch_id if mandal else None
-    upcoming_events = (
-        db.query(Event)
-        .options(joinedload(Event.creator))
-        .filter(
-            Event.is_active.is_(True),
-            Event.event_date >= ist_today(),
-            or_(
-                Event.branch_id.is_(None),
-                (Event.branch_id == branch_id) & (or_(Event.bal_mandal_id.is_(None), Event.bal_mandal_id == user.bal_mandal_id)),
-            ),
+
+    try:
+        upcoming_events = (
+            db.query(Event)
+            .options(joinedload(Event.creator))
+            .filter(
+                Event.is_active.is_(True),
+                Event.event_date >= ist_today(),
+                or_(
+                    Event.branch_id.is_(None),
+                    (Event.branch_id == branch_id) & (or_(Event.bal_mandal_id.is_(None), Event.bal_mandal_id == user.bal_mandal_id)),
+                ),
+            )
+            .order_by(Event.event_date.asc(), Event.event_time.asc())
+            .limit(6)
+            .all()
         )
-        .order_by(Event.event_date.asc(), Event.event_time.asc())
-        .limit(6)
-        .all()
-    )
+    except Exception as e:
+        print("Sanchalak upcoming events query warning:", e)
+        db.rollback()
+        upcoming_events = []
 
     # Top Featured Event (Super Admin or Mandal Special Event)
-    featured_event = (
-        db.query(Event)
-        .options(joinedload(Event.creator), joinedload(Event.branch))
-        .filter(
-            Event.is_active.is_(True),
-            or_(
-                Event.branch_id.is_(None),
-                (Event.branch_id == branch_id) & (or_(Event.bal_mandal_id.is_(None), Event.bal_mandal_id == user.bal_mandal_id)),
-            ),
+    try:
+        featured_event = (
+            db.query(Event)
+            .options(joinedload(Event.creator), joinedload(Event.branch))
+            .filter(
+                Event.is_active.is_(True),
+                or_(
+                    Event.branch_id.is_(None),
+                    (Event.branch_id == branch_id) & (or_(Event.bal_mandal_id.is_(None), Event.bal_mandal_id == user.bal_mandal_id)),
+                ),
+            )
+            .order_by(Event.is_completed.asc(), Event.event_date.asc(), Event.event_time.asc())
+            .first()
         )
-        .order_by(Event.is_completed.asc(), Event.event_date.asc(), Event.event_time.asc())
-        .first()
-    )
+    except Exception as e:
+        print("Sanchalak featured event query warning:", e)
+        db.rollback()
+        featured_event = None
+
     featured_event_stats = None
     if featured_event:
-        evt_present_count = (
-            db.query(func.count(Attendance.id))
-            .filter(
-                Attendance.bal_mandal_id == user.bal_mandal_id,
-                Attendance.attendance_date == featured_event.event_date,
-                Attendance.status == "present",
+        try:
+            evt_present_count = (
+                db.query(func.count(Attendance.id))
+                .filter(
+                    Attendance.bal_mandal_id == user.bal_mandal_id,
+                    Attendance.attendance_date == featured_event.event_date,
+                    Attendance.status == "present",
+                )
+                .scalar()
+                or 0
             )
-            .scalar()
-            or 0
-        )
-        featured_event_stats = {
-            "present_count": evt_present_count,
-            "total_children": total,
-            "rate": min(round((evt_present_count / total) * 100, 1), 100.0) if total else 0,
-        }
+            featured_event_stats = {
+                "present_count": evt_present_count,
+                "total_children": total,
+                "rate": min(round((evt_present_count / total) * 100, 1), 100.0) if total else 0,
+            }
+        except Exception as e:
+            print("Sanchalak featured event stats query warning:", e)
+            db.rollback()
+            featured_event_stats = None
 
     return templates.TemplateResponse(
         "sanchalak/dashboard.html",

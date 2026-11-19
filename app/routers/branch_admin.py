@@ -127,47 +127,63 @@ def dashboard(
         for r in mandal_rows
     ]
 
-    upcoming_events = (
-        db.query(Event)
-        .options(joinedload(Event.bal_mandal), joinedload(Event.creator))
-        .filter(
-            Event.is_active.is_(True),
-            Event.event_date >= ist_today(),
-            or_(Event.branch_id.is_(None), Event.branch_id == user.branch_id),
+    try:
+        upcoming_events = (
+            db.query(Event)
+            .options(joinedload(Event.bal_mandal), joinedload(Event.creator))
+            .filter(
+                Event.is_active.is_(True),
+                Event.event_date >= ist_today(),
+                or_(Event.branch_id.is_(None), Event.branch_id == user.branch_id),
+            )
+            .order_by(Event.event_date.asc(), Event.event_time.asc())
+            .limit(6)
+            .all()
         )
-        .order_by(Event.event_date.asc(), Event.event_time.asc())
-        .limit(6)
-        .all()
-    )
+    except Exception as e:
+        print("Branch admin upcoming events query warning:", e)
+        db.rollback()
+        upcoming_events = []
 
-    featured_event = (
-        db.query(Event)
-        .options(joinedload(Event.bal_mandal), joinedload(Event.creator), joinedload(Event.branch))
-        .filter(
-            Event.is_active.is_(True),
-            or_(Event.branch_id.is_(None), Event.branch_id == user.branch_id),
+    try:
+        featured_event = (
+            db.query(Event)
+            .options(joinedload(Event.bal_mandal), joinedload(Event.creator), joinedload(Event.branch))
+            .filter(
+                Event.is_active.is_(True),
+                or_(Event.branch_id.is_(None), Event.branch_id == user.branch_id),
+            )
+            .order_by(Event.is_completed.asc(), Event.event_date.asc(), Event.event_time.asc())
+            .first()
         )
-        .order_by(Event.is_completed.asc(), Event.event_date.asc(), Event.event_time.asc())
-        .first()
-    )
+    except Exception as e:
+        print("Branch admin featured event query warning:", e)
+        db.rollback()
+        featured_event = None
+
     featured_event_stats = None
     if featured_event:
-        bm_ids = [m.id for m in mandals]
-        evt_present_count = (
-            db.query(func.count(Attendance.id))
-            .filter(
-                Attendance.bal_mandal_id.in_(bm_ids),
-                Attendance.attendance_date == featured_event.event_date,
-                Attendance.status == "present",
-            )
-            .scalar()
-            or 0
-        ) if bm_ids else 0
-        featured_event_stats = {
-            "present_count": evt_present_count,
-            "total_children": total_children,
-            "rate": min(round((evt_present_count / total_children) * 100, 1), 100.0) if total_children else 0,
-        }
+        try:
+            bm_ids = [m.id for m in mandals]
+            evt_present_count = (
+                db.query(func.count(Attendance.id))
+                .filter(
+                    Attendance.bal_mandal_id.in_(bm_ids),
+                    Attendance.attendance_date == featured_event.event_date,
+                    Attendance.status == "present",
+                )
+                .scalar()
+                or 0
+            ) if bm_ids else 0
+            featured_event_stats = {
+                "present_count": evt_present_count,
+                "total_children": total_children,
+                "rate": min(round((evt_present_count / total_children) * 100, 1), 100.0) if total_children else 0,
+            }
+        except Exception as e:
+            print("Branch admin featured event stats query warning:", e)
+            db.rollback()
+            featured_event_stats = None
 
     return templates.TemplateResponse(
         "branch_admin/dashboard.html",

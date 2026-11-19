@@ -164,39 +164,56 @@ def dashboard(
         )
         week_stats.append({"week": w, "present": p, "rate": round((p / total_children) * 100) if total_children else 0})
 
-    upcoming_events = (
-        db.query(Event)
-        .options(joinedload(Event.branch), joinedload(Event.bal_mandal), joinedload(Event.creator))
-        .filter(Event.is_active.is_(True), Event.event_date >= ist_today())
-        .order_by(Event.event_date.asc(), Event.event_time.asc())
-        .limit(6)
-        .all()
-    )
+    try:
+        upcoming_events = (
+            db.query(Event)
+            .options(joinedload(Event.branch), joinedload(Event.bal_mandal), joinedload(Event.creator))
+            .filter(Event.is_active.is_(True), Event.event_date >= ist_today())
+            .order_by(Event.event_date.asc(), Event.event_time.asc())
+            .limit(6)
+            .all()
+        )
+    except Exception as e:
+        print("Super admin upcoming events query warning:", e)
+        db.rollback()
+        upcoming_events = []
+
     all_mandals = db.query(BalMandal).order_by(BalMandal.name).all()
 
-    featured_event = (
-        db.query(Event)
-        .options(joinedload(Event.creator), joinedload(Event.branch), joinedload(Event.bal_mandal))
-        .filter(Event.is_active.is_(True))
-        .order_by(Event.is_completed.asc(), Event.event_date.asc(), Event.event_time.asc())
-        .first()
-    )
+    try:
+        featured_event = (
+            db.query(Event)
+            .options(joinedload(Event.creator), joinedload(Event.branch), joinedload(Event.bal_mandal))
+            .filter(Event.is_active.is_(True))
+            .order_by(Event.is_completed.asc(), Event.event_date.asc(), Event.event_time.asc())
+            .first()
+        )
+    except Exception as e:
+        print("Super admin featured event query warning:", e)
+        db.rollback()
+        featured_event = None
+
     featured_event_stats = None
     if featured_event:
-        evt_present_count = (
-            db.query(func.count(Attendance.id))
-            .filter(
-                Attendance.attendance_date == featured_event.event_date,
-                Attendance.status == "present",
+        try:
+            evt_present_count = (
+                db.query(func.count(Attendance.id))
+                .filter(
+                    Attendance.attendance_date == featured_event.event_date,
+                    Attendance.status == "present",
+                )
+                .scalar()
+                or 0
             )
-            .scalar()
-            or 0
-        )
-        featured_event_stats = {
-            "present_count": evt_present_count,
-            "total_children": total_children,
-            "rate": min(round((evt_present_count / total_children) * 100, 1), 100.0) if total_children else 0,
-        }
+            featured_event_stats = {
+                "present_count": evt_present_count,
+                "total_children": total_children,
+                "rate": min(round((evt_present_count / total_children) * 100, 1), 100.0) if total_children else 0,
+            }
+        except Exception as e:
+            print("Super admin featured event stats query warning:", e)
+            db.rollback()
+            featured_event_stats = None
 
     return templates.TemplateResponse(
         "super_admin/dashboard.html",

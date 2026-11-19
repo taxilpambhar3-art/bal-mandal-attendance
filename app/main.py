@@ -3,11 +3,12 @@ from pathlib import Path
 from urllib.parse import urlencode
 
 import base64
-from fastapi import FastAPI, Request, Response
+from fastapi import FastAPI, HTTPException, Request, Response
 from fastapi.exceptions import RequestValidationError
-from fastapi.responses import FileResponse, JSONResponse, RedirectResponse
+from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
+from starlette.exceptions import HTTPException as StarletteHTTPException
 from starlette.middleware.sessions import SessionMiddleware
 
 from datetime import date
@@ -110,6 +111,18 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
     return JSONResponse(status_code=422, content={"detail": exc.errors()})
 
 
+@app.exception_handler(Exception)
+async def global_exception_handler(request: Request, exc: Exception):
+    import traceback
+    traceback.print_exc()
+    if isinstance(exc, (StarletteHTTPException, HTTPException)):
+        return JSONResponse(status_code=exc.status_code, content={"detail": exc.detail})
+    return HTMLResponse(
+        content=f"<h3>Internal Server Error</h3><pre>{traceback.format_exc()}</pre>",
+        status_code=500
+    )
+
+
 @app.on_event("startup")
 def on_startup():
     Base.metadata.create_all(bind=engine)
@@ -164,11 +177,36 @@ def on_startup():
                 print("Migration warning:", e)
     elif engine.dialect.name == "postgresql":
         with engine.connect() as conn:
-            try:
-                conn.exec_driver_sql("ALTER TABLE children ADD COLUMN IF NOT EXISTS position VARCHAR(30) DEFAULT 'Student'")
-                conn.commit()
-            except Exception as e:
-                print("Postgres migration warning:", e)
+            pg_stmts = [
+                "ALTER TABLE children ADD COLUMN IF NOT EXISTS mobile_number VARCHAR(20) DEFAULT ''",
+                "ALTER TABLE children ADD COLUMN IF NOT EXISTS first_name VARCHAR(60) DEFAULT ''",
+                "ALTER TABLE children ADD COLUMN IF NOT EXISTS father_name VARCHAR(60) DEFAULT ''",
+                "ALTER TABLE children ADD COLUMN IF NOT EXISTS surname VARCHAR(60) DEFAULT ''",
+                "ALTER TABLE children ADD COLUMN IF NOT EXISTS dob DATE",
+                "ALTER TABLE children ADD COLUMN IF NOT EXISTS dob_str VARCHAR(12) DEFAULT ''",
+                "ALTER TABLE children ADD COLUMN IF NOT EXISTS gender VARCHAR(10) DEFAULT 'Male'",
+                "ALTER TABLE children ADD COLUMN IF NOT EXISTS position VARCHAR(30) DEFAULT 'Student'",
+                "ALTER TABLE children ADD COLUMN IF NOT EXISTS standard VARCHAR(20) DEFAULT ''",
+                "ALTER TABLE children ADD COLUMN IF NOT EXISTS address TEXT DEFAULT ''",
+                "ALTER TABLE children ADD COLUMN IF NOT EXISTS uses_bus BOOLEAN DEFAULT FALSE",
+                "ALTER TABLE children ADD COLUMN IF NOT EXISTS bus_route VARCHAR(100) DEFAULT ''",
+                "ALTER TABLE children ADD COLUMN IF NOT EXISTS face_descriptor TEXT DEFAULT NULL",
+                "ALTER TABLE events ADD COLUMN IF NOT EXISTS is_completed BOOLEAN DEFAULT FALSE",
+                "ALTER TABLE events ADD COLUMN IF NOT EXISTS completed_at TIMESTAMP WITHOUT TIME ZONE DEFAULT NULL",
+                "ALTER TABLE events ADD COLUMN IF NOT EXISTS completed_by_id INTEGER DEFAULT NULL",
+                "ALTER TABLE events ADD COLUMN IF NOT EXISTS completed_notes TEXT DEFAULT ''",
+                "ALTER TABLE attendance ADD COLUMN IF NOT EXISTS event_id INTEGER DEFAULT NULL",
+            ]
+            for stmt in pg_stmts:
+                try:
+                    conn.exec_driver_sql(stmt)
+                    conn.commit()
+                except Exception as e:
+                    try:
+                        conn.rollback()
+                    except Exception:
+                        pass
+                    print("Postgres migration warning:", stmt, e)
     db = SessionLocal()
     try:
         seed_if_empty(db)
