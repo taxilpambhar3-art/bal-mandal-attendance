@@ -1218,5 +1218,180 @@ function renderBranchDossierModal(b) {
       </div>
     </div>`;
 }
+
+/* =========================================================================
+   Event Attendance Time Window & Dynamic Gating Logic
+   Automatically shows 'Record Attendance' button when start time arrives,
+   and hides it when time is up.
+   ========================================================================= */
+function calculateAttDuration(modalEl) {
+  if (!modalEl) return;
+  const sInput = modalEl.querySelector('.attStartTimeInput');
+  const eInput = modalEl.querySelector('.attEndTimeInput');
+  const badge = modalEl.querySelector('.attWindowDurationBadge');
+  if (!sInput || !eInput || !badge) return;
+
+  const sVal = sInput.value;
+  const eVal = eInput.value;
+  if (!sVal || !eVal) return;
+
+  const parseM = (t) => {
+    const p = t.split(':');
+    return parseInt(p[0], 10) * 60 + parseInt(p[1], 10);
+  };
+
+  let sM = parseM(sVal);
+  let eM = parseM(eVal);
+  if (eM < sM) eM += 24 * 60; // handles overnight
+  const diff = eM - sM;
+  const hrs = Math.floor(diff / 60);
+  const mins = diff % 60;
+  badge.innerHTML = `<i class="bi bi-stopwatch me-1"></i>Duration: ${hrs} hr${hrs !== 1 ? 's' : ''} ${mins > 0 ? (mins < 10 ? '0' + mins : mins) + ' mins' : '00 mins'}`;
+}
+
+function syncEventTimeToAtt(input) {
+  const modalEl = input.closest('.modal');
+  if (!modalEl) return;
+  const sInput = modalEl.querySelector('.attStartTimeInput');
+  if (sInput) {
+    sInput.value = input.value;
+    calculateAttDuration(modalEl);
+  }
+}
+
+function setAttStartModal(btn, timeStr) {
+  const modalEl = btn.closest('.modal');
+  if (!modalEl) return;
+  const sInput = modalEl.querySelector('.attStartTimeInput');
+  let startVal = timeStr;
+  if (timeStr === 'now') {
+    const now = new Date();
+    startVal = String(now.getHours()).padStart(2, '0') + ':' + String(now.getMinutes()).padStart(2, '0');
+  }
+  if (sInput) sInput.value = startVal;
+
+  const evtTime = modalEl.querySelector('input[name="event_time"]');
+  if (evtTime) evtTime.value = startVal;
+
+  const activeDurationBtn = modalEl.querySelector('button[onclick*="setAttWindowMinutes"].active') || btn;
+  setAttWindowMinutes(activeDurationBtn, 120);
+}
+
+function setAttWindowMinutes(btn, minutes) {
+  const modalEl = btn.closest('.modal');
+  if (!modalEl) return;
+  const sInput = modalEl.querySelector('.attStartTimeInput');
+  const eInput = modalEl.querySelector('.attEndTimeInput');
+  if (!sInput || !eInput || !sInput.value) return;
+
+  const p = sInput.value.split(':');
+  let totalM = parseInt(p[0], 10) * 60 + parseInt(p[1], 10) + minutes;
+  totalM = totalM % (24 * 60);
+  const h = Math.floor(totalM / 60);
+  const m = totalM % 60;
+  eInput.value = String(h).padStart(2, '0') + ':' + String(m).padStart(2, '0');
+
+  // Highlight active button
+  const allBtns = modalEl.querySelectorAll('button[onclick*="setAttWindowMinutes"]');
+  allBtns.forEach(b => {
+    b.classList.remove('active', 'btn-outline-primary', 'btn-outline-success', 'btn-outline-warning');
+    b.classList.add('btn-outline-secondary');
+  });
+  btn.classList.remove('btn-outline-secondary');
+  btn.classList.add('btn-outline-primary', 'active');
+
+  calculateAttDuration(modalEl);
+}
+
+function updateAttendanceWindows() {
+  const now = new Date();
+  // Get current IST time (UTC+5:30)
+  const utc = now.getTime() + (now.getTimezoneOffset() * 60000);
+  const istDate = new Date(utc + (3600000 * 5.5));
+
+  const yyyy = istDate.getFullYear();
+  const mm = String(istDate.getMonth() + 1).padStart(2, '0');
+  const dd = String(istDate.getDate()).padStart(2, '0');
+  const todayStr = `${yyyy}-${mm}-${dd}`;
+  const nowMins = istDate.getHours() * 60 + istDate.getMinutes();
+
+  const parseM = (tStr) => {
+    if (!tStr) return null;
+    let s = String(tStr).trim().toUpperCase();
+    const isPm = s.includes('PM');
+    const isAm = s.includes('AM');
+    s = s.replace('AM', '').replace('PM', '').trim();
+    const parts = s.split(':');
+    if (parts.length < 2) return null;
+    let h = parseInt(parts[0], 10);
+    let m = parseInt(parts[1], 10);
+    if (isNaN(h) || isNaN(m)) return null;
+    if (isPm && h < 12) h += 12;
+    if (isAm && h === 12) h = 0;
+    return h * 60 + m;
+  };
+
+  document.querySelectorAll('.att-window-item').forEach(el => {
+    const isCompleted = el.getAttribute('data-is-completed') === '1';
+    const eventDate = el.getAttribute('data-event-date') || '';
+    const startTimeStr = el.getAttribute('data-start-time') || '';
+    const endTimeStr = el.getAttribute('data-end-time') || '';
+
+    const badgeEl = el.querySelector('.att-status-badge');
+    const recordBtn = el.querySelector('.att-record-btn');
+
+    if (isCompleted) {
+      if (badgeEl) badgeEl.innerHTML = '<span class="badge bg-secondary text-white" style="font-size:11px;"><i class="bi bi-check-circle-fill me-1"></i>Completed</span>';
+      if (recordBtn) recordBtn.style.display = 'none';
+      return;
+    }
+
+    if (eventDate > todayStr) {
+      if (badgeEl) badgeEl.innerHTML = `<span class="badge bg-warning-subtle text-dark border border-warning" style="font-size:11px;"><i class="bi bi-clock me-1"></i>Upcoming (${eventDate})</span>`;
+      if (recordBtn) recordBtn.style.display = 'none';
+      return;
+    }
+
+    if (eventDate < todayStr) {
+      if (badgeEl) badgeEl.innerHTML = '<span class="badge bg-light text-muted border" style="font-size:11px;"><i class="bi bi-calendar-x me-1"></i>Event Passed</span>';
+      if (recordBtn) recordBtn.style.display = 'none';
+      return;
+    }
+
+    // Event is Today
+    const startM = parseM(startTimeStr);
+    const endM = parseM(endTimeStr);
+
+    if (startM === null && endM === null) {
+      if (badgeEl) badgeEl.innerHTML = '<span class="badge bg-success text-white" style="font-size:11px;"><i class="bi bi-broadcast me-1"></i>Live Attendance Open</span>';
+      if (recordBtn) recordBtn.style.display = 'inline-flex';
+      return;
+    }
+
+    const sVal = startM !== null ? startM : 0;
+    const eVal = endM !== null ? endM : (24 * 60 - 1);
+
+    if (nowMins < sVal) {
+      // Start time not yet reached -> Attendance hidden!
+      if (badgeEl) badgeEl.innerHTML = `<span class="badge bg-warning-subtle text-dark border border-warning" style="font-size:11px;"><i class="bi bi-clock-history me-1"></i>Opens at ${startTimeStr}</span>`;
+      if (recordBtn) recordBtn.style.display = 'none';
+    } else if (nowMins >= sVal && nowMins <= eVal) {
+      // Start time reached and within end time -> Live Record Attendance button shown!
+      const endLabel = endTimeStr ? `until ${endTimeStr}` : 'Now';
+      if (badgeEl) badgeEl.innerHTML = `<span class="badge bg-success text-white" style="font-size:11px;"><i class="bi bi-broadcast me-1"></i>Live (${endLabel})</span>`;
+      if (recordBtn) recordBtn.style.display = 'inline-flex';
+    } else {
+      // Time is up -> Attendance closed!
+      if (badgeEl) badgeEl.innerHTML = '<span class="badge bg-secondary-subtle text-muted border" style="font-size:11px;"><i class="bi bi-lock-fill me-1 text-danger"></i>Time\'s Up (Closed)</span>';
+      if (recordBtn) recordBtn.style.display = 'none';
+    }
+  });
+}
+
+// Run immediately and every 10 seconds for real-time live updates
+document.addEventListener('DOMContentLoaded', () => {
+  updateAttendanceWindows();
+  setInterval(updateAttendanceWindows, 10000);
+});
 </script>
 {% endblock %}

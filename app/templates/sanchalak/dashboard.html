@@ -67,10 +67,36 @@
   {% endif %}
 
   <!-- Action Buttons on Top Banner -->
-  <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 pt-2 border-top">
-    <div class="d-flex gap-2 flex-wrap">
-      <a href="/sanchalak/face-scan?event_id={{ featured_event.id }}" class="btn btn-warning text-dark btn-sm fw-bold shadow-sm px-3 py-2">
+  <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 pt-2 border-top att-window-item"
+       data-event-date="{{ featured_event.event_date.strftime('%Y-%m-%d') }}"
+       data-start-time="{{ featured_event.attendance_start_time or featured_event.event_time or '' }}"
+       data-end-time="{{ featured_event.attendance_end_time or '' }}"
+       data-is-completed="{{ 1 if featured_event.is_completed else 0 }}"
+       data-event-id="{{ featured_event.id }}">
+    <div class="d-flex gap-2 flex-wrap align-items-center">
+      {% set ws = featured_event.attendance_window_status %}
+      <div class="att-status-badge">
+        <span class="badge {{ ws.badge_class }} py-2 px-3 fw-semibold shadow-xs" style="font-size: 12px;">
+          {% if ws.status == 'live' %}
+            <i class="bi bi-broadcast me-1"></i>{{ ws.label }}
+          {% elif ws.status == 'upcoming' %}
+            <i class="bi bi-clock-history me-1"></i>{{ ws.label }}
+          {% elif ws.status == 'time_up' %}
+            <i class="bi bi-lock-fill me-1 text-danger"></i>{{ ws.label }}
+          {% else %}
+            {{ ws.label }}
+          {% endif %}
+        </span>
+      </div>
+
+      <!-- Record Attendance button: automatically shown when live, hidden when upcoming or time is up -->
+      <a href="/sanchalak/face-scan?event_id={{ featured_event.id }}" 
+         class="btn btn-warning text-dark btn-sm fw-bold shadow-sm px-3 py-2 att-record-btn"
+         style="{{ '' if ws.can_record else 'display:none;' }}">
         <i class="bi bi-camera-video-fill me-1"></i>Record Event Attendance (Face Scanner)
+      </a>
+      <a href="/sanchalak/events" class="btn btn-outline-warning text-dark btn-sm fw-semibold bg-white border px-3 py-2">
+        <i class="bi bi-calendar-range me-1"></i>All Events
       </a>
     </div>
     <div class="d-flex gap-2">
@@ -194,18 +220,37 @@
   <div class="row g-3">
     {% for evt in upcoming_events %}
     <div class="col-md-6 col-lg-4">
-      <div class="card h-100 border shadow-none bg-light-subtle rounded-3 p-3 position-relative">
-        <div class="d-flex justify-content-between align-items-start mb-2">
-          <span class="badge bg-warning-subtle text-dark border border-warning-subtle" style="font-size:11px;">
-            <i class="bi bi-tag-fill me-1"></i>{{ evt.event_type }}
-          </span>
-          <span class="badge bg-white text-dark border shadow-sm" style="font-size:11.5px;">
-            <i class="bi bi-calendar-event text-danger me-1"></i>{{ evt.event_date.strftime('%d %b %Y') }}
-          </span>
+      <div class="card h-100 border shadow-none bg-light-subtle rounded-3 p-3 position-relative d-flex flex-column att-window-item"
+           data-event-date="{{ evt.event_date.strftime('%Y-%m-%d') }}"
+           data-start-time="{{ evt.attendance_start_time or evt.event_time or '' }}"
+           data-end-time="{{ evt.attendance_end_time or '' }}"
+           data-is-completed="{{ 1 if evt.is_completed else 0 }}"
+           data-event-id="{{ evt.id }}">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+          <div class="d-flex gap-1 flex-wrap align-items-center">
+            <span class="badge bg-warning-subtle text-dark border border-warning-subtle" style="font-size:11px;">
+              <i class="bi bi-tag-fill me-1"></i>{{ evt.event_type }}
+            </span>
+            <span class="badge bg-white text-dark border shadow-sm" style="font-size:11.5px;">
+              <i class="bi bi-calendar-event text-danger me-1"></i>{{ evt.event_date.strftime('%d %b %Y') }}
+            </span>
+          </div>
+          {% if evt.created_by_id == user.id or evt.bal_mandal_id == user.bal_mandal_id %}
+          <form method="post" action="/sanchalak/events/{{ evt.id }}/delete" onsubmit="return confirm('Delete this event?');" class="d-inline m-0 p-0">
+            <input type="hidden" name="next_url" value="/sanchalak/dashboard">
+            <button type="submit" class="btn btn-link text-muted p-0 text-decoration-none hover-danger" title="Delete Event" style="font-size:13px; line-height: 1;">
+              <i class="bi bi-trash"></i>
+            </button>
+          </form>
+          {% endif %}
         </div>
         <h6 class="fw-bold text-dark mb-1 text-truncate" title="{{ evt.title }}">{{ evt.title }}</h6>
-        <div class="small text-muted mb-2 d-flex flex-wrap gap-2 align-items-center" style="font-size:12px;">
-          {% if evt.event_time %}
+        <div class="small text-muted mb-1 d-flex flex-wrap gap-2 align-items-center" style="font-size:12px;">
+          {% if evt.attendance_start_time or evt.attendance_end_time %}
+          <span class="text-warning-emphasis fw-medium">
+            <i class="bi bi-clock-history me-1"></i>{{ evt.attendance_start_time or evt.event_time }} - {{ evt.attendance_end_time or 'End' }}
+          </span>
+          {% elif evt.event_time %}
           <span><i class="bi bi-clock-fill text-warning me-1"></i>{{ evt.event_time }}</span>
           {% endif %}
           {% if evt.location %}
@@ -215,16 +260,38 @@
         {% if evt.description %}
         <p class="small text-muted mb-2 text-truncate" style="font-size:11.5px;" title="{{ evt.description }}">{{ evt.description }}</p>
         {% endif %}
-        <div class="mt-auto pt-2 border-top d-flex justify-content-between align-items-center">
-          <small class="text-muted" style="font-size:10.5px;">By: {{ evt.creator.full_name if evt.creator else 'Admin' }}</small>
-          {% if evt.created_by_id == user.id or evt.bal_mandal_id == user.bal_mandal_id %}
-          <form method="post" action="/sanchalak/events/{{ evt.id }}/delete" onsubmit="return confirm('Delete this event?');" class="d-inline">
-            <input type="hidden" name="next_url" value="/sanchalak/dashboard">
-            <button type="submit" class="btn btn-link text-danger p-0 text-decoration-none" title="Delete Event" style="font-size:12px;">
-              <i class="bi bi-trash"></i>
-            </button>
-          </form>
-          {% endif %}
+        
+        <!-- Real-Time Time-Gated Attendance Action Bar -->
+        <div class="mt-auto pt-2 border-top d-flex justify-content-between align-items-center flex-wrap gap-1">
+          {% set ws = evt.attendance_window_status %}
+          <div class="att-status-badge">
+            <span class="badge {{ ws.badge_class }}" style="font-size: 11px;">
+              {% if ws.status == 'live' %}
+                <i class="bi bi-broadcast me-1"></i>{{ ws.label }}
+              {% elif ws.status == 'upcoming' %}
+                <i class="bi bi-clock-history me-1"></i>{{ ws.label }}
+              {% elif ws.status == 'time_up' %}
+                <i class="bi bi-lock-fill me-1 text-danger"></i>{{ ws.label }}
+              {% else %}
+                {{ ws.label }}
+              {% endif %}
+            </span>
+          </div>
+
+          <div class="d-flex align-items-center gap-1">
+            <!-- Record Attendance: automatically visible when start time arrives, disappears when time is up -->
+            <a href="/sanchalak/face-scan?event_id={{ evt.id }}" 
+               class="btn btn-warning text-dark btn-xs fw-bold att-record-btn py-1 px-2" 
+               style="font-size: 11px; {{ '' if ws.can_record else 'display:none;' }}">
+              <i class="bi bi-camera-video-fill me-1"></i>Record Attendance (હાજરી પૂરો)
+            </a>
+            <a href="/sanchalak/events/{{ evt.id }}/attendance" 
+               class="btn btn-outline-secondary btn-xs fw-semibold py-1 px-2" 
+               style="font-size: 11px;" 
+               title="View Attendance">
+              <i class="bi bi-bar-chart-fill"></i>
+            </a>
+          </div>
         </div>
       </div>
     </div>
@@ -407,7 +474,67 @@ document.addEventListener("DOMContentLoaded", function() {
               <label class="form-label fw-bold small text-secondary">Select Time <span class="text-danger">*</span></label>
               <div class="input-group">
                 <span class="input-group-text bg-light text-warning"><i class="bi bi-clock"></i></span>
-                <input type="time" name="event_time" class="form-control" value="17:30" required>
+                <input type="time" name="event_time" class="form-control" value="17:30" required onchange="syncEventTimeToAtt(this)">
+              </div>
+            </div>
+
+            <!-- Dedicated Attendance Record Time & End Time Window Section -->
+            <div class="col-12">
+              <div class="p-3 rounded-3 border bg-light-subtle shadow-sm" style="border-left: 4px solid #f59e0b !important;">
+                <div class="d-flex justify-content-between align-items-center mb-2 flex-wrap gap-2">
+                  <div>
+                    <h6 class="fw-bold mb-0 text-dark">
+                      <i class="bi bi-clock-history text-warning me-2"></i>Attendance Record Time &amp; End Time (હાજરી નોંધવાનો સમયગાળો) <span class="text-danger">*</span>
+                    </h6>
+                    <small class="text-muted" style="font-size: 11.5px;">
+                      Set attendance window. The <b>'Record Attendance'</b> button will automatically appear at start time and disappear when time is up.
+                    </small>
+                  </div>
+                  <span class="badge bg-warning-subtle text-dark border attWindowDurationBadge" style="font-size: 11px;">
+                    <i class="bi bi-stopwatch me-1"></i>Duration: 2 hrs 00 mins
+                  </span>
+                </div>
+
+                <div class="row g-2 mt-1">
+                  <div class="col-md-6">
+                    <label class="form-label fw-bold small text-secondary mb-1">
+                      <i class="bi bi-play-circle-fill text-success me-1"></i>Attendance Record Start Time <span class="text-danger">*</span>
+                    </label>
+                    <div class="input-group">
+                      <span class="input-group-text bg-white text-success"><i class="bi bi-clock"></i></span>
+                      <input type="time" name="attendance_start_time" class="form-control attStartTimeInput" value="17:30" required onchange="calculateAttDuration(this.closest('.modal'))">
+                    </div>
+                    <div class="d-flex gap-1 mt-1 flex-wrap">
+                      <span class="text-muted" style="font-size: 10.5px;">Presets:</span>
+                      <button type="button" class="btn btn-outline-secondary btn-xs py-0 px-1" style="font-size: 10px;" onclick="setAttStartModal(this, 'now')">Current Time</button>
+                      <button type="button" class="btn btn-outline-secondary btn-xs py-0 px-1" style="font-size: 10px;" onclick="setAttStartModal(this, '17:00')">5:00 PM</button>
+                      <button type="button" class="btn btn-outline-secondary btn-xs py-0 px-1" style="font-size: 10px;" onclick="setAttStartModal(this, '17:30')">5:30 PM</button>
+                      <button type="button" class="btn btn-outline-secondary btn-xs py-0 px-1" style="font-size: 10px;" onclick="setAttStartModal(this, '18:00')">6:00 PM</button>
+                    </div>
+                  </div>
+
+                  <div class="col-md-6">
+                    <label class="form-label fw-bold small text-secondary mb-1">
+                      <i class="bi bi-stop-circle-fill text-danger me-1"></i>Attendance Record End Time <span class="text-danger">*</span> (Time's Up)
+                    </label>
+                    <div class="input-group">
+                      <span class="input-group-text bg-white text-danger"><i class="bi bi-clock-history"></i></span>
+                      <input type="time" name="attendance_end_time" class="form-control attEndTimeInput" value="19:30" required onchange="calculateAttDuration(this.closest('.modal'))">
+                    </div>
+                    <div class="d-flex gap-1 mt-1 flex-wrap">
+                      <span class="text-muted" style="font-size: 10.5px;">Window:</span>
+                      <button type="button" class="btn btn-outline-secondary btn-xs py-0 px-1" style="font-size: 10px;" onclick="setAttWindowMinutes(this, 60)">+1 Hour</button>
+                      <button type="button" class="btn btn-outline-secondary btn-xs py-0 px-1" style="font-size: 10px;" onclick="setAttWindowMinutes(this, 90)">+1.5 Hours</button>
+                      <button type="button" class="btn btn-outline-warning text-dark btn-xs py-0 px-1 active" style="font-size: 10px;" onclick="setAttWindowMinutes(this, 120)">+2 Hours</button>
+                      <button type="button" class="btn btn-outline-secondary btn-xs py-0 px-1" style="font-size: 10px;" onclick="setAttWindowMinutes(this, 180)">+3 Hours</button>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="mt-2 p-2 rounded-2 bg-success-subtle text-success small border border-success-subtle d-flex align-items-center gap-2" style="font-size: 11.5px;">
+                  <i class="bi bi-broadcast"></i>
+                  <span><b>Automated Timing:</b> The 'Record Attendance' button unlocks automatically when start time arrives, and closes when time is up.</span>
+                </div>
               </div>
             </div>
 

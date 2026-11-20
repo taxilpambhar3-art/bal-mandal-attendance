@@ -1500,6 +1500,8 @@ def event_add(
     title: str = Form(...),
     event_date: str = Form(...),
     event_time: str = Form(""),
+    attendance_start_time: str = Form(""),
+    attendance_end_time: str = Form(""),
     event_type: str = Form("Special Sabha"),
     bal_mandal_id: str | None = Form(None),
     location: str = Form(""),
@@ -1512,12 +1514,16 @@ def event_add(
         e_date = ist_today()
 
     m_id = safe_int(bal_mandal_id) if bal_mandal_id and bal_mandal_id != "all" else None
+    a_start = attendance_start_time.strip() if attendance_start_time else (event_time.strip() if event_time else "")
+    a_end = attendance_end_time.strip() if attendance_end_time else ""
 
     new_event = Event(
         title=title.strip(),
         description=description.strip() if description else "",
         event_date=e_date,
         event_time=event_time.strip() if event_time else "",
+        attendance_start_time=a_start,
+        attendance_end_time=a_end,
         event_type=event_type.strip() if event_type else "Special Sabha",
         location=location.strip() if location else "",
         branch_id=user.branch_id,

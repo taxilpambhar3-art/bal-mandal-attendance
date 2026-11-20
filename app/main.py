@@ -157,6 +157,8 @@ def on_startup():
                         "completed_at": "DATETIME DEFAULT NULL",
                         "completed_by_id": "INTEGER DEFAULT NULL",
                         "completed_notes": "TEXT DEFAULT ''",
+                        "attendance_start_time": "VARCHAR(30) DEFAULT ''",
+                        "attendance_end_time": "VARCHAR(30) DEFAULT ''",
                     }
                     for c_name, c_def in e_new_cols.items():
                         if e_cols and c_name not in e_cols:
@@ -195,6 +197,8 @@ def on_startup():
                 "ALTER TABLE events ADD COLUMN IF NOT EXISTS completed_at TIMESTAMP WITHOUT TIME ZONE DEFAULT NULL",
                 "ALTER TABLE events ADD COLUMN IF NOT EXISTS completed_by_id INTEGER DEFAULT NULL",
                 "ALTER TABLE events ADD COLUMN IF NOT EXISTS completed_notes TEXT DEFAULT ''",
+                "ALTER TABLE events ADD COLUMN IF NOT EXISTS attendance_start_time VARCHAR(30) DEFAULT ''",
+                "ALTER TABLE events ADD COLUMN IF NOT EXISTS attendance_end_time VARCHAR(30) DEFAULT ''",
                 "ALTER TABLE attendance ADD COLUMN IF NOT EXISTS event_id INTEGER DEFAULT NULL",
             ]
             for stmt in pg_stmts:

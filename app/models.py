@@ -16,7 +16,7 @@ from sqlalchemy import (
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from .database import Base
-from .weeks import ist_now
+from .weeks import ist_now, ist_today
 
 
 class User(Base):
@@ -141,6 +141,8 @@ class Event(Base):
     description: Mapped[Optional[str]] = mapped_column(Text, nullable=True, default="")
     event_date: Mapped[date] = mapped_column(Date, index=True)
     event_time: Mapped[Optional[str]] = mapped_column(String(30), nullable=True, default="")
+    attendance_start_time: Mapped[Optional[str]] = mapped_column(String(30), nullable=True, default="")
+    attendance_end_time: Mapped[Optional[str]] = mapped_column(String(30), nullable=True, default="")
     event_type: Mapped[str] = mapped_column(String(50), default="Special Sabha")
     location: Mapped[Optional[str]] = mapped_column(String(150), nullable=True, default="")
     branch_id: Mapped[Optional[int]] = mapped_column(ForeignKey("branches.id"), nullable=True)
@@ -158,5 +160,100 @@ class Event(Base):
     bal_mandal = relationship("BalMandal", foreign_keys=[bal_mandal_id])
     creator = relationship("User", foreign_keys=[created_by_id])
     completed_by = relationship("User", foreign_keys=[completed_by_id])
+
+    @property
+    def attendance_window_status(self) -> dict:
+        """
+        Dynamically calculates if attendance recording is live, upcoming, or expired (time's up).
+        """
+        if self.is_completed:
+            return {
+                "status": "completed",
+                "label": "Event Completed",
+                "badge_class": "bg-secondary text-white",
+                "can_record": False,
+            }
+
+        start_t = (self.attendance_start_time or self.event_time or "").strip()
+        end_t = (self.attendance_end_time or "").strip()
+
+        today = ist_today()
+        now = ist_now()
+
+        if self.event_date > today:
+            return {
+                "status": "upcoming",
+                "label": f"Upcoming ({self.event_date.strftime('%d %b')})",
+                "badge_class": "bg-warning-subtle text-dark border",
+                "can_record": False,
+            }
+        elif self.event_date < today:
+            return {
+                "status": "time_up",
+                "label": "Event Passed",
+                "badge_class": "bg-light text-muted border",
+                "can_record": False,
+            }
+
+        # Event is today
+        now_mins = now.hour * 60 + now.minute
+
+        def parse_to_mins(t_str: str) -> Optional[int]:
+            if not t_str:
+                return None
+            s = str(t_str).strip().upper()
+            is_pm = "PM" in s
+            is_am = "AM" in s
+            s = s.replace("AM", "").replace("PM", "").strip()
+            parts = s.split(":")
+            if len(parts) < 2:
+                return None
+            try:
+                h = int(parts[0])
+                m = int(parts[1])
+                if is_pm and h < 12:
+                    h += 12
+                elif is_am and h == 12:
+                    h = 0
+                return h * 60 + m
+            except Exception:
+                return None
+
+        start_m = parse_to_mins(start_t)
+        end_m = parse_to_mins(end_t)
+
+        if start_m is None and end_m is None:
+            return {
+                "status": "live",
+                "label": "Attendance Open Today",
+                "badge_class": "bg-success text-white",
+                "can_record": True,
+            }
+
+        s_val = start_m if start_m is not None else 0
+        e_val = end_m if end_m is not None else (24 * 60 - 1)
+
+        if now_mins < s_val:
+            return {
+                "status": "upcoming",
+                "label": f"Opens at {start_t}",
+                "badge_class": "bg-warning-subtle text-dark border border-warning",
+                "can_record": False,
+            }
+        elif s_val <= now_mins <= e_val:
+            label = f"Live Now (Open until {end_t})" if end_t else "Live Now (Attendance Open)"
+            return {
+                "status": "live",
+                "label": label,
+                "badge_class": "bg-success text-white",
+                "can_record": True,
+            }
+        else:
+            return {
+                "status": "time_up",
+                "label": "Attendance Closed (Time's Up)",
+                "badge_class": "bg-secondary-subtle text-muted border",
+                "can_record": False,
+            }
 
 
