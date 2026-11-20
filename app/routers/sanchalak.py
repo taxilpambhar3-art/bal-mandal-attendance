@@ -103,6 +103,7 @@ def dashboard(
             .options(joinedload(Event.creator))
             .filter(
                 Event.is_active.is_(True),
+                Event.is_completed.is_(False),
                 Event.event_date >= ist_today(),
                 or_(
                     Event.branch_id.is_(None),
@@ -125,12 +126,14 @@ def dashboard(
             .options(joinedload(Event.creator), joinedload(Event.branch))
             .filter(
                 Event.is_active.is_(True),
+                Event.is_completed.is_(False),
+                Event.event_date >= ist_today(),
                 or_(
                     Event.branch_id.is_(None),
                     (Event.branch_id == branch_id) & (or_(Event.bal_mandal_id.is_(None), Event.bal_mandal_id == user.bal_mandal_id)),
                 ),
             )
-            .order_by(Event.is_completed.asc(), Event.event_date.asc(), Event.event_time.asc())
+            .order_by(Event.event_date.asc(), Event.event_time.asc())
             .first()
         )
     except Exception as e:

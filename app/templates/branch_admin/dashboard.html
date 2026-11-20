@@ -36,7 +36,7 @@
   </div>
 </div>
 
-{% if featured_event %}
+{% if featured_event and not featured_event.is_completed %}
 <!-- Top Priority Event Announcement Banner (Super Admin / Branch Event) -->
 <div class="panel p-3 mb-4 rounded-4 shadow-sm border position-relative {% if featured_event.is_completed %}bg-success-subtle border-success{% else %}bg-white border-success{% endif %}" style="border-left: 6px solid #10b981 !important;">
   <div class="d-flex justify-content-between align-items-start flex-wrap gap-2 mb-2">

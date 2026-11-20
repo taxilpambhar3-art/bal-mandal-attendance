@@ -168,7 +168,11 @@ def dashboard(
         upcoming_events = (
             db.query(Event)
             .options(joinedload(Event.branch), joinedload(Event.bal_mandal), joinedload(Event.creator))
-            .filter(Event.is_active.is_(True), Event.event_date >= ist_today())
+            .filter(
+                Event.is_active.is_(True),
+                Event.is_completed.is_(False),
+                Event.event_date >= ist_today(),
+            )
             .order_by(Event.event_date.asc(), Event.event_time.asc())
             .limit(6)
             .all()
@@ -184,8 +188,12 @@ def dashboard(
         featured_event = (
             db.query(Event)
             .options(joinedload(Event.creator), joinedload(Event.branch), joinedload(Event.bal_mandal))
-            .filter(Event.is_active.is_(True))
-            .order_by(Event.is_completed.asc(), Event.event_date.asc(), Event.event_time.asc())
+            .filter(
+                Event.is_active.is_(True),
+                Event.is_completed.is_(False),
+                Event.event_date >= ist_today(),
+            )
+            .order_by(Event.event_date.asc(), Event.event_time.asc())
             .first()
         )
     except Exception as e:
