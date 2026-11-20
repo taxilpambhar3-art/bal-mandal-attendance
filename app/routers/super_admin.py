@@ -199,7 +199,7 @@ def dashboard(
             evt_present_count = (
                 db.query(func.count(Attendance.id))
                 .filter(
-                    Attendance.attendance_date == featured_event.event_date,
+                    Attendance.event_id == featured_event.id,
                     Attendance.status == "present",
                 )
                 .scalar()
@@ -1642,7 +1642,7 @@ def event_attendance_view(
             .options(joinedload(Attendance.child), joinedload(Attendance.bal_mandal))
             .filter(
                 Attendance.bal_mandal_id.in_(bm_ids),
-                Attendance.attendance_date == evt.event_date,
+                Attendance.event_id == evt.id,
                 Attendance.status == "present",
             )
             .order_by(Attendance.scanned_at.desc())
@@ -1651,7 +1651,7 @@ def event_attendance_view(
 
     total_event_present = (
         db.query(func.count(Attendance.id))
-        .filter(Attendance.attendance_date == evt.event_date, Attendance.status == "present")
+        .filter(Attendance.event_id == evt.id, Attendance.status == "present")
         .scalar()
         or 0
     )

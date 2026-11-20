@@ -200,6 +200,7 @@ def on_startup():
                 "ALTER TABLE events ADD COLUMN IF NOT EXISTS attendance_start_time VARCHAR(30) DEFAULT ''",
                 "ALTER TABLE events ADD COLUMN IF NOT EXISTS attendance_end_time VARCHAR(30) DEFAULT ''",
                 "ALTER TABLE attendance ADD COLUMN IF NOT EXISTS event_id INTEGER DEFAULT NULL",
+                "ALTER TABLE attendance DROP CONSTRAINT IF EXISTS uq_child_date",
             ]
             for stmt in pg_stmts:
                 try:

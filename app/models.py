@@ -104,7 +104,7 @@ class Child(Base):
 class Attendance(Base):
     __tablename__ = "attendance"
     __table_args__ = (
-        UniqueConstraint("child_id", "attendance_date", name="uq_child_date"),
+        UniqueConstraint("child_id", "attendance_date", "event_id", name="uq_child_date_event"),
     )
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)

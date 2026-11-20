@@ -169,7 +169,7 @@ def dashboard(
                 db.query(func.count(Attendance.id))
                 .filter(
                     Attendance.bal_mandal_id.in_(bm_ids),
-                    Attendance.attendance_date == featured_event.event_date,
+                    Attendance.event_id == featured_event.id,
                     Attendance.status == "present",
                 )
                 .scalar()
@@ -808,7 +808,7 @@ def face_scan_view(
             .options(joinedload(Attendance.child), joinedload(Attendance.bal_mandal))
             .filter(
                 Attendance.bal_mandal_id.in_(active_bm_ids),
-                or_(Attendance.event_id == event.id, Attendance.attendance_date == target_date),
+                Attendance.event_id == event.id,
             )
             .order_by(Attendance.scanned_at.desc())
             .all()
@@ -998,14 +998,18 @@ def face_scan_submit(
             db.query(Attendance)
             .filter(
                 Attendance.child_id == child.id,
-                or_(Attendance.event_id == event.id, Attendance.attendance_date == target_date),
+                Attendance.event_id == event.id,
             )
             .first()
         )
     else:
         existing = (
             db.query(Attendance)
-            .filter(Attendance.child_id == child.id, Attendance.attendance_date == week["date"])
+            .filter(
+                Attendance.child_id == child.id,
+                Attendance.attendance_date == week["date"],
+                Attendance.event_id.is_(None),
+            )
             .first()
         )
 
@@ -1044,7 +1048,7 @@ def face_scan_submit(
             db.query(Attendance)
             .filter(
                 Attendance.bal_mandal_id.in_(active_bm_ids),
-                or_(Attendance.event_id == event.id, Attendance.attendance_date == target_date),
+                Attendance.event_id == event.id,
                 Attendance.status == "present",
             )
             .count()
@@ -1636,13 +1640,12 @@ async def event_attendance_submit(
     for child in all_children:
         existing = (
             db.query(Attendance)
-            .filter(Attendance.child_id == child.id, Attendance.attendance_date == target_date)
+            .filter(Attendance.child_id == child.id, Attendance.event_id == evt.id)
             .first()
         )
         if child.id in submitted_child_ids:
             if existing:
                 existing.status = "present"
-                existing.event_id = evt.id
                 existing.marked_by = user.id
             else:
                 att = Attendance(
