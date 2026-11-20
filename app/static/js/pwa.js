@@ -1,80 +1,11 @@
 // Bal Mandal Mobile App & PWA Controller
 (function() {
   let deferredPrompt = null;
-
-  // --- Splash Screen & Navigation Loading UI ---
-  window.dismissSplashScreen = function() {
-    const splash = document.getElementById('appSplashScreen');
-    if (splash && !splash.classList.contains('fade-out')) {
-      splash.classList.add('fade-out');
-      setTimeout(() => {
-        splash.style.display = 'none';
-      }, 350);
-    }
-  };
-
-  window.showProgressBar = function() {
-    const bar = document.getElementById('appTopProgressBar');
-    if (bar) {
-      bar.classList.add('loading');
-      bar.style.width = '0%';
-      bar.style.opacity = '1';
-      setTimeout(() => { bar.style.width = '35%'; }, 50);
-      setTimeout(() => { bar.style.width = '75%'; }, 250);
-      setTimeout(() => { bar.style.width = '90%'; }, 600);
-    }
-  };
-
-  window.hideProgressBar = function() {
-    const bar = document.getElementById('appTopProgressBar');
-    if (bar) {
-      bar.style.width = '100%';
-      setTimeout(() => {
-        bar.style.opacity = '0';
-        setTimeout(() => {
-          bar.classList.remove('loading');
-          bar.style.width = '0%';
-        }, 250);
-      }, 150);
-    }
-  };
-
-  // Dismiss splash screen on window load with slight delay for silky smoothness
-  window.addEventListener('load', () => {
-    setTimeout(window.dismissSplashScreen, 180);
-    window.hideProgressBar();
-  });
-
-  // Pageshow event (handles back/forward browser cache navigation)
-  window.addEventListener('pageshow', () => {
-    window.dismissSplashScreen();
-    window.hideProgressBar();
-  });
-
-  // Safety fallback: if window load took more than 2.5 seconds
-  setTimeout(window.dismissSplashScreen, 2500);
-
-  // Link navigation progress bar trigger
-  document.addEventListener('click', (e) => {
-    const link = e.target.closest('a');
-    if (!link) return;
-    const href = link.getAttribute('href');
-    const target = link.getAttribute('target');
-    if (!href || href.startsWith('#') || href.startsWith('javascript:') || target === '_blank') return;
-    if (href.startsWith('/') || href.startsWith(window.location.origin)) {
-      window.showProgressBar();
-    }
-  });
-
-  // Form submission progress bar trigger
-  document.addEventListener('submit', () => {
-    window.showProgressBar();
-  });
-
-  // --- PWA Installation & Standalone detection ---
   const isIos = () => {
     const ua = window.navigator.userAgent;
     const isIosDevice = /iphone|ipad|ipod/i.test(ua);
+    const isWebKit = /WebKit/i.test(ua);
+    const isSafari = isIosDevice && isWebKit && !/CriOS/i.test(ua) && !/FxiOS/i.test(ua);
     return isIosDevice;
   };
 
@@ -86,21 +17,25 @@
     );
   };
 
+  // If already running as an installed standalone app, tag document element
   if (isStandalone()) {
     document.documentElement.classList.add('is-standalone-app');
     console.log('[PWA] Running in Standalone Mobile App mode');
   }
 
   window.addEventListener('beforeinstallprompt', (e) => {
+    // Prevent the mini-infobar from appearing on mobile
     e.preventDefault();
     deferredPrompt = e;
     console.log('[PWA] beforeinstallprompt event captured');
 
+    // Only show banner if user hasn't dismissed it in this session and not standalone
     if (!isStandalone()) {
       const dismissed = sessionStorage.getItem('pwa_banner_dismissed');
       if (!dismissed) {
         showInstallBanner();
       }
+      // Also reveal any persistent install buttons (e.g. in drawer or header)
       document.querySelectorAll('.pwa-install-trigger').forEach((btn) => {
         btn.classList.remove('d-none');
       });
@@ -144,6 +79,7 @@
       deferredPrompt = null;
       hideInstallBanner();
     } else if (isIos()) {
+      // Show iOS modal guide
       const modalEl = document.getElementById('iosInstallModal');
       if (modalEl && window.bootstrap && window.bootstrap.Modal) {
         const modal = new bootstrap.Modal(modalEl);
@@ -152,10 +88,12 @@
         alert("To install Bal Mandal App on iPhone:\n1. Tap the Share button at bottom of Safari\n2. Select 'Add to Home Screen'");
       }
     } else {
+      // Browser fallback
       alert("To install Bal Mandal App:\nOpen your browser menu (⋮) and tap 'Add to Home Screen' or 'Install app'.");
     }
   };
 
+  // Check on DOM ready
   document.addEventListener('DOMContentLoaded', () => {
     if (isStandalone()) {
       hideInstallBanner();
@@ -163,9 +101,11 @@
         btn.classList.add('d-none');
       });
     } else if (isIos()) {
+      // On iOS Safari, show the install option in menu
       document.querySelectorAll('.pwa-install-trigger').forEach((btn) => {
         btn.classList.remove('d-none');
       });
+      // Optionally show banner once if not dismissed
       const dismissed = sessionStorage.getItem('pwa_banner_dismissed');
       if (!dismissed) {
         showInstallBanner();
