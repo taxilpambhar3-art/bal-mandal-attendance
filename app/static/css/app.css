@@ -1457,3 +1457,151 @@ button, a, input, select, textarea, .btn, .stat-card, .bottom-nav-item {
   background: #cbd5e1;
   border-radius: 4px;
 }
+
+/* ==========================================================================
+   App Loading & Splash Screen UI
+   ========================================================================== */
+
+/* Top Navigation Loading Progress Bar */
+.app-top-progress-bar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  height: 3px;
+  width: 0%;
+  background: linear-gradient(90deg, #AC2B31, #f59e0b, #AC2B31);
+  background-size: 200% 100%;
+  z-index: 99999;
+  box-shadow: 0 0 10px rgba(172, 43, 49, 0.7), 0 0 6px rgba(245, 158, 11, 0.8);
+  transition: width 0.3s cubic-bezier(0.1, 0.9, 0.2, 1), opacity 0.25s ease;
+  pointer-events: none;
+  opacity: 0;
+}
+
+.app-top-progress-bar.loading {
+  opacity: 1;
+  animation: progressShimmer 1.4s infinite linear;
+}
+
+@keyframes progressShimmer {
+  0% { background-position: 100% 0; }
+  100% { background-position: -100% 0; }
+}
+
+/* Fullscreen App Launch Splash Screen */
+.app-splash-screen {
+  position: fixed;
+  inset: 0;
+  background: #ffffff;
+  background-image: radial-gradient(circle at 50% 35%, rgba(172, 43, 49, 0.05) 0%, transparent 60%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 99998;
+  opacity: 1;
+  visibility: visible;
+  transition: opacity 0.3s cubic-bezier(0.16, 1, 0.3, 1), visibility 0.3s ease, transform 0.3s ease;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.app-splash-screen.fade-out {
+  opacity: 0 !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+  transform: scale(1.02);
+}
+
+.app-splash-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 24px;
+  max-width: 320px;
+}
+
+.app-splash-logo-wrapper {
+  position: relative;
+  width: 88px;
+  height: 88px;
+  margin-bottom: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.app-splash-logo {
+  width: 80px;
+  height: 80px;
+  border-radius: 22px;
+  object-fit: cover;
+  box-shadow: 0 10px 25px -4px rgba(172, 43, 49, 0.35);
+  position: relative;
+  z-index: 2;
+  border: 2px solid rgba(172, 43, 49, 0.15);
+  background: #ffffff;
+}
+
+.app-splash-pulse-ring {
+  position: absolute;
+  inset: -6px;
+  border-radius: 28px;
+  background: radial-gradient(circle, rgba(172, 43, 49, 0.28) 0%, rgba(245, 158, 11, 0.18) 70%, transparent 100%);
+  animation: splashRingPulse 2s ease-in-out infinite;
+  z-index: 1;
+}
+
+@keyframes splashRingPulse {
+  0% { transform: scale(0.92); opacity: 0.5; }
+  50% { transform: scale(1.14); opacity: 0.95; }
+  100% { transform: scale(0.92); opacity: 0.5; }
+}
+
+.app-splash-title {
+  font-size: 19px;
+  font-weight: 800;
+  color: #0f172a;
+  margin-bottom: 2px;
+  letter-spacing: -0.3px;
+}
+
+.app-splash-subtitle {
+  font-size: 13px;
+  font-weight: 600;
+  color: #8A1F24;
+  margin-bottom: 20px;
+}
+
+.app-splash-loader-bar {
+  width: 130px;
+  height: 4px;
+  background: #f1f5f9;
+  border-radius: 999px;
+  overflow: hidden;
+  position: relative;
+  margin-bottom: 12px;
+}
+
+.app-splash-loader-progress {
+  position: absolute;
+  height: 100%;
+  width: 50%;
+  background: linear-gradient(90deg, #AC2B31, #f59e0b);
+  border-radius: 999px;
+  animation: splashBarSlide 1.2s ease-in-out infinite;
+}
+
+@keyframes splashBarSlide {
+  0% { left: -50%; width: 30%; }
+  50% { left: 25%; width: 60%; }
+  100% { left: 100%; width: 30%; }
+}
+
+.app-splash-status {
+  font-size: 12px;
+  font-weight: 600;
+  color: #64748b;
+  display: flex;
+  align-items: center;
+}
