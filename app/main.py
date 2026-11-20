@@ -298,3 +298,21 @@ def admin_redirect(request: Request):
 def health():
     info = current_week_info()
     return {"ok": True, "week": info["week_label"], "month": info["month_name"]}
+
+@app.get("/manifest.json")
+def manifest():
+    manifest_file = BASE_DIR / "static" / "manifest.json"
+    return FileResponse(manifest_file, media_type="application/manifest+json")
+
+
+@app.get("/sw.js")
+def service_worker():
+    sw_file = BASE_DIR / "static" / "sw.js"
+    return FileResponse(
+        sw_file,
+        media_type="application/javascript",
+        headers={
+            "Service-Worker-Allowed": "/",
+            "Cache-Control": "no-cache, no-store, must-revalidate",
+        },
+    )

@@ -30,7 +30,11 @@
     <kbd class="d-none d-lg-inline">⌘K</kbd>
   </button>
 
-  <div class="right ms-auto">
+  <div class="right ms-auto d-flex align-items-center">
+    <button type="button" class="btn btn-sm btn-light text-dark fw-bold rounded-pill px-2 py-1 shadow-sm pwa-install-trigger d-none d-inline-flex align-items-center gap-1 me-2" onclick="triggerPwaInstall()" title="Install Bal Mandal Mobile App">
+      <i class="bi bi-phone-arrow-down-fill text-primary"></i>
+      <span style="font-size: 11.5px;">Install App</span>
+    </button>
     <div class="user-profile-pill d-none d-md-flex align-items-center">
       <i class="bi bi-person-circle"></i>
       <span class="text-truncate" style="max-width: 150px;">{{ user.full_name }}</span>
@@ -62,6 +66,13 @@
     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="offcanvas" aria-label="Close"></button>
   </div>
   <div class="offcanvas-body p-2 d-flex flex-column justify-content-between">
+    <!-- Quick PWA Install Button inside Mobile Drawer -->
+    <div class="mb-2 pwa-install-trigger d-none">
+      <button type="button" class="btn btn-warning w-100 fw-bold d-flex align-items-center justify-content-center gap-2 rounded-3 shadow-sm py-2" onclick="triggerPwaInstall()">
+        <i class="bi bi-phone-arrow-down-fill fs-5"></i>
+        <span>📱 Install Mobile App (ઇન્સ્ટોલ કરો)</span>
+      </button>
+    </div>
     <div class="mobile-nav-links">
       {% block sidenav %}{% endblock %}
     </div>

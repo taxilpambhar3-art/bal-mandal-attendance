@@ -4,12 +4,22 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=5">
   <meta name="theme-color" content="#AC2B31">
+  <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="Bal Mandal">
+  <meta name="application-name" content="Bal Mandal">
   <meta name="format-detection" content="telephone=no">
   <title>{% block title %}Bal Mandal Attendance Portal{% endblock %}</title>
-  <link rel="icon" type="image/png" href="/static/img/logo.png">
-  <link rel="apple-touch-icon" href="/static/img/logo.png">
+
+  <!-- PWA Manifest & Icons -->
+  <link rel="manifest" href="/manifest.json">
+  <link rel="icon" type="image/png" sizes="192x192" href="/static/img/icon-192.png">
+  <link rel="icon" type="image/png" sizes="512x512" href="/static/img/icon-512.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="/static/img/apple-touch-icon.png">
+  <link rel="shortcut icon" href="/static/img/logo.png">
+
+  <!-- Typography & Styles -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -20,13 +30,74 @@
 </head>
 <body>
 {% block body %}{% endblock %}
+
+<!-- Floating PWA Mobile App Install Banner -->
+<div id="pwaInstallBanner" class="pwa-install-banner d-none" role="alert" aria-live="polite">
+  <div class="d-flex align-items-center gap-2 flex-grow-1 text-truncate">
+    <img src="/static/img/icon-192.png" alt="Bal Mandal App" class="pwa-banner-icon shadow-sm">
+    <div class="pwa-banner-text text-truncate">
+      <div class="pwa-banner-title fw-bold text-truncate">Bal Mandal Mobile App</div>
+      <div class="pwa-banner-subtitle text-muted text-truncate">📱 ઇન્સ્ટોલ કરો • Fast & Native</div>
+    </div>
+  </div>
+  <div class="d-flex align-items-center gap-2 flex-shrink-0">
+    <button type="button" class="btn btn-sm btn-primary pwa-install-btn fw-bold px-3 shadow-sm" onclick="triggerPwaInstall()">
+      <i class="bi bi-download me-1"></i>Install
+    </button>
+    <button type="button" class="btn-close btn-sm pwa-dismiss-btn" onclick="dismissPwaBanner()" aria-label="Dismiss"></button>
+  </div>
+</div>
+
+<!-- iOS Home Screen Install Guide Modal -->
+<div class="modal fade" id="iosInstallModal" tabindex="-1" aria-labelledby="iosInstallModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-sm">
+    <div class="modal-content rounded-4 border-0 shadow-lg text-center p-3">
+      <div class="text-end">
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <img src="/static/img/icon-192.png" width="60" height="60" alt="Logo" class="rounded-3 shadow-sm mx-auto mb-2">
+      <h6 class="fw-bold mb-1" id="iosInstallModalLabel">Install Bal Mandal App</h6>
+      <p class="text-muted small mb-3">Install on your iPhone home screen for fast fullscreen biometric attendance:</p>
+      <div class="text-start small text-secondary bg-light p-3 rounded-3 mb-3 border">
+        <div class="d-flex align-items-start gap-2 mb-2">
+          <span class="badge bg-primary rounded-circle">1</span>
+          <span>Tap the <strong>Share</strong> button <i class="bi bi-box-arrow-up text-primary fw-bold"></i> in Safari bottom bar.</span>
+        </div>
+        <div class="d-flex align-items-start gap-2 mb-2">
+          <span class="badge bg-primary rounded-circle">2</span>
+          <span>Scroll down and tap <strong>Add to Home Screen</strong> <i class="bi bi-plus-square text-dark"></i>.</span>
+        </div>
+        <div class="d-flex align-items-start gap-2">
+          <span class="badge bg-primary rounded-circle">3</span>
+          <span>Tap <strong>Add</strong> in the top-right corner.</span>
+        </div>
+      </div>
+      <button type="button" class="btn btn-primary btn-sm rounded-pill w-100 fw-bold" data-bs-dismiss="modal">Got it!</button>
+    </div>
+  </div>
+</div>
+
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 <script src="/static/js/chart.min.js"></script>
 <script>
   if (typeof Chart === 'undefined') {
     document.write('<script src="https://cdn.jsdelivr.net/npm/chart.js"><\/script>');
   }
+
+  // Register PWA Service Worker for Mobile App support
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('/sw.js', { scope: '/' })
+        .then((reg) => {
+          console.log('[PWA] Service Worker registered successfully, scope:', reg.scope);
+        })
+        .catch((err) => {
+          console.warn('[PWA] Service Worker registration failed:', err);
+        });
+    });
+  }
 </script>
+<script src="/static/js/pwa.js"></script>
 {% block scripts %}{% endblock %}
 </body>
 </html>
