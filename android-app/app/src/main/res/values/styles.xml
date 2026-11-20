@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="Theme.BalMandal" parent="Theme.MaterialComponents.DayNight.NoActionBar">
+        <item name="colorPrimary">@color/brand_crimson</item>
+        <item name="colorPrimaryDark">@color/brand_crimson_dark</item>
+        <item name="colorAccent">@color/brand_amber</item>
+        <item name="android:statusBarColor">@color/brand_crimson</item>
+        <item name="android:navigationBarColor">@color/white</item>
+    </style>
+</resources>
