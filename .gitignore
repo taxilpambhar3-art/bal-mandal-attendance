@@ -39,3 +39,4 @@ app/static/uploads/*
 *.log
 scratch/
 tmp/
+*.apk

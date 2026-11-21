@@ -1457,3 +1457,123 @@ button, a, input, select, textarea, .btn, .stat-card, .bottom-nav-item {
   background: #cbd5e1;
   border-radius: 4px;
 }
+
+/* ==========================================================================
+   Notification Bell & Toast Alert Styling
+   ========================================================================== */
+
+.nav-notification-btn {
+  background: rgba(255, 255, 255, 0.16);
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  color: #ffffff;
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.18s ease;
+  cursor: pointer;
+  padding: 0;
+}
+
+.nav-notification-btn:hover {
+  background: rgba(255, 255, 255, 0.28);
+  transform: scale(1.05);
+  color: #ffffff;
+}
+
+.nav-notification-btn:active {
+  transform: scale(0.92);
+}
+
+.nav-bell-pulse i {
+  animation: bellRing 1.8s infinite ease-in-out;
+  display: inline-block;
+  color: #fef08a !important;
+}
+
+@keyframes bellRing {
+  0% { transform: rotate(0); }
+  5% { transform: rotate(18deg); }
+  10% { transform: rotate(-18deg); }
+  15% { transform: rotate(14deg); }
+  20% { transform: rotate(-14deg); }
+  25% { transform: rotate(0); }
+  100% { transform: rotate(0); }
+}
+
+/* Floating Real-time Notification Toast */
+.notification-toast-container {
+  position: fixed;
+  top: calc(16px + env(safe-area-inset-top, 0px));
+  right: 16px;
+  z-index: 1090;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  pointer-events: none;
+  max-width: 380px;
+  width: calc(100% - 32px);
+}
+
+.custom-notif-toast {
+  background: #0f172a;
+  color: #ffffff;
+  padding: 12px 14px;
+  border-radius: 14px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  pointer-events: auto;
+  opacity: 0;
+  transform: translateY(-20px) scale(0.96);
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.custom-notif-toast.show {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+}
+
+.notif-toast-icon {
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  background: #AC2B31;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  color: #ffffff;
+  font-size: 15px;
+}
+
+.notif-toast-title {
+  font-size: 13.5px;
+  font-weight: 700;
+  line-height: 1.25;
+}
+
+.notif-toast-body {
+  font-size: 12px;
+  color: #94a3b8;
+  line-height: 1.2;
+  margin-top: 2px;
+}
+
+.notif-item {
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.notif-item:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+}
+
+.notif-message-box {
+  background: #fdf2f2 !important;
+  border: 1px dashed rgba(172, 43, 49, 0.25) !important;
+  color: #1e293b !important;
+  font-weight: 500;
+}

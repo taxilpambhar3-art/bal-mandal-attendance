@@ -1280,6 +1280,11 @@ def event_add(
     )
     db.add(new_event)
     db.commit()
+    try:
+        from .notifications import create_event_notification
+        create_event_notification(db, new_event, user)
+    except Exception as e:
+        print("Notification dispatch error:", e)
     redirect_to = next_url if next_url and next_url.startswith("/") else "/sanchalak/events"
     sep = "&" if "?" in redirect_to else "?"
     return RedirectResponse(f"{redirect_to}{sep}event_created=1", status_code=303)

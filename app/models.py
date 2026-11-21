@@ -257,3 +257,34 @@ class Event(Base):
             }
 
 
+
+
+class AppNotification(Base):
+    __tablename__ = "notifications"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    title: Mapped[str] = mapped_column(String(200))
+    message: Mapped[str] = mapped_column(Text, default="")
+    notification_type: Mapped[str] = mapped_column(String(50), default="event_created")
+    event_id: Mapped[Optional[int]] = mapped_column(ForeignKey("events.id", ondelete="CASCADE"), nullable=True)
+    branch_id: Mapped[Optional[int]] = mapped_column(ForeignKey("branches.id"), nullable=True)
+    bal_mandal_id: Mapped[Optional[int]] = mapped_column(ForeignKey("bal_mandals.id"), nullable=True)
+    target_role: Mapped[str] = mapped_column(String(30), default="all")
+    link_url: Mapped[Optional[str]] = mapped_column(String(255), nullable=True, default="")
+    created_by_id: Mapped[Optional[int]] = mapped_column(ForeignKey("users.id"), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=ist_now)
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True)
+
+    event = relationship("Event", foreign_keys=[event_id])
+    branch = relationship("Branch", foreign_keys=[branch_id])
+    bal_mandal = relationship("BalMandal", foreign_keys=[bal_mandal_id])
+    creator = relationship("User", foreign_keys=[created_by_id])
+
+
+class UserNotificationRead(Base):
+    __tablename__ = "user_notification_reads"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
+    notification_id: Mapped[int] = mapped_column(ForeignKey("notifications.id", ondelete="CASCADE"), index=True)
+    read_at: Mapped[datetime] = mapped_column(DateTime, default=ist_now)

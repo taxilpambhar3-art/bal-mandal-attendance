@@ -16,7 +16,7 @@ from .auth import ROLE_HOME, ROLE_LABEL, ROLE_THEME, heal_password_hashes
 from .database import Base, SessionLocal, engine, DATA_DIR
 from .deps import AuthRedirect
 from .models import Attendance, BalMandal, Branch, Child, Event, StoredPhoto, User
-from .routers import auth, branch_admin, dossier, sanchalak, spotlight, super_admin
+from .routers import auth, branch_admin, dossier, notifications, sanchalak, spotlight, super_admin
 from .seed import seed_if_empty
 from .weeks import current_week_info, format_dt, gujarati_month, ist_today, week_number_for
 
@@ -94,6 +94,7 @@ app.include_router(branch_admin.router)
 app.include_router(sanchalak.router)
 app.include_router(spotlight.router)
 app.include_router(dossier.router)
+app.include_router(notifications.router)
 
 
 @app.exception_handler(AuthRedirect)
@@ -174,6 +175,35 @@ def on_startup():
                 except Exception as e:
                     print("Attendance migration warning:", e)
 
+                # notifications table migration
+                try:
+                    conn.exec_driver_sql("""
+                    CREATE TABLE IF NOT EXISTS notifications (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        title VARCHAR(200) NOT NULL,
+                        message TEXT DEFAULT '',
+                        notification_type VARCHAR(50) DEFAULT 'event_created',
+                        event_id INTEGER DEFAULT NULL,
+                        branch_id INTEGER DEFAULT NULL,
+                        bal_mandal_id INTEGER DEFAULT NULL,
+                        target_role VARCHAR(30) DEFAULT 'all',
+                        link_url VARCHAR(255) DEFAULT '',
+                        created_by_id INTEGER DEFAULT NULL,
+                        created_at DATETIME,
+                        is_active BOOLEAN DEFAULT 1
+                    )
+                    """)
+                    conn.exec_driver_sql("""
+                    CREATE TABLE IF NOT EXISTS user_notification_reads (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        user_id INTEGER NOT NULL,
+                        notification_id INTEGER NOT NULL,
+                        read_at DATETIME
+                    )
+                    """)
+                except Exception as e:
+                    print("Notifications sqlite migration warning:", e)
+
                 conn.commit()
             except Exception as e:
                 print("Migration warning:", e)
@@ -201,6 +231,26 @@ def on_startup():
                 "ALTER TABLE events ADD COLUMN IF NOT EXISTS attendance_end_time VARCHAR(30) DEFAULT ''",
                 "ALTER TABLE attendance ADD COLUMN IF NOT EXISTS event_id INTEGER DEFAULT NULL",
                 "ALTER TABLE attendance DROP CONSTRAINT IF EXISTS uq_child_date",
+                """CREATE TABLE IF NOT EXISTS notifications (
+                    id SERIAL PRIMARY KEY,
+                    title VARCHAR(200) NOT NULL,
+                    message TEXT DEFAULT '',
+                    notification_type VARCHAR(50) DEFAULT 'event_created',
+                    event_id INTEGER DEFAULT NULL,
+                    branch_id INTEGER DEFAULT NULL,
+                    bal_mandal_id INTEGER DEFAULT NULL,
+                    target_role VARCHAR(30) DEFAULT 'all',
+                    link_url VARCHAR(255) DEFAULT '',
+                    created_by_id INTEGER DEFAULT NULL,
+                    created_at TIMESTAMP WITHOUT TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+                    is_active BOOLEAN DEFAULT TRUE
+                )""",
+                """CREATE TABLE IF NOT EXISTS user_notification_reads (
+                    id SERIAL PRIMARY KEY,
+                    user_id INTEGER NOT NULL,
+                    notification_id INTEGER NOT NULL,
+                    read_at TIMESTAMP WITHOUT TIME ZONE DEFAULT CURRENT_TIMESTAMP
+                )""",
             ]
             for stmt in pg_stmts:
                 try:
