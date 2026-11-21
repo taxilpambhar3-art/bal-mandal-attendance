@@ -25,9 +25,7 @@ jobs:
         with:
           java-version: '17'
           distribution: 'temurin'
-
-      - name: Set up Android SDK
-        uses: android-actions/setup-android@v3
+          cache: 'gradle'
 
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v3
@@ -36,6 +34,8 @@ jobs:
 
       - name: Build Debug APK
         working-directory: android-app
+        env:
+          ANDROID_HOME: /usr/local/lib/android/sdk
         run: |
           gradle assembleDebug --no-daemon --stacktrace
           mkdir -p output
@@ -67,7 +67,7 @@ jobs:
             #### 📥 Download & Installation:
             1. Download `BalMandalAttendance.apk` below directly to your Android phone.
             2. Open the downloaded file.
-            3. Tap **Install** (Allow "Install unknown apps" from browser/files if prompted).
+            3. Tap **Install** (Allow "Install unknown apps" from your browser/files if prompted).
           files: android-app/output/BalMandalAttendance.apk
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
